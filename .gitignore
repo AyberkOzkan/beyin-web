@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+/build/
+/dist/
+/.venv/
+
+# Node (only at the repo root; the fixture vault keeps its own node_modules on purpose)
+/node_modules/
+
+# Design sources: large PNG mockups stay local
+/design/mockups/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local scratch
+/tmp/
+*.patch
