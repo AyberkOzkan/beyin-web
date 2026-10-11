@@ -18,7 +18,8 @@
 | İstemci yokken işlemci | %0 | 60 sn'de 20 ms işlemci süresi (%0,03); süreç içi ölçümde %0,017 | Tuttu (ölçüm duyarlılığında sıfır) |
 | Sunucu belleği | 60 MB altı | 24,8 MB (istekten sonra ve 60 sn boşta aynı); süreç içi ölçümde 29,8 MB | Tuttu |
 | Ana Sayfa'nın ilk çizimi | 1 sn altı (yerel) | İlk içerikli çizim 76 ms, bölümlerin dolması 58 ms (yedi koşunun ortancası; en büyük 80 ve 67 ms) | Tuttu |
-| Grafik, 500 düğüm | Yerleşim 3 sn'de durulur; akıcı sürükleme | Yerleşim 0,9 sn'de duruldu, durulunca çizim durdu (2026-10-11, P12). Sürüklemenin akıcılığı ölçülmedi | Yerleşim tuttu; sürükleme ölçülmedi |
+| Grafik, 500 düğüm | Yerleşim 3 sn'de durulur; akıcı sürükleme | Yerleşim 0,35 sn'de duruldu (2026-10-11, gökyüzü görünümüyle yeniden ölçüldü). Sürüklemenin akıcılığı ölçülmedi | Yerleşim tuttu; sürükleme ölçülmedi |
+| Grafik süzülürken bir karenin çizimi (500 düğüm) | 16 ms altı | 0,7 ms (60 karenin ortancası; çizim komutları, rasterleştirme hariç) | Tuttu |
 
 "Beyin ne hatırlıyor?" araması önbellekten cevaplanmaz; her istek Beyin CLI'ını çağırır (`context --no-sync`). İlk istek 315 ms; ardından 20 isteğin ortancası 275 ms, en büyüğü 395 ms. PLAN'da bunun için hedef yok.
 
@@ -52,7 +53,7 @@
 - **İlk taramanın tekrarı:** `python3 scripts/measure.py VAULT` üç kez daha (her koşu yeni süreç). İlk koşunun 1,45 sn sürmesi, dosyaların `/mnt/c` üzerinden o oturumda ilk kez okunmasındandır; sonraki koşularda işletim sistemi önbelleği doludur.
 - **Gerçek süreçte işlemci ve bellek:** `python3 -m beyin_web --vault VAULT --port 7391 --no-token`, dokuz API ucuna ve ana sayfaya birer `curl` isteği, ardından `/proc/PID/status`'tan `VmRSS` ve 60 sn arayla `/proc/PID/stat`'tan kullanıcı ve çekirdek süresi (2 tik, `CLK_TCK=100`). PLAN'daki `top` ve `ps` yerine aynı sayaçlar doğrudan `/proc`'tan okundu.
 - **Ana Sayfa'nın ilk çizimi:** Selenium ile başsız Edge; sunucu aynı süreçte, gerçek vault Windows yolundan. Her koşuda sayfa yeniden yüklendi; tarayıcının `first-contentful-paint` kaydı ve Ana Sayfa'nın bütün bölümlerinin dolduğu an (`aria-busy="false"`; `performance.now()`) okundu. İlk yükleme ısınma sayılıp atıldı (136 ms). Bölümlerin dolması ilk çizimden önce görünür, çünkü tarayıcı dolu sayfayı bir sonraki karede çizer. Sunucu ve tarayıcı aynı makinede olduğundan ağ gecikmesi yoktur.
-- **Grafik:** `scripts/synthetic_vault.py` ile üretilen 500 düğüm ve 1.697 kenarlı vault, başsız Edge; P12'nin tarayıcı testlerinde ölçüldü. Sürüklemenin akıcılığı için kare hızı ölçümü yapılmadı; bu satır elle denenmeyi bekliyor.
+- **Grafik:** `scripts/synthetic_vault.py` ile üretilen 500 düğümlü vault, başsız Edge; `tests/e2e/test_graph.py`'deki bütçe testi yerleşimin durulma süresini ve süzülme sırasında 60 karenin çizim süresini `performance.now()` ile ölçer (2026-10-11, iki koşu: 346 ve 357 ms; 0,70 ms). Kare süresi tuvale verilen çizim komutlarının süresidir; tarayıcının rasterleştirmesini içermez. Sürüklemenin akıcılığı için kare hızı ölçümü yapılmadı; bu satır elle denenmeyi bekliyor.
 - **Dosyaların değişmediği:** ölçümden önce ve sonra `find … -printf '%T@ %s %p'` çıktıları karşılaştırıldı.
 
 ## Sınırlar
