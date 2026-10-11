@@ -375,7 +375,7 @@ class ScanTests(unittest.TestCase):
         before = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
         root = Path(__file__).resolve().parents[1]
         result = subprocess.run(
-            [sys.executable, "scripts/olc.py", str(self.vault)], cwd=root,
+            [sys.executable, "scripts/measure.py", str(self.vault)], cwd=root,
             capture_output=True, text=True, encoding="utf-8", timeout=20, check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)

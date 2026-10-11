@@ -14,7 +14,7 @@ from beyin_web.config import Settings
 from beyin_web.http.server import create_server
 from beyin_web.runtime.beyin_cli import BeyinRuntime
 from beyin_web.vault.scan import MarkdownSource
-from scripts.altin_guncelle import NOW, TZ
+from scripts.update_golden import NOW, TZ
 from tests.e2e.support import BrowserTestCase
 from tests.support import FIXTURES, make_vault
 

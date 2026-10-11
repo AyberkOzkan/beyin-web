@@ -196,7 +196,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 if path.startswith(("/api/", "/static/")) or path in {"/api", "/static"}:
                     self.send_error(401)
                 else:
-                    self._serve_file("giris.html", 401)
+                    self._serve_file("login.html", 401)
                 return
         if path.startswith("/api/") or path == "/api":
             for pattern, handler in application.routes:

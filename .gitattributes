@@ -1,5 +1,8 @@
 * text=auto eol=lf
 
+# cmd.exe reads batch files most reliably with CRLF line endings.
+*.cmd text eol=crlf
+
 *.png binary
 *.jpg binary
 *.gif binary

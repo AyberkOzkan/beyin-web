@@ -8,7 +8,7 @@ from pathlib import Path
 
 from beyin_web.vault.links import build_links
 from beyin_web.vault.scan import MarkdownSource
-from scripts.sentetik_vault import generate_vault
+from scripts.synthetic_vault import generate_vault
 
 
 class SyntheticVaultTests(unittest.TestCase):
@@ -63,7 +63,7 @@ class SyntheticVaultTests(unittest.TestCase):
         self.assertFalse((self.root / "negative").exists())
 
     def test_command_line_arguments_and_refusal(self) -> None:
-        script = Path(__file__).resolve().parents[1] / "scripts" / "sentetik_vault.py"
+        script = Path(__file__).resolve().parents[1] / "scripts" / "synthetic_vault.py"
         target = self.root / "vault"
         command = [sys.executable, str(script), str(target), "--notes", "12", "--seed", "9"]
         result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", check=False)

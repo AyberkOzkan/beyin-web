@@ -12,7 +12,7 @@ from urllib.parse import quote
 
 from beyin_web.http import api
 from beyin_web.vault.records import make_rid
-from scripts.altin_guncelle import ENDPOINTS, NOW, TZ, request, running_server
+from scripts.update_golden import ENDPOINTS, NOW, TZ, request, running_server
 from tests.support import FIXTURES, make_vault
 
 

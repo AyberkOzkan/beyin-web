@@ -48,7 +48,7 @@ class SecurityTests(ServerCase):
                     connection.close()
 
     def test_no_cookie_api_and_static_are_unauthorized(self) -> None:
-        for path in ("/api/v1/pulse", "/api/v1/missing", "/static/index.html", "/static/giris.html"):
+        for path in ("/api/v1/pulse", "/api/v1/missing", "/static/index.html", "/static/login.html"):
             with self.subTest(path=path):
                 status, headers, body = self.request(path)
                 self.assertEqual(status, 401)
@@ -61,7 +61,7 @@ class SecurityTests(ServerCase):
                 status, headers, body = self.request(path)
                 self.assertEqual(status, 401)
                 self.assertEqual(headers["Content-Type"], "text/html; charset=utf-8")
-                self.assertEqual(body, (self.static_dir / "giris.html").read_bytes())
+                self.assertEqual(body, (self.static_dir / "login.html").read_bytes())
                 text = body.decode("utf-8")
                 self.assertIn("terminalde", text)
                 for forbidden in ("<script", "<style", "style=", "src=", "href="):

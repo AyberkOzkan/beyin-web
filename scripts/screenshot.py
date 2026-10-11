@@ -1,6 +1,6 @@
 """Open pages of the app in headless Edge and save screenshots for design review.
 
-    py -3 scripts/ekran.py [--out design/ekran] [--vault PATH] [--full] [--wait 2.5] [HASH ...]
+    py -3 scripts/screenshot.py [--out design/screenshots] [--vault PATH] [--full] [--wait 2.5] [HASH ...]
 
 Without --vault the synthetic vault is served with the clock of the golden files. With --vault a
 real vault is read (never written); Beyin is not called. The default output folder is not tracked
@@ -27,7 +27,7 @@ from beyin_web.vault.scan import MarkdownSource  # noqa: E402
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("hashes", nargs="*", default=["#/"])
-    parser.add_argument("--out", type=Path, default=ROOT / "design" / "ekran")
+    parser.add_argument("--out", type=Path, default=ROOT / "design" / "screenshots")
     parser.add_argument("--vault", type=Path)
     parser.add_argument("--full", action="store_true", help="grow the window to the page's height")
     parser.add_argument("--wait", type=float, default=2.5, help="seconds to let a page settle")
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temporary:
         if args.vault is None:
-            from scripts.altin_guncelle import NOW, TZ
+            from scripts.update_golden import NOW, TZ
             from tests.support import make_vault
             vault = make_vault(Path(temporary))
         else:

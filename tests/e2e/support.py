@@ -48,7 +48,7 @@ class BrowserTestCase(unittest.TestCase):
         if executable is None:
             raise unittest.SkipTest("Local Edge driver unavailable; network downloads are disabled")
         options = webdriver.EdgeOptions()
-        if os.environ.get("BEYIN_WEB_E2E_GOSTER") != "1":
+        if os.environ.get("BEYIN_WEB_E2E_SHOW") != "1":
             options.add_argument("--headless=new")
         options.add_argument("--window-size=1672,941")
         options.add_argument("--disable-background-networking")
@@ -140,7 +140,7 @@ class PageTestCase(BrowserTestCase):
         self.addCleanup(self.stop_page_server)
 
     def restart_server(self) -> None:
-        from scripts.altin_guncelle import NOW, TZ
+        from scripts.update_golden import NOW, TZ
         self.stop_page_server()
         self.settings = Settings(vault=self.vault, port=0, token_enabled=False, display_name=self.display_name)
         self.source = MarkdownSource(self.vault, min_interval=0)
