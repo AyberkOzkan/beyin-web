@@ -4,6 +4,7 @@
   "records": 30,
   "vault_name": "vault",
   "drawings": {},
+  "obsidian_uri": "obsidian://open?path=%2Fvault",
   "hidden_private": 3,
   "beyin": {
     "available": true,

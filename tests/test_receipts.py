@@ -7,12 +7,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from beyin_web.domain.receipts import build_receipts
-from beyin_web.vault.records import make_rid
+from beyin_web.vault.records import make_rid, receipt_summary, receipt_title
 from beyin_web.vault.scan import MarkdownSource
 from tests.support import make_vault
 
 
 class ReceiptTests(unittest.TestCase):
+    def test_shared_summary_keeps_markdown_and_excludes_learned_from_title(self) -> None:
+        body = "\ufeffATLAS: **Not** hazırlandı.\r\nÖğrenilen: Yeni bilgi\r\nDevam.\r\nÖĞRENİLEN: yok\r\n"
+        self.assertEqual(receipt_summary(body), ("ATLAS: **Not** hazırlandı.\nDevam.", "Yeni bilgi"))
+        self.assertEqual(receipt_title(body, "receipts/abcdef0123456789.md", {"atlas"}), "Not hazırlandı")
+        self.assertEqual(receipt_summary("Öğrenilen: yok\n"), ("", None))
+
     def setUp(self) -> None:
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

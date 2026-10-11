@@ -1,6 +1,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; min-width: 1024px; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
+/* 960px, not 1024: a 1024px window keeps about 977px for the page (frame and scrollbar) and must not scroll sideways. */
+body { margin: 0; min-width: 960px; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
 h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); line-height: 1.15; margin: 0 0 16px; }
 h1 { font-size: 44px; font-weight: 700; }
 h2 { font-size: 28px; font-weight: 700; }

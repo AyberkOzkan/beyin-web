@@ -33,7 +33,7 @@ export function render(root) {
       el("button", { class: "button", type: "button", onclick: () => document.dispatchEvent(new CustomEvent("beyin:health")) }, icon("activity"), t("health.title")))),
     card(t("showcase.states"), states),
     card(t("showcase.illustrations"), [el("p", { class: "muted" }, t("showcase.illustrationMessage")),
-      ["hero-saray", "yan-agac", "baslik-daglar", "kart-cam"].map(name => illustrationSlot(name))]),
+      ["hero-palace", "sidebar-tree", "heading-mountains", "card-window"].map(name => illustrationSlot(name))]),
     card(t("showcase.markdown"), markdown, "book-open"),
   ];
   sections[0].classList.add("showcase-wide");

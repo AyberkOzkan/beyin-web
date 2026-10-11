@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from beyin_web.config import Settings
-from beyin_web.domain.obsidian import obsidian_uri
+from beyin_web.domain.obsidian import obsidian_uri, obsidian_vault_uri
 from beyin_web.http.api import register_api
 from beyin_web.http.server import BeyinHTTPServer
 from beyin_web.runtime.beyin_cli import BeyinRuntime
@@ -84,6 +84,10 @@ def request(
 def normalize(payload: dict[str, object], vault: Path) -> dict[str, object]:
     if "obsidian_uri" not in payload:
         return payload
+    if "path" not in payload:
+        if payload["obsidian_uri"] != obsidian_vault_uri(str(vault)):
+            raise RuntimeError("invalid obsidian_uri")
+        return {**payload, "obsidian_uri": obsidian_vault_uri("/vault")}
     path = payload["path"]
     if not isinstance(path, str) or payload["obsidian_uri"] != obsidian_uri(str(vault), path):
         raise RuntimeError("invalid obsidian_uri")

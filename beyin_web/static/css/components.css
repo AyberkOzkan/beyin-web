@@ -31,6 +31,7 @@
 .state-title { display: block; font: 700 23px/1.15 var(--font-heading); margin-bottom: 8px; }
 .state p { color: var(--ink-soft); margin-bottom: 12px; }
 .button, .icon-button, .local-status { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; }
+a.button { color: var(--ink); text-decoration: none; }
 .icon-button { width: 40px; height: 40px; padding: 8px; }
 .skeleton { display: grid; gap: 12px; }
 .skeleton-line { height: 14px; border-radius: 5px; background: var(--line); }

@@ -60,8 +60,11 @@ export function createReader(record) {
       el("dt", {}, t("knowledge.nextAction")), el("dd", { "data-field": "next_action" }, meta.next_action || t("knowledge.unspecified"))),
     el("details", { class: "reader-task-body" }, el("summary", {}, t("knowledge.taskBody")), body));
   } else root.append(body);
+  document.dispatchEvent(new CustomEvent("beyin:record", { detail: { obsidianUri: record.obsidian_uri ?? "" } }));
   return { root, destroy() {
+    if (destroyed) return;
     destroyed = true;
+    document.dispatchEvent(new CustomEvent("beyin:record", { detail: { obsidianUri: null } }));
     copy.removeEventListener("click", copyPath);
     document.removeEventListener("keydown", escape);
     document.removeEventListener("click", outside);

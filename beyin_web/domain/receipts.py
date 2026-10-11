@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from beyin_web.domain.tasks import _text
-from beyin_web.vault.links import fold_name
-from beyin_web.vault.records import classify
+from beyin_web.vault.records import classify, receipt_project, receipt_summary
 from beyin_web.vault.scan import VaultSnapshot
 
 
@@ -30,20 +29,6 @@ def _path_key(value: str) -> str:
     return unicodedata.normalize("NFC", value.replace("\\", "/"))
 
 
-def _summary(body: str) -> tuple[str, str | None]:
-    lines: list[str] = []
-    learned: list[str] = []
-    for line in body.lstrip("\ufeff").splitlines():
-        label, separator, value = line.strip().partition(":")
-        if separator and fold_name(label) == "öğrenilen":
-            value = value.strip()
-            if value and fold_name(value) != "yok":
-                learned.append(value)
-        else:
-            lines.append(line)
-    return "\n".join(lines).strip(), "\n".join(learned) or None
-
-
 def build_receipts(
     snapshot: VaultSnapshot, known_projects: Iterable[str],
 ) -> tuple[tuple[Receipt, ...], tuple[str, ...]]:
@@ -52,9 +37,7 @@ def build_receipts(
         _path_key(record.path): record for record in records
         if classify(record) not in {"index", "rejected"}
     }
-    names: dict[str, str] = {}
-    for name in sorted(known_projects):
-        names.setdefault(fold_name(name), name)
+    names = tuple(known_projects)
     receipts: list[Receipt] = []
     warnings: list[str] = []
     for record in records:
@@ -82,11 +65,10 @@ def build_receipts(
                 ref_rids.append(resolved.rid)
             if classify(resolved) != "memory" and resolved.project:
                 projects.add(resolved.project)
-        summary, learned = _summary(record.body)
+        summary, learned = receipt_summary(record.body)
         inferred = False
         if not projects:
-            prefix, separator, _ = summary.partition(":")
-            project = names.get(fold_name(prefix.strip())) if separator else None
+            project = receipt_project(summary, names)
             if project is not None:
                 projects.add(project)
                 inferred = True

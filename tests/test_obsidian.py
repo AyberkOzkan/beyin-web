@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from urllib.parse import unquote
 
-from beyin_web.domain.obsidian import obsidian_uri
+from beyin_web.domain.obsidian import obsidian_uri, obsidian_vault_uri
 
 PREFIX = "obsidian://open?path="
 
@@ -24,6 +24,27 @@ CASES: list[tuple[str, str, str, str]] = [
 
 
 class TestObsidianUri(unittest.TestCase):
+    def test_vault_paths_share_record_encoding_and_translation(self) -> None:
+        for root, expected in (
+            ("/home/deniz/Beyin Notları/", "/home/deniz/Beyin Notları"),
+            ("c:/Users/Çınar/Beyin Notları/", r"C:\Users\Çınar\Beyin Notları"),
+            (r"C:\Users\Çınar\Beyin Notları", r"C:\Users\Çınar\Beyin Notları"),
+            ("/mnt/d/Çınar/Beyin Notları/", r"D:\Çınar\Beyin Notları"),
+            ("/mnt/C/Çınar", r"C:\Çınar"),
+            ("/mnt/data/Çınar", "/mnt/data/Çınar"),
+            (r"\\server\share\Çınar", r"\\server\share\Çınar"),
+            ("/", "/"), ("/mnt/c", "C:\\"), ("c:/", "C:\\"),
+        ):
+            with self.subTest(root=root):
+                uri = obsidian_vault_uri(root)
+                self.assertTrue(uri.startswith(PREFIX))
+                encoded = uri[len(PREFIX):]
+                self.assertEqual(unquote(encoded), expected)
+                for char in ("/", "\\", " ", ":", "Ç", "ı"):
+                    self.assertNotIn(char, encoded)
+                self.assertEqual(unquote(obsidian_uri(root, "note.md")[len(PREFIX):]),
+                                 expected.rstrip("/\\") + ("\\" if "\\" in expected else "/") + "note.md")
+
     def test_cases(self) -> None:
         for name, vault_root, rel_path, expected_path in CASES:
             with self.subTest(name=name):

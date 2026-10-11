@@ -3,8 +3,39 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { groupNotes, filterGroups, firstNote, firstSentence, recordKind, receiptDate, withoutLeadingTitle } from "../../beyin_web/static/js/pages/knowledge-model.js";
 import { kindColor, truncateTitle, worldToScreen, screenToWorld, findNode } from "../../beyin_web/static/js/components/graph-core.js";
+import { createReader } from "../../beyin_web/static/js/components/reader.js";
+import { setMessages } from "../../beyin_web/static/js/i18n.js";
 
 const golden = JSON.parse(readFileSync(new URL("../fixtures/golden/knowledge.json", import.meta.url), "utf8"));
+
+test("reader announces its Obsidian target and clears it once when destroyed", () => {
+  class ReaderNode extends EventTarget {
+    constructor() { super(); this.children = []; this.classList = { add() {} }; }
+    setAttribute() {}
+    append(...nodes) { this.children.push(...nodes); }
+  }
+  const originalNode = globalThis.Node, originalDocument = globalThis.document;
+  globalThis.Node = ReaderNode;
+  globalThis.document = Object.assign(new EventTarget(), {
+    createElement: () => new ReaderNode(), createElementNS: () => new ReaderNode(),
+    createTextNode: () => new ReaderNode(),
+  });
+  try {
+    setMessages(JSON.parse(readFileSync(new URL("../../beyin_web/static/i18n/tr.json", import.meta.url), "utf8")));
+    const events = [];
+    document.addEventListener("beyin:record", event => events.push(event.detail.obsidianUri));
+    const record = JSON.parse(readFileSync(new URL("../fixtures/golden/record.json", import.meta.url), "utf8"));
+    for (const uri of [record.obsidian_uri, undefined, "", "https://example.org"]) {
+      const reader = createReader({ ...record, obsidian_uri: uri });
+      assert.equal(events.at(-1), uri ?? "");
+      reader.destroy();
+      assert.equal(events.at(-1), null);
+      const count = events.length;
+      reader.destroy();
+      assert.equal(events.length, count);
+    }
+  } finally { globalThis.Node = originalNode; globalThis.document = originalDocument; }
+});
 
 test("a body heading that repeats the title is dropped, any other heading stays", () => {
   assert.equal(withoutLeadingTitle("# Kavram bir\n\nMetin.", "Kavram bir"), "\nMetin.");

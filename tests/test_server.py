@@ -89,7 +89,7 @@ class ServerTests(ServerCase):
         self.assertEqual(status, 200)
         payload = json.loads(body)
         snapshot = self.source.snapshot()
-        self.assertEqual(set(payload), {"generation", "scanned_at", "records", "hidden_private", "beyin", "vault_name", "drawings"})
+        self.assertEqual(set(payload), {"generation", "scanned_at", "records", "hidden_private", "beyin", "vault_name", "drawings", "obsidian_uri"})
         self.assertEqual(payload["vault_name"], self.vault.name)
         self.assertEqual(payload["drawings"], {})
         self.assertEqual(payload["generation"], snapshot.generation)
@@ -127,20 +127,23 @@ class ServerTests(ServerCase):
         self.assertEqual(self.server.drawings, {})
         images = self.static_dir / "img"
         images.mkdir()
-        for name in ("hero-saray.png", "hero-saray.svg", "hero-saray.webp", "yan-agac.svg",
-                     "yan-agac.webp", "baslik-daglar.webp", "kart-cam.jpg", "unknown.png",
-                     "hero-saray.PNG", "kart-cam.txt"):
+        for name in ("hero-palace.png", "hero-palace.svg", "hero-palace.webp", "sidebar-tree.svg",
+                     "sidebar-tree.webp", "heading-mountains.webp", "card-window.jpg", "unknown.png",
+                     "hero-palace.PNG", "card-window.txt"):
             (images / name).write_bytes(b"image")
-        (images / "kart-cam.png").mkdir()
+        (images / "card-window.png").mkdir()
+        legacy_names = ("hero-" + "saray", "yan-" + "agac", "baslik-" + "daglar", "kart-" + "cam")
+        for name in legacy_names:
+            (images / (name + ".png")).write_bytes(b"legacy")
         self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], {})
         self.stop_server()
         self.server = create_server(self.settings, self.source, self.runtime)
         self.thread = threading.Thread(target=self.server.serve_forever, kwargs={"poll_interval": 0.01})
         self.thread.start()
-        expected = {"hero-saray": "/static/img/hero-saray.png", "yan-agac": "/static/img/yan-agac.svg",
-                    "baslik-daglar": "/static/img/baslik-daglar.webp"}
+        expected = {"hero-palace": "/static/img/hero-palace.png", "sidebar-tree": "/static/img/sidebar-tree.svg",
+                    "heading-mountains": "/static/img/heading-mountains.webp"}
         self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], expected)
-        (images / "kart-cam.svg").write_bytes(b"image")
+        (images / "card-window.svg").write_bytes(b"image")
         self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], expected)
 
     def test_disabled_runtime_pulse_never_calls_cli(self) -> None:

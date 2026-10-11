@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, cast
 from urllib.parse import parse_qs, urlsplit
 
 from beyin_web.domain import graph, journal
-from beyin_web.domain.obsidian import obsidian_uri
+from beyin_web.domain.obsidian import obsidian_uri, obsidian_vault_uri
 from beyin_web.domain.projects import Project, build_projects
 from beyin_web.domain.receipts import Receipt, build_receipts
 from beyin_web.domain.search import search
@@ -176,6 +176,7 @@ class API:
             if path == "pulse":
                 data = {"scanned_at": snapshot.scanned_at.isoformat(), "records": len(snapshot.records),
                         "vault_name": snapshot.root.name, "drawings": dict(self.server.drawings),
+                        "obsidian_uri": obsidian_vault_uri(str(self.server.settings.vault)),
                         "hidden_private": snapshot.hidden_private,
                         "beyin": {"available": available, "version": health["installed_version"],
                                   "up_to_date": health["up_to_date"]}}

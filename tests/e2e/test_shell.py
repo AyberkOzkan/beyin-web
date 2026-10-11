@@ -4,7 +4,55 @@ import threading
 from dataclasses import replace
 
 from beyin_web.http.server import create_server
-from tests.e2e.support import BrowserTestCase
+from beyin_web.domain.obsidian import obsidian_uri, obsidian_vault_uri
+from beyin_web.vault.records import make_rid
+from tests.e2e.support import BrowserTestCase, PageTestCase
+
+
+class ObsidianShellTests(PageTestCase):
+    def test_topbar_targets_vault_record_and_selected_knowledge_note(self) -> None:
+        self.open()
+        link = self.wait_for(".topbar-actions .obsidian-link")
+        self.assertEqual(link.text, self.messages["shell.openObsidian"])
+        self.assertEqual(link.get_dom_attribute("href"), obsidian_vault_uri(str(self.vault)))
+        self.assertEqual(link.get_attribute("aria-label"), self.messages["shell.openVaultObsidian"])
+        path = "notes/atlas.md"
+        self.driver.execute_script("location.hash = arguments[0]", "#/not/" + make_rid(path))
+        self.wait_for(".record-reader")
+        self.wait_until(lambda driver: link.get_dom_attribute("href") == obsidian_uri(str(self.vault), path))
+        self.assertEqual(link.get_attribute("aria-label"), self.messages["shell.openRecordObsidian"])
+        self.driver.execute_script("location.hash = '#/'")
+        self.wait_for('.home-page[aria-busy="false"]')
+        self.wait_until(lambda driver: link.get_dom_attribute("href") == obsidian_vault_uri(str(self.vault)))
+        path = "knowledge/concepts/kavram-bir.md"
+        self.driver.execute_script("location.hash = arguments[0]", "#/bilgi/" + make_rid(path))
+        self.wait_for('.record-reader[data-rid="' + make_rid(path) + '"]')
+        self.wait_until(lambda driver: link.get_dom_attribute("href") == obsidian_uri(str(self.vault), path))
+        self.assertEqual(link.get_attribute("aria-label"), self.messages["shell.openRecordObsidian"])
+        self.driver.set_window_size(1024, 941)
+        self.wait_until(lambda driver: driver.execute_script("return window.innerWidth <= 1024"))
+        self.assertEqual(self.driver.execute_script("""
+            const bar = document.querySelector('#topbar');
+            return bar.scrollWidth <= bar.clientWidth &&
+              [...bar.querySelectorAll('a, button, input')].every(node => {
+                const rect = node.getBoundingClientRect(), parent = bar.getBoundingClientRect();
+                return rect.left >= parent.left && rect.right <= parent.right;
+              });
+        """), True)
+        self.assertFalse(self.wait_for(".obsidian-link").find_element("css selector", ".obsidian-link-text").is_displayed())
+        self.assert_clean_text()
+        self.assert_no_overflow((1024,))
+
+    def test_topbar_rejects_invalid_or_missing_record_addresses(self) -> None:
+        self.open()
+        self.wait_for(".obsidian-link")
+        for uri in ("", "https://example.org", "javascript:alert(1)"):
+            self.driver.execute_script(
+                "document.dispatchEvent(new CustomEvent('beyin:record', {detail: {obsidianUri: arguments[0]}}))", uri)
+            self.wait_until(lambda driver: not self.all(".obsidian-link"))
+        self.driver.execute_script(
+            "document.dispatchEvent(new CustomEvent('beyin:record', {detail: {obsidianUri: null}}))")
+        self.assertEqual(self.wait_for(".obsidian-link").get_dom_attribute("href"), obsidian_vault_uri(str(self.vault)))
 
 
 class ShellTests(BrowserTestCase):

@@ -4,10 +4,32 @@ from typing import Any
 from unittest.mock import patch
 
 from beyin_web.runtime.beyin_cli import RuntimeUnavailable
+from beyin_web.vault.records import make_rid
 from tests.e2e.support import PageTestCase
 
 
 class SearchTests(PageTestCase):
+    def test_receipt_has_readable_search_and_reader_titles(self) -> None:
+        path = "receipts/" + "a" * 64 + ".md"
+        title = "Başlıkla aranabilen çalışma tamamlandı"
+        (self.vault / path).write_text(
+            '---\nkind: receipt\ncreated_at: "2026-01-12T12:00:00+03:00"\n---\n'
+            'atlas: **Başlıkla** aranabilen çalışma tamamlandı. İkinci cümle.\nÖğrenilen: Yeni bilgi.\n',
+            encoding="utf-8",
+        )
+        self.restart_server()
+        self.open("#/arama?q=Başlıkla")
+        self.filled()
+        result = self.wait_for('.search-result[data-rid="' + make_rid(path) + '"]')
+        self.assertEqual(result.find_element("css selector", "h2").text, title)
+        for heading in self.all("#main h1, #main h2"):
+            self.assertNotRegex(heading.text, r"[0-9a-fA-F]{41,}")
+        result.click()
+        self.assertEqual(self.text(".reader-title"), title)
+        for heading in self.all("#main h1, #main h2"):
+            self.assertNotRegex(heading.text, r"[0-9a-fA-F]{41,}")
+        self.assert_clean_text()
+
     def filled(self) -> None:
         self.wait_for('.search-results[aria-busy="false"] .search-result')
         self.wait_for(".search-summary")

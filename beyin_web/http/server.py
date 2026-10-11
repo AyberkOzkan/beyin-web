@@ -48,7 +48,7 @@ class BeyinHTTPServer(ThreadingHTTPServer):
         static_root = settings.static_dir.resolve()
         try:
             images = {path.name: path for path in (static_root / "img").iterdir()}
-            for name in ("hero-saray", "yan-agac", "baslik-daglar", "kart-cam"):
+            for name in ("hero-palace", "sidebar-tree", "heading-mountains", "card-window"):
                 for extension in (".png", ".svg", ".webp"):
                     path = images.get(name + extension)
                     if path is not None and path.is_file() and path.resolve().is_relative_to(static_root):

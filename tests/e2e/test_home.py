@@ -131,6 +131,8 @@ class HomeTests(BrowserTestCase):
         self.filled()
         for width in (1280, 1672):
             self.driver.set_window_size(width, 941)
+            self.wait_until(lambda driver: driver.execute_script(
+                "return matchMedia('(max-width: 1399px)').matches") == (width == 1280))
             self.wait_until(lambda driver: driver.execute_script("return document.documentElement.scrollWidth <= document.documentElement.clientWidth"))
             columns = self.driver.execute_script("return getComputedStyle(document.querySelector('.home-middle')).gridTemplateColumns.split(' ').length")
             self.assertEqual(columns, 2 if width == 1280 else 3)
@@ -139,12 +141,12 @@ class HomeTests(BrowserTestCase):
         images = self.static_dir / "img"
         images.mkdir()
         pixel = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII=")
-        (images / "hero-saray.png").write_bytes(pixel)
-        (images / "yan-agac.png").write_bytes(pixel)
+        (images / "hero-palace.png").write_bytes(pixel)
+        (images / "sidebar-tree.png").write_bytes(pixel)
         self.start_home_server()
         self.open()
         self.filled()
-        for selector, name in (("#home-greeting img", "hero-saray"), ("#sidebar-art img", "yan-agac")):
+        for selector, name in (("#home-greeting img", "hero-palace"), ("#sidebar-art img", "sidebar-tree")):
             picture = self.wait_for(selector)
             self.wait_until(lambda driver: driver.execute_script("return arguments[0].complete && arguments[0].naturalWidth > 0", picture))
             self.assertTrue(picture.get_attribute("src").endswith(f"/static/img/{name}.png"))

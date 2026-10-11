@@ -4,9 +4,44 @@ import { readFileSync } from "node:fs";
 import { parseRoute } from "../../beyin_web/static/js/router.js";
 import { setMessages, t, relativeTime, formatDate, formatTime } from "../../beyin_web/static/js/i18n.js";
 import { resolveWikilink, renderMarkdown } from "../../beyin_web/static/js/markdown.js";
+import { obsidianTarget, illustrationSlot } from "../../beyin_web/static/js/components/index.js";
 
 const messages = JSON.parse(readFileSync(new URL("../../beyin_web/static/i18n/tr.json", import.meta.url), "utf8"));
 setMessages(messages);
+
+test("Obsidian target changes from vault to record and back, rejecting missing or unsafe URIs", () => {
+  const vault = "obsidian://open?path=%2Fvault", record = vault + "%2Fnote.md";
+  assert.deepEqual(obsidianTarget(vault), { href: vault, labelKey: "shell.openVaultObsidian" });
+  assert.deepEqual(obsidianTarget(vault, record), { href: record, labelKey: "shell.openRecordObsidian" });
+  assert.deepEqual(obsidianTarget(undefined, record), { href: record, labelKey: "shell.openRecordObsidian" });
+  assert.deepEqual(obsidianTarget(vault, null), obsidianTarget(vault));
+  for (const uri of [undefined, null, "", "https://example.org", "javascript:alert(1)", 12, "obsidian://other?"]) {
+    assert.equal(obsidianTarget(uri), null);
+    if (uri !== null && uri !== undefined) assert.equal(obsidianTarget(vault, uri), null);
+  }
+  assert.equal(t("shell.openObsidian"), "Obsidian'da Aç");
+  assert.equal(t("shell.openVaultObsidian"), "Vault'u Obsidian'da aç");
+  assert.equal(t("shell.openRecordObsidian"), "Bu notu Obsidian'da aç");
+});
+
+test("illustration slots accept only the four English names and local sources", () => {
+  const original = globalThis.document;
+  globalThis.document = {
+    createElement: tag => ({ tag, attributes: {}, setAttribute(key, value) { this.attributes[key] = value; }, addEventListener() {} }),
+  };
+  try {
+    for (const name of ["hero-palace", "sidebar-tree", "heading-mountains", "card-window"]) {
+      const src = "/static/img/" + name + ".png";
+      assert.equal(illustrationSlot(name, { [name]: src }).attributes.src, src);
+      for (const bad of ["https://example.org/a.png", src + "?x", src + "#x", "/static/img/other.png"]) {
+        assert.equal(illustrationSlot(name, { [name]: bad }), null);
+      }
+      assert.equal(illustrationSlot(name, {}), null);
+    }
+    const legacy = ["hero-" + "saray", "yan-" + "agac", "baslik-" + "daglar", "kart-" + "cam"];
+    for (const name of legacy) assert.equal(illustrationSlot(name, { [name]: "/static/img/" + name + ".png" }), null);
+  } finally { globalThis.document = original; }
+});
 
 test("every route in the contract parses with decoded parameters", () => {
   const cases = [

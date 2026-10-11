@@ -11,7 +11,7 @@ from types import MappingProxyType
 from typing import Protocol
 
 from beyin_web.vault.frontmatter import declares_private, parse_frontmatter
-from beyin_web.vault.records import Record, _memory_role, build_record
+from beyin_web.vault.records import Record, _memory_role, build_record, with_receipt_titles
 
 
 @dataclass(frozen=True)
@@ -162,7 +162,9 @@ class MarkdownSource:
                 generation = self._snapshot.generation + 1 if self._snapshot else 1
                 self._snapshot = VaultSnapshot(
                     generation=generation, scanned_at=datetime.now(timezone.utc), root=self._root,
-                    records={cached.record.rid: cached.record for cached in cache.values() if cached.record is not None},
+                    # Project names are only known once every record is read; receipt titles drop them here.
+                    records=with_receipt_titles({
+                        cached.record.rid: cached.record for cached in cache.values() if cached.record is not None}),
                     companion_dir=companion, hidden_private=sum(cached.hidden for cached in cache.values()),
                     warnings=warnings,
                 )

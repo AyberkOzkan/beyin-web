@@ -4,6 +4,12 @@ import { t } from "../i18n.js";
 const statuses = new Set(["inbox", "active", "waiting", "blocked", "done", "cancelled", "unknown"]);
 const kinds = new Set(["note", "knowledge", "task", "receipt", "memory", "index", "rejected"]);
 
+export function obsidianTarget(vaultUri, recordUri = null) {
+  const href = recordUri ?? vaultUri;
+  if (typeof href !== "string" || !href.startsWith("obsidian://open?")) return null;
+  return { href, labelKey: recordUri === null ? "shell.openVaultObsidian" : "shell.openRecordObsidian" };
+}
+
 export function card(title, children = [], iconName = null) {
   return el("section", { class: "card" },
     el("div", { class: "card-title" }, iconName && icon(iconName), el("h2", {}, title)), children);
@@ -96,6 +102,7 @@ export function setDrawings(value) {
 }
 
 export function illustrationSlot(name, available = drawings) {
+  if (!["hero-palace", "sidebar-tree", "heading-mountains", "card-window"].includes(name)) return null;
   const source = available[name];
   if (!source || !source.startsWith(`/static/img/${name}.`) || /[?#]/.test(source)) return null;
   return el("img", { class: "illustration", src: source, alt: "", onerror: event => event.target.remove() });

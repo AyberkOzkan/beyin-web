@@ -44,7 +44,7 @@ function greeting(data) {
   const name = data.display_name?.trim() || "";
   return [el("div", { class: "home-welcome-copy" },
     el("h1", {}, t(greetingKey(data.period, name), { name })), el("p", {}, t("home.subtitle"))),
-  el("div", { class: "home-welcome-aside" }, illustrationSlot("hero-saray"),
+  el("div", { class: "home-welcome-aside" }, illustrationSlot("hero-palace"),
     el("blockquote", {}, dailyQuote(messageList("home.quotes"))))];
 }
 

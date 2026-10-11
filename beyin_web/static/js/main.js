@@ -3,7 +3,7 @@ import { setMessages, t, formatDate, formatTime } from "./i18n.js";
 import { el, icon, prepareIcons } from "./dom.js";
 import { parseRoute } from "./router.js";
 import { navigationIndex, shouldFocusMain, preserveFocus } from "./accessibility.js";
-import { errorState, statusDot, skeleton, illustrationSlot, setDrawings } from "./components/index.js";
+import { errorState, statusDot, skeleton, illustrationSlot, setDrawings, obsidianTarget } from "./components/index.js";
 import { healthDrawer } from "./components/health-drawer.js";
 import { indicatorState } from "./pages/memory-model.js";
 import * as placeholder from "./pages/placeholder.js";
@@ -30,6 +30,22 @@ let drawer;
 let translationsReady = false;
 let currentRoute;
 let cancelFocus = () => {};
+let vaultObsidianUri;
+let recordObsidianUri = null;
+
+function updateObsidianLink() {
+  const actions = document.querySelector(".topbar-actions");
+  let link = actions.querySelector(".obsidian-link");
+  const target = obsidianTarget(vaultObsidianUri, recordObsidianUri);
+  if (!target) { link?.remove(); return; }
+  if (!link) {
+    link = el("a", { class: "button obsidian-link" },
+      icon("external-link"), el("span", { class: "obsidian-link-text" }, t("shell.openObsidian")));
+    actions.prepend(link);
+  }
+  link.setAttribute("href", target.href);
+  link.setAttribute("aria-label", t(target.labelKey));
+}
 
 function route() {
   if (unauthorized) return;
@@ -69,6 +85,8 @@ function showLogin() {
 }
 
 function updatePulse(data) {
+  vaultObsidianUri = data.obsidian_uri;
+  updateObsidianLink();
   const indicator = document.querySelector(".local-status");
   const status = indicatorState(data);
   indicator.setAttribute("aria-label", t(status.key));
@@ -92,7 +110,7 @@ function buildShell(pulse) {
   document.getElementById("topbar").setAttribute("aria-label", t("shell.topbar"));
   document.getElementById("main").setAttribute("aria-label", t("shell.main"));
   setDrawings(pulse.drawings);
-  const sidebarArt = illustrationSlot("yan-agac");
+  const sidebarArt = illustrationSlot("sidebar-tree");
   document.getElementById("sidebar-art").replaceChildren(...(sidebarArt ? [sidebarArt] : []));
   const brand = document.getElementById("brand");
   brand.replaceChildren(icon("brain"), el("span", {}, el("span", { class: "brand-name" }, t("shell.brand")),
@@ -131,6 +149,10 @@ function buildShell(pulse) {
     }
   });
   document.addEventListener("beyin:health", drawer.open);
+  document.addEventListener("beyin:record", event => {
+    recordObsidianUri = event.detail?.obsidianUri ?? null;
+    updateObsidianLink();
+  });
   // A page that refreshes itself exports handlesChanges; the others are simply rendered again.
   document.addEventListener("beyin:changed", () => { if (!currentPage?.handlesChanges) route(); });
   window.addEventListener("hashchange", route);

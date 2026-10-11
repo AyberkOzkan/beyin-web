@@ -11,7 +11,7 @@ from unittest.mock import patch
 from urllib.parse import quote
 
 from beyin_web.http import api
-from beyin_web.domain.obsidian import obsidian_uri
+from beyin_web.domain.obsidian import obsidian_uri, obsidian_vault_uri
 from beyin_web.vault.records import make_rid
 from scripts.update_golden import ENDPOINTS, NOW, TZ, normalize, request, running_server
 from tests.support import FIXTURES, make_vault
@@ -48,7 +48,7 @@ class APITests(unittest.TestCase):
                 payload = self.payload(endpoint)
                 expected = json.loads((FIXTURES / "golden" / f"{name}.json").read_text(encoding="utf-8"))
                 self.assertEqual(normalize(payload, self.vault), expected)
-                if name != "record":
+                if name not in {"record", "pulse"}:
                     self.assertNotIn("obsidian://", json.dumps(payload))
                     self.assertNotIn("obsidian_uri", json.dumps(payload))
                 self.assertNotIn("GIZLI-SIZINTI-ISARETI", json.dumps(payload))
@@ -66,6 +66,49 @@ class APITests(unittest.TestCase):
                     self.assertIn("%C3%87%C4%B1nar%20Projesi.md", payload["obsidian_uri"])
         self.assertEqual(self.payload("/records/" + make_rid("notes/gizli.md"), 404)["error"]["code"], "not_found")
 
+    def test_private_receipt_title_never_leaks(self) -> None:
+        marker = "PRIVATE-RECEIPT-TITLE"
+        path = "receipts/" + "f" * 64 + ".md"
+        (self.vault / path).write_text(
+            '---\nkind: receipt\nvisibility: private\ncreated_at: "2026-01-12T12:00:00+03:00"\n---\n'
+            + marker + ".\n", encoding="utf-8",
+        )
+        for endpoint in (*ENDPOINTS.values(), "/graph?receipts=1&unresolved=1",
+                         "/search?q=" + marker, "/records/" + make_rid(path)):
+            with self.subTest(endpoint=endpoint):
+                status = 404 if endpoint == "/records/" + make_rid(path) else 200
+                self.assertNotIn(marker, json.dumps(self.payload(endpoint, status)))
+        for rid in self.server.source.snapshot().records:
+            self.assertNotIn(marker, json.dumps(self.payload("/records/" + rid)))
+
+    def test_receipt_prefix_tracks_visible_projects_and_preserves_explicit_titles(self) -> None:
+        body = "roundtrip: **Başlıkla** aranabilen çalışma tamamlandı. Devam."
+        title = "Başlıkla aranabilen çalışma tamamlandı"
+        path = "receipts/" + "a" * 64 + ".md"
+        receipt = self.vault / path
+        header = '---\nkind: receipt\ncreated_at: "2026-01-12T12:00:00+03:00"\n'
+        receipt.write_text(header + "---\n" + body, encoding="utf-8")
+        rid = make_rid(path)
+        self.assertEqual(self.payload("/records/" + rid)["title"], "roundtrip: " + title)
+        project = self.vault / "notes" / "roundtrip.md"
+        project.write_text("---\nproject: roundtrip\n---\n# Roundtrip\n", encoding="utf-8")
+        record = self.payload("/records/" + rid)
+        self.assertEqual(record["title"], title)
+        snapshot = self.server.source.snapshot()
+        self.assertIs(self.server.source.snapshot(), snapshot)
+        self.assertEqual(snapshot.records[rid].title, title)
+        results = self.payload("/search?q=" + quote("Başlıkla"))["results"]
+        self.assertEqual(next(item["title"] for item in results if item["rid"] == rid), title)
+        graph = self.payload("/graph?receipts=1&connected_only=0")
+        self.assertEqual(next(item["title"] for item in graph["nodes"] if item["id"] == rid), title)
+        project.unlink()
+        self.assertEqual(self.payload("/records/" + rid)["title"], "roundtrip: " + title)
+        project.write_text("---\nproject: roundtrip\nvisibility: private\n---\n# Gizli\n", encoding="utf-8")
+        self.assertEqual(self.payload("/records/" + rid)["title"], "roundtrip: " + title)
+        project.write_text("---\nproject: roundtrip\n---\n# Roundtrip\n", encoding="utf-8")
+        receipt.write_text(header + 'title: "roundtrip: Özel başlık"\n---\n' + body, encoding="utf-8")
+        self.assertEqual(self.payload("/records/" + rid)["title"], "roundtrip: Özel başlık")
+
     def test_normalize_rejects_wrong_vault_without_exposing_uri(self) -> None:
         payload = self.payload(ENDPOINTS["record"])
         with self.assertRaisesRegex(RuntimeError, "^invalid obsidian_uri$"):
@@ -74,9 +117,13 @@ class APITests(unittest.TestCase):
 
     def test_pulse_vault_name_and_server_drawings(self) -> None:
         payload = self.payload("/pulse")
+        self.assertEqual(payload["obsidian_uri"], obsidian_vault_uri(str(self.server.settings.vault)))
+        self.assertEqual(normalize(payload, self.vault)["obsidian_uri"], obsidian_vault_uri("/vault"))
+        with self.assertRaisesRegex(RuntimeError, "^invalid obsidian_uri$"):
+            normalize({**payload, "obsidian_uri": obsidian_vault_uri("/elsewhere")}, self.vault)
         self.assertEqual(payload["vault_name"], self.vault.name)
         self.assertEqual(payload["drawings"], {})
-        self.server.drawings = {"hero-saray": "/static/img/hero-saray.png"}
+        self.server.drawings = {"hero-palace": "/static/img/hero-palace.png"}
         self.assertEqual(self.payload("/pulse")["drawings"], self.server.drawings)
 
     def test_etags_and_generation_changes(self) -> None:

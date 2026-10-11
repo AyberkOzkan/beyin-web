@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from beyin_web.vault.frontmatter import parse_frontmatter
-from beyin_web.vault.records import Record, build_record, classify, make_rid
+from beyin_web.vault.records import Record, build_record, classify, make_rid, receipt_title, with_receipt_titles
 from tests.support import make_vault
 
 
@@ -48,6 +48,75 @@ class RecordTests(unittest.TestCase):
         relative = "notes/code.md"
         (self.vault / relative).write_text("```md\n# Code\n```\n# Heading\n", encoding="utf-8")
         self.assertEqual(self.record(relative).title, "Heading")
+
+    def test_receipt_title_table(self) -> None:
+        path = "receipts/" + "abcdef0123456789" * 4 + ".md"
+        long_summary = " ".join(["uzun"] * 20)
+        cases = (
+            ("plain", "Temel not hazırlandı.", "Temel not hazırlandı"),
+            ("prefix", "ATLAS: Temel not hazırlandı.", "Temel not hazırlandı"),
+            ("unknown_prefix", "unknown: Temel not hazırlandı.", "unknown: Temel not hazırlandı"),
+            ("multiple", "İlk cümle! İkinci cümle.", "İlk cümle"),
+            ("question", "Tamam mı? Evet.", "Tamam mı"),
+            ("newline", "\ufeffİlk satır\r\nSonraki satır.", "İlk satır"),
+            ("long", long_summary, " ".join(["uzun"] * 16) + "…"),
+            ("markdown", "**Kalın** ve \x60kod\x60 [[Atlas#Amaç|not]] [bağ](https://example.test/a(b)).",
+             "Kalın ve kod not bağ"),
+            ("learned", "Öğrenilen: Yeni bilgi.", "abcdef012345…"),
+            ("learned_first", "Öğrenilen: Yeni bilgi.\nAsıl özet.", "Asıl özet"),
+            ("empty", "", "abcdef012345…"),
+            ("invalid", "\ufffd", "abcdef012345…"),
+            ("fence", "\x60\x60\x60\ncode\n\x60\x60\x60", "abcdef012345…"),
+        )
+        for name, body, expected in cases:
+            with self.subTest(name=name):
+                title = receipt_title(body, path, {"atlas"})
+                self.assertEqual(title, expected)
+                self.assertLessEqual(len(title), 80)
+        for size in (79, 80, 81):
+            body = " ".join(["aa"] * 26) + " " + "a" * (size - 78)
+            with self.subTest(size=size):
+                title = receipt_title(body, path)
+                self.assertEqual(title, body if size <= 80 else " ".join(["aa"] * 26) + "…")
+
+    def test_receipt_build_preserves_explicit_title_and_other_kinds(self) -> None:
+        path = "receipts/" + "a" * 64 + ".md"
+        for kind, title, expected in (
+            ("receipt", None, "Asıl özet"),
+            ("receipt", "  Özel başlık!  ", "  Özel başlık!  "),
+            ("note", None, "a" * 64),
+        ):
+            meta = {"kind": kind}
+            if title is not None:
+                meta["title"] = title
+            record, warning = build_record(path, meta, "Asıl özet. Devam.", datetime.now(timezone.utc))
+            self.assertIsNone(warning)
+            self.assertEqual(record.title, expected)
+        record, _ = build_record(path, {"kind": "receipt"}, "", datetime.now(timezone.utc))
+        self.assertEqual(record.title, "a" * 12 + "…")
+
+    def test_snapshot_receipt_titles_preserve_explicit_titles_and_original_records(self) -> None:
+        now = datetime.now(timezone.utc)
+        records = {}
+        for path, meta, body in (
+            ("project.md", {"project": "atlas"}, "# Atlas"),
+            ("derived.md", {"kind": "receipt"}, "ATLAS: **Yeni** çalışma tamamlandı."),
+            ("explicit.md", {"kind": "receipt", "title": "atlas: Özel başlık"}, "atlas: Özel başlık"),
+            ("unknown.md", {"kind": "receipt"}, "unknown: Çalışma tamamlandı."),
+            ("private.md", {"kind": "note", "project": "unknown", "visibility": "private"}, "# Gizli"),
+            ("generated.md", {"kind": "receipt-index", "project": "unknown"}, "# Dizin"),
+            ("rejected.md", {"kind": "inference", "project": "unknown", "validity": "rejected"}, "# Reddedilen"),
+        ):
+            record, _ = build_record(path, meta, body, now)
+            if record is not None:
+                records[record.rid] = record
+        original = repr(records)
+        titled = with_receipt_titles(records)
+        self.assertEqual(titled[make_rid("derived.md")].title, "Yeni çalışma tamamlandı")
+        self.assertEqual(titled[make_rid("explicit.md")].title, "atlas: Özel başlık")
+        self.assertEqual(titled[make_rid("unknown.md")].title, "unknown: Çalışma tamamlandı")
+        self.assertEqual(repr(records), original)
+        self.assertEqual(with_receipt_titles(titled), titled)
 
     def test_excerpt_simplifies_first_paragraph(self) -> None:
         relative = "notes/excerpt.md"
