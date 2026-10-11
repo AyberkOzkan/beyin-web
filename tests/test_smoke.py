@@ -46,13 +46,23 @@ class SmokeTests(unittest.TestCase):
         self.assertEqual(result.stdout, "beyin-web 0.1.0.dev0\n")
         self.assertEqual(result.stderr, "")
 
-    def test_server_placeholder(self) -> None:
-        for argv in ([], ["--vault", "sentetik", "--open"]):
-            with self.subTest(argv=argv):
-                output = io.StringIO()
-                with contextlib.redirect_stderr(output):
-                    self.assertEqual(main(argv), 2)
-                self.assertEqual(output.getvalue(), "sunucu henüz uygulanmadı\n")
+    def test_missing_vault(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for argv in ([], ["--vault", str(root / "missing"), "--open"]):
+                with self.subTest(argv=argv):
+                    output = io.StringIO()
+                    with (
+                        patch("beyin_web.__main__.config_directory", return_value=root),
+                        patch("beyin_web.__main__.Path.cwd", return_value=root),
+                        patch.dict("os.environ", {}, clear=True),
+                        contextlib.redirect_stderr(output),
+                    ):
+                        self.assertEqual(main(argv), 2)
+                    self.assertEqual(
+                        output.getvalue(),
+                        "Vault bulunamadı. --vault ile var olan bir vault klasörü belirtin.\n",
+                    )
 
     def test_argument_defaults(self) -> None:
         args = parse_args([])

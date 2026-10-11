@@ -1,25 +1,48 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
+import os
+import shutil
+import subprocess
 import sys
+import threading
+import time
+import webbrowser
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
+from http.server import ThreadingHTTPServer
 from pathlib import Path
+from typing import cast
+from urllib.parse import urlencode
 
 from beyin_web import __version__
+from beyin_web.config import Settings, config_directory, load_settings
+from beyin_web.http.server import BeyinHTTPServer, create_server
+from beyin_web.runtime.beyin_cli import BeyinRuntime, health_summary
+from beyin_web.vault.scan import MarkdownSource, VaultSource
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="beyin-web")
     parser.add_argument("--vault", type=Path)
-    parser.add_argument("--port", type=int, default=7373)
+    parser.add_argument("--port", type=int)
     parser.add_argument("--open", action="store_true")
     parser.add_argument("--idle-exit", type=int, metavar="DAKİKA")
     parser.add_argument("--no-token", action="store_true")
     parser.add_argument(
         "--version", action="version", version=f"beyin-web {__version__}"
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    args.port_explicit = args.port is not None
+    if args.port is None:
+        args.port = 7373
+    if not 0 <= args.port <= 65535:
+        parser.error("port 0 ile 65535 arasında olmalıdır")
+    if args.idle_exit is not None and args.idle_exit <= 0:
+        parser.error("boşta kapanma süresi pozitif olmalıdır")
+    return args
 
 
 def resolve_vault(
@@ -46,10 +69,101 @@ def resolve_vault(
     return None
 
 
+def bind_server(
+    settings: Settings, source: VaultSource, runtime: BeyinRuntime,
+) -> ThreadingHTTPServer:
+    for port in range(settings.port, min(settings.port + 20, 65535) + 1):
+        try:
+            return create_server(replace(settings, port=port), source, runtime)
+        except OSError as error:
+            # Windows also reports an exclusively occupied port as WSAEACCES.
+            if error.errno != errno.EADDRINUSE and getattr(error, "winerror", None) not in {10013, 10048}:
+                raise
+    raise OSError(errno.EADDRINUSE, "ports_unavailable")
+
+
+def open_address(address: str) -> None:
+    if os.environ.get("WSL_DISTRO_NAME"):
+        executable = shutil.which("wslview") or "explorer.exe"
+        subprocess.Popen([executable, address], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        webbrowser.open(address)
+
+
+def _watch_idle(server: BeyinHTTPServer, seconds: float, stopped: threading.Event) -> None:
+    with server.activity:
+        while not stopped.is_set():
+            remaining = seconds - (time.monotonic() - server.last_request)
+            if remaining <= 0:
+                break
+            server.activity.wait(remaining)
+        else:
+            return
+    server.shutdown()
+
+
+def serve(server: ThreadingHTTPServer, idle_exit: int | None) -> None:
+    watcher: threading.Thread | None = None
+    stopped: threading.Event | None = None
+    application = cast(BeyinHTTPServer, server)
+    if idle_exit is not None:
+        stopped = threading.Event()
+        application.note_request()
+        watcher = threading.Thread(
+            target=_watch_idle, args=(application, idle_exit * 60, stopped), daemon=True,
+        )
+        watcher.start()
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if stopped is not None:
+            with application.activity:
+                stopped.set()
+                application.activity.notify_all()
+        if watcher is not None:
+            watcher.join()
+        server.server_close()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    parse_args(argv)
-    print("sunucu henüz uygulanmadı", file=sys.stderr)
-    return 2
+    args = parse_args(argv)
+    directory = config_directory()
+    vault = resolve_vault(args.vault, os.environ, Path.cwd(), directory / "config.json")
+    if vault is None or not vault.is_dir():
+        print("Vault bulunamadı. --vault ile var olan bir vault klasörü belirtin.", file=sys.stderr)
+        return 2
+    try:
+        settings = load_settings(
+            vault.resolve(), directory,
+            port=args.port if args.port_explicit else None,
+            token_enabled=not args.no_token,
+            idle_exit=args.idle_exit,
+            open_browser=args.open,
+        )
+        runtime = BeyinRuntime(settings.vault)
+        if not runtime.available:
+            print("Beyin bulunamadı; yalın kipte çalışıyor.", file=sys.stderr)
+        companion_dir = health_summary(runtime.doctor() if runtime.available else None)["companion_dir"]
+        source = MarkdownSource(
+            settings.vault, companion_dir=companion_dir if isinstance(companion_dir, str) else None,
+        )
+        server = bind_server(settings, source, runtime)
+    except (OSError, ValueError):
+        print("Sunucu başlatılamadı. Ayarları ve kullanılabilir portları kontrol edin.", file=sys.stderr)
+        return 2
+    address = f"http://127.0.0.1:{server.server_address[1]}/"
+    if settings.token_enabled:
+        address += "?" + urlencode({"t": settings.token})
+    print(f"beyin-web adresi: {address}", flush=True)
+    if settings.open_browser:
+        try:
+            open_address(address)
+        except OSError:
+            print("Tarayıcı açılamadı. Terminaldeki adresi tarayıcıda açın.", file=sys.stderr)
+    serve(server, settings.idle_exit)
+    return 0
 
 
 if __name__ == "__main__":
