@@ -3,6 +3,7 @@ import { el } from "../dom.js";
 import { t } from "../i18n.js";
 import { card, emptyState, errorState, filterBox, skeleton } from "../components/index.js";
 import { createGraphCanvas } from "../components/graph-canvas.js";
+import { layoutMetrics } from "../components/graph-core.js";
 import { readState, stateHash, apiParams, adjacency, focusGraph, searchMatches } from "./graph-model.js";
 
 let active;
@@ -76,6 +77,7 @@ export function render(root, params = {}) {
   function showSelection(node) {
     if (session.destroyed) return;
     const version = ++session.selectionVersion;
+    if (!node) { showTips(); return; }
     const ids = adjacency(data.nodes, data.edges).get(node.id) || new Set();
     const linked = data.nodes.filter(item => ids.has(item.id));
     const summary = el("div", { class: "graph-summary" }, skeleton(2));
@@ -169,6 +171,12 @@ export function render(root, params = {}) {
       const graph = await createGraphCanvas(data, { focus: state.focus, onSelect: showSelection, onFocus: id => navigate({ focus: id }) });
       if (session.destroyed || version !== session.version) { graph.destroy(); return; }
       session.graph = graph;
+      // An on-demand snapshot keeps test inspection local to this canvas and off the frame loop.
+      listen(graph.canvas, "graph:inspect", event => {
+        if (typeof event.detail?.respond !== "function") return;
+        const nodes = graph.positions();
+        event.detail.respond({ nodes, edges: data.edges, metrics: layoutMetrics(nodes, data.edges) });
+      });
       area.replaceChildren(graph.root);
       updateSearch();
       if (state.focus && data.nodes.some(node => node.id === state.focus)) graph.select(state.focus);

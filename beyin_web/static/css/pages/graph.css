@@ -10,14 +10,15 @@
 .graph-check { display: flex; align-items: center; gap: 8px; padding-top: 26px; font-size: 13px; }
 .graph-check input { accent-color: var(--sage-deep); }
 .graph-layout { display: grid; grid-template-columns: minmax(0, 1fr) var(--context-width); gap: var(--gap); align-items: start; }
-.graph-area { min-width: 0; min-height: clamp(420px, calc(100vh - 340px), 900px); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--card); overflow: hidden; }
+.graph-area { min-width: 0; min-height: clamp(420px, calc(100vh - 340px), 900px); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--space); overflow: hidden; }
 .graph-area > .skeleton { padding: 32px; }
+.graph-area > .state { margin: 16px; background: var(--card); border-radius: var(--radius-control); }
 .graph-stage { position: relative; min-width: 0; }
 .graph-canvas { display: block; width: 100%; height: clamp(420px, calc(100vh - 340px), 900px); touch-action: none; cursor: grab; }
 .graph-canvas:active { cursor: grabbing; }
-.graph-legend { position: absolute; bottom: 16px; left: 16px; max-width: calc(100% - 170px); display: flex; flex-wrap: wrap; gap: 8px 12px; padding: 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-control); font-size: 12px; pointer-events: none; }
+.graph-legend { position: absolute; bottom: 16px; left: 16px; max-width: calc(100% - 220px); display: flex; flex-wrap: wrap; gap: 8px 12px; padding: 0; color: var(--space-ink); font-size: 12px; pointer-events: none; }
 .graph-legend-item { display: inline-flex; align-items: center; gap: 6px; }
-.graph-legend small { flex-basis: 100%; }
+.graph-legend small { flex-basis: 100%; color: var(--space-soft); }
 .graph-swatch { width: 10px; height: 10px; border-radius: 50%; }
 .graph-swatch-note { background: var(--sage); }
 .graph-swatch-fact { background: var(--blue); }

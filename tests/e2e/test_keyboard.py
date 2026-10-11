@@ -203,6 +203,8 @@ class KeyboardTests(PageTestCase):
         try:
             self.open("#/grafik")
             self.assert_static_graph(".graph-canvas")
+            self.assertEqual(self.wait_for(".graph-canvas").get_attribute("data-drifting"), "false")
+            self.assertFalse(self.driver.find_element("css selector", ".graph-motion").is_displayed())
             self.open("#/not/" + make_rid("notes/atlas.md"))
             self.assert_static_graph(".mini-graph")
         finally:

@@ -10,6 +10,11 @@
   --amber: #D9A441;
   --blue: #5B84C4;
   --red: #C0564B;
+  --space: #14171C;
+  --space-ink: #ECE9E0;
+  --space-soft: #8A8F98;
+  --space-line: #3A4049;
+  --space-accent: #A9C7B4;
   --font-heading: "EB Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-body: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-code: ui-monospace, Consolas, "Courier New", monospace;
