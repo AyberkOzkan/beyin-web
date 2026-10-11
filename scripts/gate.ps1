@@ -43,7 +43,8 @@ if ($Only -ne 'node') {
         'python: the py launcher is not on PATH'
         $unavailable = $true
     } else {
-        $out = @(py -3 -m unittest discover -s tests -t . 2>&1 | ForEach-Object { "$_" })
+        # Verbose, so that a skipped test can be told apart by its module.
+        $out = @(py -3 -m unittest discover -v -s tests -t . 2>&1 | ForEach-Object { "$_" })
         $code = $LASTEXITCODE
         $ran = $out | Where-Object { $_ -cmatch '^Ran \d+ tests?' } | Select-Object -Last 1
         $verdict = $out | Where-Object { $_ -cmatch '^(OK|FAILED)' } | Select-Object -Last 1
@@ -59,9 +60,16 @@ if ($Only -ne 'node') {
                 ForEach-Object { if ($_.Length -gt 400) { $_.Substring(0, 400) + ' ...' } else { $_ } } |
                 Select-Object -First 160
         } elseif ("$verdict" -match 'skipped') {
-            'python: tests were skipped. The browser tests need selenium and a cached Edge driver;'
-            'refresh the driver with: py -3 -c "from selenium import webdriver; webdriver.Edge().quit()"'
-            $unavailable = $true
+            $skips = @($out | Where-Object { $_ -match '\.\.\. skipped ' })
+            if (@($skips | Where-Object { $_ -match 'tests\.e2e\.' }).Count -gt 0 -or $skips.Count -eq 0) {
+                'python: browser tests were skipped. They need selenium and a cached Edge driver;'
+                'refresh the driver with: py -3 -c "from selenium import webdriver; webdriver.Edge().quit()"'
+                $unavailable = $true
+            } else {
+                # Tests of the other platform (the POSIX launcher on Windows) skip themselves on purpose.
+                'python: skipped outside the browser tests:'
+                $skips | ForEach-Object { '  ' + ($_ -replace '^(\S+) \((\S+)\) \.\.\. skipped ', '$2: ') } | Select-Object -First 12
+            }
         }
     }
 }
