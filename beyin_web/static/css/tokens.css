@@ -1,0 +1,39 @@
+:root {
+  --paper: #F4F0E6;
+  --paper-side: #EFEBE0;
+  --card: #F8F5EE;
+  --line: #E3DDCF;
+  --ink: #1E2422;
+  --ink-soft: #6E7168;
+  --sage: #8FB09A;
+  --sage-deep: #4E7C63;
+  --amber: #D9A441;
+  --blue: #5B84C4;
+  --red: #C0564B;
+  --font-heading: "EB Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-body: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-code: ui-monospace, Consolas, "Courier New", monospace;
+  --sidebar-width: 248px;
+  --topbar-height: 64px;
+  --list-width: 360px;
+  --context-width: 340px;
+  --radius-card: 12px;
+  --radius-control: 10px;
+  --gap: 16px;
+  --card-padding: 24px;
+}
+
+/* Reserved for 0.2; no current control enables this selector. */
+:root[data-theme="dark"] {
+  --paper: #202723;
+  --paper-side: #1B211E;
+  --card: #29312C;
+  --line: #414A43;
+  --ink: #F4F0E6;
+  --ink-soft: #BABCB2;
+  --sage: #8FB09A;
+  --sage-deep: #A3C5AD;
+  --amber: #D9A441;
+  --blue: #8BACDF;
+  --red: #DF8478;
+}

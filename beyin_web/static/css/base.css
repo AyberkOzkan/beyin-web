@@ -1,0 +1,38 @@
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; min-width: 1024px; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); line-height: 1.15; margin: 0 0 16px; }
+h1 { font-size: 44px; font-weight: 700; }
+h2 { font-size: 28px; font-weight: 700; }
+h3 { font-size: 23px; }
+p { margin: 0 0 16px; }
+a { color: var(--sage-deep); text-underline-offset: 3px; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .5; }
+:focus-visible { outline: 2px solid var(--sage-deep); outline-offset: 3px; }
+small, .muted { color: var(--ink-soft); }
+code, pre, kbd { font-family: var(--font-code); }
+code { font-size: .85em; }
+pre { background: var(--paper-side); padding: 16px; border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
+kbd { font-size: 12px; border: 1px solid var(--line); border-radius: 5px; padding: 3px 7px; white-space: nowrap; }
+.markdown-body { overflow-wrap: anywhere; }
+.markdown-body > :last-child { margin-bottom: 0; }
+.markdown-body h1 { font-size: 36px; }
+.markdown-body h2 { margin-top: 28px; }
+.markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 { margin-top: 24px; }
+.markdown-body ul, .markdown-body ol { padding-left: 28px; margin: 0 0 16px; }
+.markdown-body li { margin: 5px 0; }
+.markdown-body blockquote { margin: 16px 0; padding: 16px 20px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); background: var(--paper-side); }
+.markdown-body blockquote p:last-child { margin: 0; }
+.markdown-body table { border-collapse: collapse; display: block; overflow-x: auto; margin: 16px 0; max-width: 100%; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--line); padding: 8px 14px; }
+.markdown-body th { background: var(--paper-side); }
+.align-left { text-align: left; }
+.align-center { text-align: center; }
+.align-right { text-align: right; }
+.markdown-body hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+.markdown-body img { max-width: 100%; }
+.task-item { list-style: none; }
+.task-checkbox { accent-color: var(--sage-deep); margin-right: 8px; }
+.wikilink-unresolved, .image-alt { color: var(--ink-soft); }

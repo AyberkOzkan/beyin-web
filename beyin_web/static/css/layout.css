@@ -1,0 +1,33 @@
+.shell { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; background: var(--paper-side); border-right: 1px solid var(--line); padding: 20px 16px; display: flex; flex-direction: column; }
+.brand { display: flex; align-items: center; gap: 16px; color: var(--ink); text-decoration: none; margin: 0 8px 32px; }
+.brand > .icon { width: 40px; height: 40px; }
+.brand-name { display: block; font: 700 25px/1.2 var(--font-heading); }
+.brand-version { font-size: 12px; }
+.nav-link { display: flex; align-items: center; gap: 16px; height: 40px; padding: 0 16px; margin-bottom: 4px; border-radius: 8px; font-size: 17px; color: var(--ink); text-decoration: none; }
+.nav-link:hover { background: var(--card); }
+.nav-link[aria-current="page"] { background: var(--line); }
+#sidebar-art { margin-top: auto; }
+.vault-status { padding: 16px; margin-top: 24px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--card); font-size: 13px; }
+.vault-status p { margin-bottom: 4px; }
+.vault-name { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.workspace { min-width: 0; }
+.topbar { height: var(--topbar-height); display: flex; align-items: center; gap: 20px; padding: 0 24px; border-bottom: 1px solid var(--line); }
+.global-search { height: 44px; flex: 1; max-width: 930px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-control); }
+.global-search input { flex: 1; width: 0; background: transparent; border: 0; outline-offset: 0; }
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.content { padding: 32px; }
+.page-heading { margin-bottom: 28px; }
+.page-heading p { margin: 0; color: var(--ink-soft); }
+.three-columns { display: grid; grid-template-columns: var(--list-width) minmax(0, 1fr) var(--context-width); gap: var(--gap); }
+.three-columns > * { min-width: 0; }
+.showcase-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.showcase-wide { grid-column: 1 / -1; }
+.stack { display: grid; gap: var(--gap); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.login-screen { max-width: 600px; margin: 120px auto; padding: 32px; }
+@media (max-width: 1199px) {
+  .three-columns { grid-template-columns: var(--list-width) minmax(0, 1fr); }
+  .three-columns > :last-child { grid-column: 1 / -1; }
+  .content { padding: 24px; }
+}

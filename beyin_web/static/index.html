@@ -2,7 +2,29 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>beyin-web</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <script type="module" src="/static/js/main.js"></script>
 </head>
-<body></body>
+<body>
+  <div id="shell" class="shell" hidden>
+    <aside class="sidebar">
+      <a id="brand" class="brand" href="#/"></a>
+      <nav id="navigation"></nav>
+      <div id="sidebar-art"></div>
+      <section id="vault-status" class="vault-status" aria-live="polite"></section>
+    </aside>
+    <div class="workspace">
+      <header id="topbar" class="topbar"></header>
+      <main id="main" class="content" tabindex="-1"></main>
+    </div>
+  </div>
+  <div id="startup" role="status"></div>
+</body>
 </html>
