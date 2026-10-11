@@ -65,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
                     height = driver.execute_script("return Math.max(document.documentElement.scrollHeight, 941)")
                     driver.set_window_size(1672, min(height + 120, 4000))
                     time.sleep(0.3)
-                name = "".join(char if char.isalnum() else "-" for char in fragment).strip("-") or "ana"
+                name = "".join(char if char.isalnum() else "-" for char in fragment).strip("-") or "home"
                 target = args.out / f"{index:02}-{name}.png"
                 driver.save_screenshot(str(target))
                 driver.set_window_size(1672, 941)

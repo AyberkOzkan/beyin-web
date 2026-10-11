@@ -164,7 +164,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         try:
             self._dispatch()
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            self.log_error("connection_error")
+            # The browser went away mid-response (reload, navigation); there is nobody to answer
+            # and nothing the user can act on, so the terminal stays quiet.
+            pass
         except Exception:
             self.send_error(500)
 

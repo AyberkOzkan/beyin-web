@@ -123,6 +123,15 @@ class SecurityTests(ServerCase):
             self.request("/api/v1/pulse?t=private-secret", headers={"Host": "evil.example"})
         self.assertEqual(output.getvalue(), "http_error: 403\n")
 
+    def test_client_disconnect_is_not_reported(self) -> None:
+        from beyin_web.http.server import RequestHandler
+        output = io.StringIO()
+        with patch.object(RequestHandler, "_dispatch", side_effect=ConnectionResetError), \
+                contextlib.redirect_stderr(output):
+            with self.assertRaises((http.client.HTTPException, OSError)):
+                self.request("/api/v1/pulse")
+        self.assertEqual(output.getvalue(), "")
+
     def test_parser_errors_have_security_headers_and_no_request_echo(self) -> None:
         output = io.StringIO()
         with socket.create_connection(("127.0.0.1", self.server.server_port), timeout=5) as connection:
