@@ -2,6 +2,7 @@ import { get } from "../api.js";
 import { el, icon } from "../dom.js";
 import { t, formatDate } from "../i18n.js";
 import { badge, tabs, emptyState, errorState, skeleton } from "../components/index.js";
+import { preserveFocus } from "../accessibility.js";
 import { searchKinds, readSearchState, searchHash, searchApiParams, highlightParts,
   debounce, requestGate, commitSearchHistory } from "./search-model.js";
 
@@ -45,10 +46,12 @@ function updateDescription(state) {
 
 function resultCard(state, record, index) {
   const kind = record.kind === "fact" ? "knowledge" : kindIcons[record.kind] ? record.kind : "note";
-  const link = el("a", { class: "search-result-link", href: `#/not/${encodeURIComponent(record.rid)}` },
+  const heading = el("div", { class: "search-result-link" },
     icon(kindIcons[kind]), el("h2", {}, record.title));
+  const link = el("a", { class: "search-result-body", href: `#/not/${encodeURIComponent(record.rid)}` }, heading);
   const content = el("p", { class: "search-snippet" });
-  const card = el("article", { class: "card search-result", "data-rid": record.rid }, link, content);
+  link.append(content);
+  const card = el("article", { class: "card search-result", "data-rid": record.rid }, link);
   if (state.query.kip === "beyin") {
     content.textContent = record.text || "";
     content.id = `search-text-${index}`;
@@ -71,12 +74,7 @@ function resultCard(state, record, index) {
   const meta = el("div", { class: "search-result-meta row" }, el("span", { class: "search-path muted" }, record.path), badge(kind));
   if (record.project) meta.append(el("span", { class: "badge search-project-badge" }, record.project));
   if (record.mtime) meta.append(el("time", { datetime: record.mtime, class: "muted" }, formatDate(record.mtime)));
-  card.append(meta);
-  listen(state, card, "click", event => {
-    if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey ||
-      event.target.closest("a, button") || window.getSelection()?.toString()) return;
-    location.hash = link.getAttribute("href");
-  });
+  link.append(meta);
   return card;
 }
 
@@ -122,6 +120,8 @@ async function loadResults(state) {
 
 async function loadPulse(state) {
   const current = state.pulseGate.issue();
+  state.cancelModesFocus?.();
+  state.cancelModesFocus = preserveFocus(state.modes);
   state.modes.replaceChildren(skeleton(1));
   try {
     const data = await get("/api/v1/pulse");
@@ -150,6 +150,8 @@ async function loadPulse(state) {
 
 async function loadProjects(state) {
   const current = state.projectsGate.issue();
+  state.cancelProjectFocus?.();
+  state.cancelProjectFocus = preserveFocus(state.project);
   state.project.replaceChildren(skeleton(1));
   try {
     const data = await get("/api/v1/projects");
@@ -227,6 +229,8 @@ export function render(root, params = {}) {
 
 export function destroy() {
   if (!active) return;
+  active.cancelModesFocus?.();
+  active.cancelProjectFocus?.();
   active.events.abort();
   active.delayed.cancel();
   active.resultsGate.invalidate();

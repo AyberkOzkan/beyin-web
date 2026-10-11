@@ -2,6 +2,7 @@ import { get } from "../api.js";
 import { el } from "../dom.js";
 import { t, formatDate, formatTime } from "../i18n.js";
 import { mountMarkdown } from "../markdown.js";
+import { scrollTo } from "../accessibility.js";
 import { card, tabs, emptyState, errorState, skeleton } from "../components/index.js";
 import { sections, sectionFromHash, scopeList, filterRules, sectionHasContent } from "./memory-model.js";
 
@@ -106,7 +107,7 @@ function content(name, data, state) {
 
 function scrollToSection(state) {
   if (active !== state || !state.params.bolum) return;
-  state.bodies.get(state.selected)?.parentElement.scrollIntoView({ block: "start" });
+  scrollTo(state.bodies.get(state.selected)?.parentElement);
 }
 
 async function load(state) {

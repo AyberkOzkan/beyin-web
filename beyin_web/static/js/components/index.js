@@ -42,7 +42,7 @@ export function tabs(items, selected, onChange = () => {}) {
   const root = el("div", { class: "tabs", role: "tablist", "aria-label": t("component.tabs") });
   const buttons = items.map(item => el("button", {
     type: "button", class: "tab", role: "tab", disabled: item.disabled,
-    "aria-selected": String(item.id === selected), tabindex: item.id === selected ? 0 : -1,
+    "aria-selected": String(item.id === selected), "data-tab": item.id, tabindex: item.id === selected ? 0 : -1,
     onclick: () => select(item.id),
   }, item.label));
   function select(id) {
@@ -75,12 +75,12 @@ export function filterBox({ label = t("component.filter"), value = "", disabled 
 }
 
 export function emptyState(title = t("state.emptyTitle"), message = t("state.emptyMessage")) {
-  return el("div", { class: "state" }, icon("inbox"), el("h3", {}, title), el("p", {}, message));
+  return el("div", { class: "state" }, icon("inbox"), el("strong", { class: "state-title" }, title), el("p", {}, message));
 }
 
 export function errorState(message = t("state.errorMessage"), retry = null) {
   return el("div", { class: "state", role: "alert" }, icon("circle-alert"),
-    el("h3", {}, t("state.errorTitle")), el("p", {}, message),
+    el("strong", { class: "state-title" }, t("state.errorTitle")), el("p", {}, message),
     retry && el("button", { class: "button", type: "button", onclick: retry }, icon("refresh-cw"), t("action.retry")));
 }
 

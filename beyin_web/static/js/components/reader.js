@@ -28,8 +28,21 @@ export function createReader(record) {
   }
   const copy = el("button", { type: "button", class: "button" }, t("knowledge.copyPath"));
   copy.addEventListener("click", copyPath);
-  const menu = el("details", { class: "reader-menu" },
-    el("summary", { "aria-label": t("knowledge.actions") }, icon("ellipsis")), copy);
+  const toggle = el("summary", { "aria-label": t("knowledge.actions") }, icon("ellipsis"));
+  const menu = el("details", { class: "reader-menu" }, toggle, copy);
+  if (typeof record.obsidian_uri === "string" && record.obsidian_uri.startsWith("obsidian://open?")) {
+    menu.append(el("a", { class: "button", href: record.obsidian_uri }, t("knowledge.openObsidian")));
+  }
+  function escape(event) {
+    if (event.key !== "Escape" || !menu.open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    menu.open = false;
+    toggle.focus();
+  }
+  function outside(event) { if (!menu.contains(event.target)) menu.open = false; }
+  document.addEventListener("keydown", escape);
+  document.addEventListener("click", outside);
   const metadata = el("div", { class: "row reader-metadata" }, badge(recordKind(record.kind)),
     record.kind === "untrusted" && el("span", { class: "badge reader-untrusted" }, t("knowledge.untrusted")),
     record.project && el("a", { href: `#/projeler/${encodeURIComponent(record.project)}` }, record.project),
@@ -47,7 +60,12 @@ export function createReader(record) {
       el("dt", {}, t("knowledge.nextAction")), el("dd", { "data-field": "next_action" }, meta.next_action || t("knowledge.unspecified"))),
     el("details", { class: "reader-task-body" }, el("summary", {}, t("knowledge.taskBody")), body));
   } else root.append(body);
-  return { root, destroy() { destroyed = true; copy.removeEventListener("click", copyPath); } };
+  return { root, destroy() {
+    destroyed = true;
+    copy.removeEventListener("click", copyPath);
+    document.removeEventListener("keydown", escape);
+    document.removeEventListener("click", outside);
+  } };
 }
 
 export function mountRecordView(readerRoot, contextRoot, rid) {

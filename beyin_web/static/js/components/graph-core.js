@@ -66,3 +66,9 @@ export function createSimulation(d3, nodes, edges, {
   if (center) simulation.force("center", d3.forceCenter(0, 0));
   return simulation;
 }
+
+export function settleSimulation(simulation, maximum = 180) {
+  simulation.stop();
+  for (let tick = 0; tick < maximum && simulation.alpha() > simulation.alphaMin(); tick++) simulation.tick();
+  simulation.alpha(0);
+}

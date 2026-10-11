@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, cast
 from urllib.parse import parse_qs, urlsplit
 
 from beyin_web.domain import graph, journal
+from beyin_web.domain.obsidian import obsidian_uri
 from beyin_web.domain.projects import Project, build_projects
 from beyin_web.domain.receipts import Receipt, build_receipts
 from beyin_web.domain.search import search
@@ -291,6 +292,7 @@ class API:
         if path.startswith("records/"):
             record = self._record(snapshot, path[len("records/"):])
             return {**record_summary(record), "meta": record.meta, "body": record.body,
+                    "obsidian_uri": obsidian_uri(str(self.server.settings.vault), record.path),
                     "links_out": [record_summary(snapshot.records[rid]) for rid in models.links.outgoing.get(record.rid, ())],
                     "links_in": [record_summary(snapshot.records[rid]) for rid in models.links.incoming.get(record.rid, ())],
                     "unresolved": models.links.unresolved.get(record.rid, ()),

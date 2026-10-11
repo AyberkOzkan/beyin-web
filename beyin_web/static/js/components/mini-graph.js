@@ -3,11 +3,13 @@ import { el } from "../dom.js";
 import { t } from "../i18n.js";
 import { loadD3 } from "../d3.js";
 import { errorState, skeleton } from "./index.js";
-import { createSimulation, kindColor, truncateTitle, screenToWorld, worldToScreen, findNode } from "./graph-core.js";
+import { createSimulation, settleSimulation, kindColor, truncateTitle, screenToWorld, worldToScreen, findNode } from "./graph-core.js";
+import { reducedMotion } from "../accessibility.js";
 
 export function createMiniGraph(rid) {
   const root = el("div", { class: "mini-graph" });
   const state = { running: false, destroyed: false, draws: 0 };
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let simulation;
   let frame;
   let observer;
@@ -97,7 +99,10 @@ export function createMiniGraph(rid) {
       const d3 = await loadD3();
       if (state.destroyed || current !== generation) return;
       canvas = el("canvas", { class: "mini-graph-canvas", role: "img", "aria-label": t("knowledge.graphDescription") });
-      root.replaceChildren(canvas);
+      const list = el("ul", { class: "mini-graph-node-list", "aria-label": t("knowledge.graphNodes") },
+        data.nodes.filter(node => node.kind !== "unresolved").map(node => el("li", {},
+          el("a", { href: `#/not/${encodeURIComponent(node.id)}`, "aria-current": node.id === rid ? "page" : null }, node.title))));
+      root.replaceChildren(canvas, list);
       simulation = createSimulation(d3, data.nodes, data.edges, { focus: rid });
       // Advance d3 manually: one owned animation loop can be cancelled completely.
       simulation.stop().alphaDecay(0.06);
@@ -107,8 +112,6 @@ export function createMiniGraph(rid) {
       canvas.addEventListener("click", click);
       observer = new ResizeObserver(draw);
       observer.observe(canvas);
-      state.running = true;
-      root.dataset.running = "true";
       let ticks = 0;
       function advance() {
         if (state.destroyed || !state.running) return;
@@ -118,7 +121,12 @@ export function createMiniGraph(rid) {
         if (simulation.alpha() <= simulation.alphaMin() || ticks >= 180) stop();
         else frame = requestAnimationFrame(advance);
       }
-      frame = requestAnimationFrame(advance);
+      if (reducedMotion()) { settleSimulation(simulation); stop(); }
+      else {
+        state.running = true;
+        root.dataset.running = "true";
+        frame = requestAnimationFrame(advance);
+      }
     } catch (error) {
       if (!state.destroyed && current === generation && error.code !== "unauthorized") {
         releaseCanvas();
@@ -127,10 +135,18 @@ export function createMiniGraph(rid) {
     }
   }
 
+  function preferenceChanged() {
+    if (state.destroyed || !simulation || !canvas || !reducedMotion()) return;
+    settleSimulation(simulation);
+    stop();
+    draw();
+  }
+  motion.addEventListener("change", preferenceChanged);
   void load();
   return { root, state, destroy() {
     state.destroyed = true;
     ++generation;
+    motion.removeEventListener("change", preferenceChanged);
     releaseCanvas();
     root.dataset.destroyed = "true";
   } };

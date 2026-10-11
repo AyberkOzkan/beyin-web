@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from beyin_web.config import Settings
+from beyin_web.domain.obsidian import obsidian_uri
 from beyin_web.http.api import register_api
 from beyin_web.http.server import BeyinHTTPServer
 from beyin_web.runtime.beyin_cli import BeyinRuntime
@@ -80,6 +81,15 @@ def request(
         connection.close()
 
 
+def normalize(payload: dict[str, object], vault: Path) -> dict[str, object]:
+    if "obsidian_uri" not in payload:
+        return payload
+    path = payload["path"]
+    if not isinstance(path, str) or payload["obsidian_uri"] != obsidian_uri(str(vault), path):
+        raise RuntimeError("invalid obsidian_uri")
+    return {**payload, "obsidian_uri": obsidian_uri("/vault", path)}
+
+
 def main() -> int:
     destination = FIXTURES / "golden"
     destination.mkdir(exist_ok=True)
@@ -94,7 +104,7 @@ def main() -> int:
                 status, _, body = request(server, endpoint)
                 if status != 200:
                     raise RuntimeError(f"{name}: HTTP {status}")
-                payload = json.loads(body)
+                payload = normalize(json.loads(body), vault)
                 content = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
                 if str(vault) in content or vault.as_posix() in content:
                     raise RuntimeError(f"{name}: absolute vault path")

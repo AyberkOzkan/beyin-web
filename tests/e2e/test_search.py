@@ -113,15 +113,15 @@ class SearchTests(PageTestCase):
 
     def test_empty_query_no_results_private_records_and_clear(self) -> None:
         self.open("#/arama")
-        self.assertEqual(self.text(".search-results h3"), self.messages["search.hintTitle"])
+        self.assertEqual(self.text(".search-results .state-title"), self.messages["search.hintTitle"])
         for query in ("zzzz-no-match", "GIZLI-SIZINTI-ISARETI"):
             self.type_query(query, enter=True)
-            self.wait_until(lambda driver: self.text(".search-results h3") == self.messages["search.noResultsTitle"])
+            self.wait_until(lambda driver: self.text(".search-results .state-title") == self.messages["search.noResultsTitle"])
             self.assertEqual(self.rids(), [])
             self.assertIn(self.messages["search.noResults"], self.text(".search-results"))
         self.wait_for(".search-form .icon-button").click()
         self.wait_until(lambda driver: self.hash() == "#/arama")
-        self.assertEqual(self.text(".search-results h3"), self.messages["search.hintTitle"])
+        self.assertEqual(self.text(".search-results .state-title"), self.messages["search.hintTitle"])
 
     def test_beyin_long_plain_text_warnings_and_omitted(self) -> None:
         text = "<script>synthetic</script>\n" + "Long plain text\n" * 60

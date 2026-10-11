@@ -9,6 +9,26 @@ export function resolveWikilink(source, wikilinks = {}) {
 
 const md = markdownit({ html: false, linkify: false, typographer: false });
 
+export function headingLevels(levels, minimum = 3) {
+  const first = levels[0] || minimum;
+  let previous = minimum - 1;
+  return levels.map(level => {
+    previous = Math.min(6, previous + 1, Math.max(minimum, minimum + level - first));
+    return previous;
+  });
+}
+
+md.core.ruler.after("inline", "embedded_headings", state => {
+  if (!state.env.embedded) return;
+  const openings = state.tokens.filter(token => token.type === "heading_open");
+  const levels = headingLevels(openings.map(token => Number(token.tag.slice(1))));
+  let index = 0;
+  for (const token of state.tokens) {
+    if (token.type === "heading_open") token.tag = `h${levels[index]}`;
+    if (token.type === "heading_close") token.tag = `h${levels[index++]}`;
+  }
+});
+
 md.inline.ruler.before("link", "wikilink", (state, silent) => {
   if (state.src.slice(state.pos, state.pos + 2) !== "[[") return false;
   const end = state.src.indexOf("]]", state.pos + 2);
@@ -83,5 +103,6 @@ export function renderMarkdown(body, wikilinks = {}) {
 
 export function mountMarkdown(root, body, wikilinks = {}) {
   root.classList.add("markdown-body");
-  root.innerHTML = renderMarkdown(body, wikilinks);
+  // Embedded notes sit below the page and section titles, including notes mounted off-DOM.
+  root.innerHTML = md.render(String(body), { wikilinks, insideLink: false, embedded: true });
 }

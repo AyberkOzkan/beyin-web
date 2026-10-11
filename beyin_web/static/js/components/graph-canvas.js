@@ -1,11 +1,13 @@
 import { el, icon } from "../dom.js";
 import { t } from "../i18n.js";
 import { loadD3 } from "../d3.js";
-import { createSimulation, kindColor, projectColor, truncateTitle, screenToWorld, worldToScreen, findNode } from "./graph-core.js";
+import { createSimulation, settleSimulation, kindColor, projectColor, truncateTitle, screenToWorld, worldToScreen, findNode } from "./graph-core.js";
+import { reducedMotion } from "../accessibility.js";
 import { adjacency, focusDistances, searchMatches } from "../pages/graph-model.js";
 
 export async function createGraphCanvas(data, { focus = "", onSelect = () => {}, onFocus = () => {} } = {}) {
   const d3 = await loadD3();
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const root = el("div", { class: "graph-stage" });
   const canvas = el("canvas", { class: "graph-canvas", role: "img", "aria-label": t("graph.canvas"),
     "data-nodes": data.nodes.length, "data-edges": data.edges.length, "data-running": "false", "data-draws": "0" });
@@ -122,6 +124,20 @@ export async function createGraphCanvas(data, { focus = "", onSelect = () => {},
     dirty = true;
     if (reheat) simulation.alpha(Math.max(0.2, simulation.alpha()));
     if (document.hidden) return;
+    if (reducedMotion()) {
+      stop();
+      // A full settle on every pointer move would stall a large graph; it runs once on release.
+      if (!pointer) settleSimulation(simulation);
+      else if (pointer.node) simulation.tick(3);
+      if (automaticFit) fitTransform();
+      if (centered) {
+        const node = byId.get(centered);
+        transform.x = width / 2 - node.x * transform.k;
+        transform.y = height / 2 - node.y * transform.k;
+      }
+      draw();
+      return;
+    }
     state.running = true;
     canvas.dataset.running = "true";
     if (frame === null) frame = requestAnimationFrame(advance);
@@ -262,6 +278,7 @@ export async function createGraphCanvas(data, { focus = "", onSelect = () => {},
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
   listen(window, "resize", resize);
+  listen(motion, "change", () => requestDraw());
   return { root, canvas, state, select, center, setSearch(query) {
     matches = new Set(searchMatches(nodes, query).map(node => node.id));
     canvas.dataset.matches = String(matches.size);

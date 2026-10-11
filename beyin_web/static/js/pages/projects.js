@@ -3,6 +3,7 @@ import { el } from "../dom.js";
 import { t, formatDate, relativeTime } from "../i18n.js";
 import { card, listRow, progressBar, tabs, filterBox, emptyState, errorState, skeleton } from "../components/index.js";
 import { mountMarkdown } from "../markdown.js";
+import { scrollTo } from "../accessibility.js";
 import { withoutLeadingTitle } from "./knowledge-model.js";
 import { splitNote, taskIcon, filterProjects, projectCounts, newestProject, projectHash, firstSentence } from "./projects-model.js";
 
@@ -83,7 +84,7 @@ function mountNote(state, root, body, wikilinks) {
     link.addEventListener("click", event => {
       event.preventDefault();
       panel.open = true;
-      panel.scrollIntoView({ block: "start" });
+      scrollTo(panel);
       panel.querySelector("summary").focus();
     }, { signal: state.listeners.signal });
     list.append(el("li", {}, link));

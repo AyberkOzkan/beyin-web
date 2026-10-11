@@ -11,8 +11,9 @@ from unittest.mock import patch
 from urllib.parse import quote
 
 from beyin_web.http import api
+from beyin_web.domain.obsidian import obsidian_uri
 from beyin_web.vault.records import make_rid
-from scripts.update_golden import ENDPOINTS, NOW, TZ, request, running_server
+from scripts.update_golden import ENDPOINTS, NOW, TZ, normalize, request, running_server
 from tests.support import FIXTURES, make_vault
 
 
@@ -36,8 +37,9 @@ class APITests(unittest.TestCase):
         self.assertEqual(headers["Content-Type"], "application/json; charset=utf-8")
         payload = json.loads(body)
         self.assertIn("generation", payload)
-        self.assertNotIn(str(self.vault), body.decode("utf-8"))
-        self.assertNotIn(self.vault.as_posix(), body.decode("utf-8"))
+        content = json.dumps(normalize(payload, self.vault), ensure_ascii=False)
+        self.assertNotIn(str(self.vault), content)
+        self.assertNotIn(self.vault.as_posix(), content)
         return payload
 
     def test_all_golden_responses_and_privacy(self) -> None:
@@ -45,12 +47,30 @@ class APITests(unittest.TestCase):
             with self.subTest(endpoint=endpoint):
                 payload = self.payload(endpoint)
                 expected = json.loads((FIXTURES / "golden" / f"{name}.json").read_text(encoding="utf-8"))
-                self.assertEqual(payload, expected)
+                self.assertEqual(normalize(payload, self.vault), expected)
+                if name != "record":
+                    self.assertNotIn("obsidian://", json.dumps(payload))
+                    self.assertNotIn("obsidian_uri", json.dumps(payload))
                 self.assertNotIn("GIZLI-SIZINTI-ISARETI", json.dumps(payload))
         snapshot = self.server.source.snapshot()
         for rid in snapshot.records:
             self.assertNotIn("GIZLI-SIZINTI-ISARETI", json.dumps(self.payload("/records/" + rid)))
         self.assertNotIn("GIZLI-SIZINTI-ISARETI", json.dumps(self.payload("/graph?receipts=1&unresolved=1")))
+
+    def test_record_obsidian_uri_uses_server_vault_and_encodes_paths(self) -> None:
+        for path in ("notes/atlas.md", "notes/Çınar Projesi.md"):
+            with self.subTest(path=path):
+                payload = self.payload("/records/" + make_rid(path))
+                self.assertEqual(payload["obsidian_uri"], obsidian_uri(str(self.server.settings.vault), path))
+                if "Çınar" in path:
+                    self.assertIn("%C3%87%C4%B1nar%20Projesi.md", payload["obsidian_uri"])
+        self.assertEqual(self.payload("/records/" + make_rid("notes/gizli.md"), 404)["error"]["code"], "not_found")
+
+    def test_normalize_rejects_wrong_vault_without_exposing_uri(self) -> None:
+        payload = self.payload(ENDPOINTS["record"])
+        with self.assertRaisesRegex(RuntimeError, "^invalid obsidian_uri$"):
+            normalize({**payload, "obsidian_uri": obsidian_uri("/elsewhere", payload["path"])}, self.vault)
+        self.assertEqual(payload["obsidian_uri"], obsidian_uri(str(self.vault), payload["path"]))
 
     def test_pulse_vault_name_and_server_drawings(self) -> None:
         payload = self.payload("/pulse")

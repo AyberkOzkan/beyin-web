@@ -2,6 +2,7 @@ import { get, startPulse } from "./api.js";
 import { setMessages, t, formatDate, formatTime } from "./i18n.js";
 import { el, icon, prepareIcons } from "./dom.js";
 import { parseRoute } from "./router.js";
+import { navigationIndex, shouldFocusMain, preserveFocus } from "./accessibility.js";
 import { errorState, statusDot, skeleton, illustrationSlot, setDrawings } from "./components/index.js";
 import { healthDrawer } from "./components/health-drawer.js";
 import { indicatorState } from "./pages/memory-model.js";
@@ -27,13 +28,27 @@ let stopPulse = () => {};
 let unauthorized = false;
 let drawer;
 let translationsReady = false;
+let currentRoute;
+let cancelFocus = () => {};
 
 function route() {
   if (unauthorized) return;
+  const next = parseRoute(location.hash);
+  const { page, params } = next;
+  const main = document.getElementById("main");
+  if (shouldFocusMain(currentRoute, next)) {
+    cancelFocus();
+    cancelFocus = () => {};
+    main.focus({ preventScroll: true });
+  } else if (main.contains(document.activeElement) && document.activeElement !== main) {
+    cancelFocus();
+    cancelFocus = preserveFocus(main);
+  }
+  // A second render can arrive before an async control has returned; keep its pending restoration.
+  currentRoute = next;
   currentPage?.destroy();
-  const { page, params } = parseRoute(location.hash);
   currentPage = pages[page] || placeholder;
-  currentPage.render(document.getElementById("main"), { ...params, page });
+  currentPage.render(main, { ...params, page });
   document.title = t("shell.documentTitle", { page: t(`page.${page}.title`) });
   document.querySelectorAll(".nav-link").forEach(link => {
     if (link.dataset.page === page || (page === "record" && link.dataset.page === "knowledge")) link.setAttribute("aria-current", "page");
@@ -46,6 +61,7 @@ function showLogin() {
   stopPulse();
   if (!translationsReady) { location.replace("/"); return; }
   currentPage?.destroy();
+  cancelFocus();
   drawer?.close();
   document.getElementById("shell").hidden = true;
   document.getElementById("startup").replaceChildren(el("section", { class: "login-screen card", id: "login-screen" },
@@ -66,6 +82,15 @@ function updatePulse(data) {
 }
 
 function buildShell(pulse) {
+  const skip = document.getElementById("skip-content");
+  skip.textContent = t("shell.skipContent");
+  skip.addEventListener("click", event => {
+    event.preventDefault();
+    document.getElementById("main").focus();
+  });
+  document.querySelector(".sidebar").setAttribute("aria-label", t("shell.sidebar"));
+  document.getElementById("topbar").setAttribute("aria-label", t("shell.topbar"));
+  document.getElementById("main").setAttribute("aria-label", t("shell.main"));
   setDrawings(pulse.drawings);
   const sidebarArt = illustrationSlot("yan-agac");
   document.getElementById("sidebar-art").replaceChildren(...(sidebarArt ? [sidebarArt] : []));
@@ -75,6 +100,14 @@ function buildShell(pulse) {
   const nav = document.getElementById("navigation");
   nav.setAttribute("aria-label", t("shell.navigation"));
   nav.replaceChildren(...navigation.map(([page, href, name]) => el("a", { class: "nav-link", href, "data-page": page }, icon(name), t(`page.${page}.title`))));
+  nav.addEventListener("keydown", event => {
+    const links = [...nav.querySelectorAll("a")];
+    const current = links.indexOf(document.activeElement);
+    const index = navigationIndex(event.key, current, links.length);
+    if (current < 0 || index < 0) return;
+    event.preventDefault();
+    links[index].focus();
+  });
   const search = el("input", { id: "global-search", type: "search", autocomplete: "off", placeholder: t("shell.searchPlaceholder"), "aria-label": t("shell.searchLabel") });
   search.addEventListener("keydown", event => {
     if (event.key === "Enter") { event.preventDefault(); location.hash = `/arama?q=${encodeURIComponent(search.value)}`; }

@@ -2,6 +2,7 @@ import { get } from "../api.js";
 import { el, icon } from "../dom.js";
 import { t, messageList, formatDate, formatTime, relativeTime } from "../i18n.js";
 import { errorState, skeleton, statusDot, illustrationSlot } from "../components/index.js";
+import { preserveFocus } from "../accessibility.js";
 import { greetingKey, firstSentence, dailyQuote, weeklyBars, changeKey } from "./home-model.js";
 
 const definitions = [
@@ -120,6 +121,8 @@ function upcoming(data) {
 const builders = { counts, last_session: lastSession, recent, projects, threads, week, tasks, upcoming };
 
 function update(state, data) {
+  state.cancelFocus?.();
+  state.cancelFocus = preserveFocus(state.root);
   const scroll = [window.scrollX, window.scrollY];
   const today = new Date();
   const greetingSignature = JSON.stringify([data.greeting, today.getFullYear(), today.getMonth(), today.getDate()]);
@@ -206,6 +209,7 @@ export function render(root) {
 }
 
 export function destroy() {
+  active?.cancelFocus?.();
   if (active) document.removeEventListener("beyin:changed", active.changed);
   active = null;
 }

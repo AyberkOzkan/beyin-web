@@ -1,6 +1,7 @@
 import { get } from "../api.js";
 import { el, icon } from "../dom.js";
 import { t } from "../i18n.js";
+import { preserveFocus } from "../accessibility.js";
 import { card, emptyState, errorState, listRow, skeleton } from "../components/index.js";
 import { calendar } from "../components/calendar.js";
 import { heatmap } from "../components/heatmap.js";
@@ -29,6 +30,10 @@ function failure(message, retry) {
 
 function paintCalendar(state) {
   if (!state.monthData) return;
+  if (state.calendar.body.contains(document.activeElement)) {
+    state.cancelCalendarFocus?.();
+    state.cancelCalendarFocus = preserveFocus(state.calendar.body);
+  }
   const days = state.monthData.days;
   state.calendar.body.replaceChildren(calendar({
     month: state.month, days, selected: state.date, today: state.heatData?.today,
@@ -71,6 +76,8 @@ function busy(state, key, value) {
 
 async function loadMonth(state, month) {
   if (active !== state) return;
+  state.cancelCalendarFocus?.();
+  state.cancelCalendarFocus = preserveFocus(state.calendar.body);
   state.month = month;
   state.monthData = null;
   const request = ++state.monthRequest;
@@ -191,6 +198,7 @@ export function render(root, params = {}) {
 }
 
 export function destroy() {
+  active?.cancelCalendarFocus?.();
   if (active) active.root.removeEventListener("click", active.click);
   active = null;
 }
