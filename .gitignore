@@ -21,3 +21,6 @@ Thumbs.db
 # Local scratch
 /tmp/
 *.patch
+
+# Screenshots taken for design review may show real vault content
+/design/ekran/
