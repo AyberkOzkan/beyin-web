@@ -174,6 +174,7 @@ class API:
                 health["companion_dir"] = directory
             if path == "pulse":
                 data = {"scanned_at": snapshot.scanned_at.isoformat(), "records": len(snapshot.records),
+                        "vault_name": snapshot.root.name, "drawings": dict(self.server.drawings),
                         "hidden_private": snapshot.hidden_private,
                         "beyin": {"available": available, "version": health["installed_version"],
                                   "up_to_date": health["up_to_date"]}}

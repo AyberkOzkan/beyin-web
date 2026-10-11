@@ -17,7 +17,10 @@ class ShellTests(BrowserTestCase):
         for link, route in zip(links, ["#/", "#/projeler", "#/bilgi", "#/gunlukler", "#/grafik", "#/arama", "#/hafiza"]):
             link.click()
             WebDriverWait(self.driver, 5).until(lambda driver: driver.current_url.endswith(route) and link.get_attribute("aria-current") == "page")
-            self.assertEqual(self.text("#main h1"), link.text)
+            if route == "#/":
+                self.wait_for('.home-page[aria-busy="false"]')
+            else:
+                self.assertEqual(self.text("#main h1"), link.text)
 
     def test_showcase_markdown_and_resources(self) -> None:
         from selenium.webdriver.common.by import By

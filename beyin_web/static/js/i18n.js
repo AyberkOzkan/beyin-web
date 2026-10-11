@@ -4,6 +4,10 @@ export function setMessages(value) {
   messages = value;
 }
 
+export function messageList(key) {
+  return Array.isArray(messages[key]) ? messages[key].filter(value => typeof value === "string") : [];
+}
+
 export function t(key, variables = {}) {
   const value = messages[key];
   if (typeof value !== "string") {

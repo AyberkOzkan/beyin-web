@@ -27,11 +27,13 @@ class BeyinRuntime:
         python: str = sys.executable,
         script: Path | None = None,
         timeout: float = 10.0,
+        enabled: bool = True,
     ) -> None:
         self.vault = Path(vault).resolve()
         self.python = python
         self.script = Path(script).resolve() if script is not None else self.vault / "beyin.py"
         self.timeout = timeout
+        self.enabled = enabled
         self.last_error: str | None = None
         self._lock = RLock()
         self._doctor_result: dict[str, object] | None = None
@@ -39,7 +41,7 @@ class BeyinRuntime:
 
     @property
     def available(self) -> bool:
-        return self.script.is_file()
+        return self.enabled and self.script.is_file()
 
     def doctor(self) -> dict[str, object] | None:
         with self._lock:

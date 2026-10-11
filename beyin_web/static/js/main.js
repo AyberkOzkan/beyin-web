@@ -2,16 +2,17 @@ import { get, startPulse } from "./api.js";
 import { setMessages, t, formatDate, formatTime } from "./i18n.js";
 import { el, icon, prepareIcons } from "./dom.js";
 import { parseRoute } from "./router.js";
-import { errorState, healthDrawer, statusDot, skeleton } from "./components/index.js";
+import { errorState, healthDrawer, statusDot, skeleton, illustrationSlot, setDrawings } from "./components/index.js";
 import * as placeholder from "./pages/placeholder.js";
 import * as showcase from "./pages/showcase.js";
+import * as home from "./pages/home.js";
 
 const navigation = [
   ["home", "#/", "house"], ["projects", "#/projeler", "folder-kanban"],
   ["knowledge", "#/bilgi", "book-open"], ["journal", "#/gunlukler", "calendar-days"],
   ["graph", "#/grafik", "waypoints"], ["search", "#/arama", "search"], ["memory", "#/hafiza", "brain"],
 ];
-const pages = { showcase };
+const pages = { showcase, home };
 let currentPage;
 let stopPulse = () => {};
 let unauthorized = false;
@@ -45,13 +46,16 @@ function showLogin() {
 function updatePulse(data) {
   document.getElementById("brand-version").textContent = data.beyin.version ? t("shell.version", { version: data.beyin.version }) : t("shell.plainMode");
   document.getElementById("vault-status").replaceChildren(
-    el("p", { class: "vault-name" }, statusDot("active", t("shell.local")), el("strong", {}, t("shell.local"))),
+    el("p", { class: "vault-name" }, statusDot("active", t("shell.local")), el("strong", {}, data.vault_name)),
     el("p", { id: "vault-records", "data-count": data.records }, t("shell.recordCount", { count: data.records })),
     el("p", { class: "muted" }, t("shell.lastScan", { time: formatTime(data.scanned_at) })),
     el("small", {}, formatDate(data.scanned_at)));
 }
 
-function buildShell() {
+function buildShell(pulse) {
+  setDrawings(pulse.drawings);
+  const sidebarArt = illustrationSlot("yan-agac");
+  document.getElementById("sidebar-art").replaceChildren(...(sidebarArt ? [sidebarArt] : []));
   const brand = document.getElementById("brand");
   brand.replaceChildren(icon("brain"), el("span", {}, el("span", { class: "brand-name" }, t("shell.brand")),
     el("small", { id: "brand-version", class: "brand-version" }, t("state.loading"))));
@@ -81,10 +85,11 @@ function buildShell() {
     }
   });
   document.addEventListener("beyin:health", drawer.open);
-  document.addEventListener("beyin:changed", route);
+  document.addEventListener("beyin:changed", () => { if (currentPage !== home) route(); });
   window.addEventListener("hashchange", route);
   document.getElementById("startup").replaceChildren();
   document.getElementById("shell").hidden = false;
+  updatePulse(pulse);
   route();
   stopPulse = startPulse({ onPulse: updatePulse, onError: error => {
     if (error.code !== "unauthorized") document.getElementById("vault-status").replaceChildren(errorState(t("shell.pulseError")));
@@ -96,7 +101,8 @@ try {
   setMessages(await get("/static/i18n/tr.json"));
   translationsReady = true;
   await prepareIcons();
-  if (!unauthorized) buildShell();
+  const pulse = await get("/api/v1/pulse");
+  if (!unauthorized) buildShell(pulse);
 } catch (error) {
   if (!unauthorized) {
     const startup = document.getElementById("startup");

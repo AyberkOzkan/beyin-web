@@ -19,6 +19,7 @@ class Settings:
     open_browser: bool = False
     display_name: str = ""
     static_dir: Path = field(default_factory=lambda: Path(__file__).parent / "static")
+    beyin_enabled: bool = True
 
 
 def config_directory(
@@ -71,6 +72,7 @@ def load_settings(
     token_enabled: bool = True,
     idle_exit: int | None = None,
     open_browser: bool = False,
+    beyin_enabled: bool = True,
 ) -> Settings:
     if token_enabled and directory.resolve().is_relative_to(vault.resolve()):
         raise ValueError("config_inside_vault")
@@ -90,4 +92,5 @@ def load_settings(
         idle_exit=idle_exit,
         open_browser=open_browser,
         display_name=display_name if isinstance(display_name, str) else "",
+        beyin_enabled=beyin_enabled and config.get("beyin") is not False,
     )

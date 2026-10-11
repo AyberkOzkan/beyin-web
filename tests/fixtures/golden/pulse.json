@@ -2,6 +2,8 @@
   "generation": 1,
   "scanned_at": "2026-01-12T16:00:00+03:00",
   "records": 30,
+  "vault_name": "vault",
+  "drawings": {},
   "hidden_private": 3,
   "beyin": {
     "available": true,

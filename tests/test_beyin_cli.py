@@ -81,6 +81,19 @@ class BeyinRuntimeTests(unittest.TestCase):
         self.assertTrue(runtime.available)
         self.assertIsNotNone(runtime.doctor())
 
+    def test_disabled_runtime_never_starts_subprocess(self) -> None:
+        shutil.copyfile(self.script, self.vault / "beyin.py")
+        runtime = BeyinRuntime(self.vault, enabled=False)
+        with patch("beyin_web.runtime.beyin_cli.subprocess.run") as run:
+            self.assertFalse(runtime.available)
+            self.assertIsNone(runtime.doctor())
+            self.assertEqual(runtime.last_error, "missing")
+            with self.assertRaises(RuntimeUnavailable) as caught:
+                runtime.context("sorgu")
+            self.assertEqual(caught.exception.code, "missing")
+        run.assert_not_called()
+        self.assertFalse(self.log.exists())
+
     def test_directory_is_not_available(self) -> None:
         (self.vault / "beyin.py").mkdir()
         self.assertFalse(BeyinRuntime(self.vault).available)

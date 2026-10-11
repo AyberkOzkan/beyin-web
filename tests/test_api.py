@@ -52,6 +52,13 @@ class APITests(unittest.TestCase):
             self.assertNotIn("GIZLI-SIZINTI-ISARETI", json.dumps(self.payload("/records/" + rid)))
         self.assertNotIn("GIZLI-SIZINTI-ISARETI", json.dumps(self.payload("/graph?receipts=1&unresolved=1")))
 
+    def test_pulse_vault_name_and_server_drawings(self) -> None:
+        payload = self.payload("/pulse")
+        self.assertEqual(payload["vault_name"], self.vault.name)
+        self.assertEqual(payload["drawings"], {})
+        self.server.drawings = {"hero-saray": "/static/img/hero-saray.png"}
+        self.assertEqual(self.payload("/pulse")["drawings"], self.server.drawings)
+
     def test_etags_and_generation_changes(self) -> None:
         for name, endpoint in ENDPOINTS.items():
             if name == "search_beyin":

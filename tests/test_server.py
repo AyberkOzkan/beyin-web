@@ -89,7 +89,9 @@ class ServerTests(ServerCase):
         self.assertEqual(status, 200)
         payload = json.loads(body)
         snapshot = self.source.snapshot()
-        self.assertEqual(set(payload), {"generation", "scanned_at", "records", "hidden_private", "beyin"})
+        self.assertEqual(set(payload), {"generation", "scanned_at", "records", "hidden_private", "beyin", "vault_name", "drawings"})
+        self.assertEqual(payload["vault_name"], self.vault.name)
+        self.assertEqual(payload["drawings"], {})
         self.assertEqual(payload["generation"], snapshot.generation)
         self.assertEqual(payload["records"], len(snapshot.records))
         self.assertEqual(payload["hidden_private"], snapshot.hidden_private)
@@ -120,6 +122,34 @@ class ServerTests(ServerCase):
                     "available": True, "version": "0.1.0", "up_to_date": True,
                 })
         self.assertEqual(log.read_text(encoding="utf-8").splitlines(), ['["doctor"]'])
+
+    def test_drawings_are_discovered_once_at_startup(self) -> None:
+        self.assertEqual(self.server.drawings, {})
+        images = self.static_dir / "img"
+        images.mkdir()
+        for name in ("hero-saray.png", "hero-saray.svg", "hero-saray.webp", "yan-agac.svg",
+                     "yan-agac.webp", "baslik-daglar.webp", "kart-cam.jpg", "unknown.png",
+                     "hero-saray.PNG", "kart-cam.txt"):
+            (images / name).write_bytes(b"image")
+        (images / "kart-cam.png").mkdir()
+        self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], {})
+        self.stop_server()
+        self.server = create_server(self.settings, self.source, self.runtime)
+        self.thread = threading.Thread(target=self.server.serve_forever, kwargs={"poll_interval": 0.01})
+        self.thread.start()
+        expected = {"hero-saray": "/static/img/hero-saray.png", "yan-agac": "/static/img/yan-agac.svg",
+                    "baslik-daglar": "/static/img/baslik-daglar.webp"}
+        self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], expected)
+        (images / "kart-cam.svg").write_bytes(b"image")
+        self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], expected)
+
+    def test_disabled_runtime_pulse_never_calls_cli(self) -> None:
+        shutil.copyfile(FIXTURES / "fake_beyin.py", self.vault / "beyin.py")
+        self.server.runtime = BeyinRuntime(self.vault, enabled=False)
+        with patch("beyin_web.runtime.beyin_cli.subprocess.run") as run:
+            payload = json.loads(self.request("/api/v1/pulse")[2])
+        self.assertFalse(payload["beyin"]["available"])
+        run.assert_not_called()
 
     def test_pulse_with_unreachable_beyin(self) -> None:
         self.server.runtime = BeyinRuntime(self.vault, script=FIXTURES / "fake_beyin.py")
@@ -167,7 +197,7 @@ class ServerTests(ServerCase):
         content_types = {
             "html": "text/html; charset=utf-8", "css": "text/css; charset=utf-8",
             "js": "text/javascript; charset=utf-8", "json": "application/json; charset=utf-8",
-            "svg": "image/svg+xml", "png": "image/png", "woff2": "font/woff2",
+            "svg": "image/svg+xml", "png": "image/png", "webp": "image/webp", "woff2": "font/woff2",
         }
         for extension, content_type in content_types.items():
             with self.subTest(extension=extension):
@@ -327,6 +357,26 @@ class LaunchTests(unittest.TestCase):
                 self.assertEqual(bind.call_args.args[0].port, expected_port)
                 self.assertIn("/?t=", output.getvalue())
                 serving.assert_called_once_with(server, None)
+
+    def test_no_beyin_and_config_false_force_plain_mode(self) -> None:
+        config_dir = self.root / "config"
+        config_dir.mkdir()
+        shutil.copyfile(FIXTURES / "fake_beyin.py", self.vault / "beyin.py")
+        for arguments, configured in ((["--no-beyin"], True), ([], False), (["--no-beyin"], False)):
+            (config_dir / "config.json").write_text(json.dumps({"beyin": configured}), encoding="utf-8")
+            with (
+                self.subTest(arguments=arguments, configured=configured),
+                patch("beyin_web.__main__.config_directory", return_value=config_dir),
+                patch("beyin_web.runtime.beyin_cli.subprocess.run") as run,
+                patch("beyin_web.__main__.bind_server", return_value=Mock(server_address=("127.0.0.1", 7474))) as bind,
+                patch("beyin_web.__main__.serve"),
+                contextlib.redirect_stdout(io.StringIO()),
+                contextlib.redirect_stderr(io.StringIO()),
+            ):
+                self.assertEqual(main(["--vault", str(self.vault), "--no-token", *arguments]), 0)
+                self.assertFalse(bind.call_args.args[2].available)
+                self.assertFalse(bind.call_args.args[0].beyin_enabled)
+                run.assert_not_called()
 
     def test_clean_ctrl_c_and_no_idle_thread_by_default(self) -> None:
         server = Mock()

@@ -89,7 +89,13 @@ export function skeleton(lines = 3) {
     Array.from({ length: Math.max(1, Math.min(10, lines)) }, () => el("div", { class: "skeleton-line", "aria-hidden": "true" })));
 }
 
-export function illustrationSlot(name, available = {}) {
+let drawings = {};
+
+export function setDrawings(value) {
+  drawings = { ...value };
+}
+
+export function illustrationSlot(name, available = drawings) {
   const source = available[name];
   if (!source || !source.startsWith(`/static/img/${name}.`) || /[?#]/.test(source)) return null;
   return el("img", { class: "illustration", src: source, alt: "", onerror: event => event.target.remove() });

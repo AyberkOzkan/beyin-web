@@ -27,6 +27,7 @@ CONTENT_TYPES: dict[str, str] = {
     ".json": "application/json; charset=utf-8",
     ".svg": "image/svg+xml",
     ".png": "image/png",
+    ".webp": "image/webp",
     ".woff2": "font/woff2",
 }
 APIHandler = Callable[["RequestHandler", re.Match[str]], Mapping[str, object] | None]
@@ -43,6 +44,18 @@ class BeyinHTTPServer(ThreadingHTTPServer):
         self.settings = settings
         self.source = source
         self.runtime = runtime
+        self.drawings: dict[str, str] = {}
+        static_root = settings.static_dir.resolve()
+        try:
+            images = {path.name: path for path in (static_root / "img").iterdir()}
+            for name in ("hero-saray", "yan-agac", "baslik-daglar", "kart-cam"):
+                for extension in (".png", ".svg", ".webp"):
+                    path = images.get(name + extension)
+                    if path is not None and path.is_file() and path.resolve().is_relative_to(static_root):
+                        self.drawings[name] = f"/static/img/{path.name}"
+                        break
+        except OSError:
+            pass
         self.routes: list[tuple[re.Pattern[str], APIHandler]] = []
         self.activity = threading.Condition()
         self.last_request = time.monotonic()

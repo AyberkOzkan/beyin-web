@@ -31,6 +31,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--open", action="store_true")
     parser.add_argument("--idle-exit", type=int, metavar="DAKİKA")
     parser.add_argument("--no-token", action="store_true")
+    parser.add_argument("--no-beyin", action="store_true")
     parser.add_argument(
         "--version", action="version", version=f"beyin-web {__version__}"
     )
@@ -141,8 +142,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             token_enabled=not args.no_token,
             idle_exit=args.idle_exit,
             open_browser=args.open,
+            beyin_enabled=not args.no_beyin,
         )
-        runtime = BeyinRuntime(settings.vault)
+        runtime = BeyinRuntime(settings.vault, enabled=settings.beyin_enabled)
         if not runtime.available:
             print("Beyin bulunamadı; yalın kipte çalışıyor.", file=sys.stderr)
         companion_dir = health_summary(runtime.doctor() if runtime.available else None)["companion_dir"]
