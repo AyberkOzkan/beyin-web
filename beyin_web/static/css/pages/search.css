@@ -1,1 +1,30 @@
 /* Styles of the search page and of the components introduced with it. */
+.search-page { max-width: 1120px; margin: 0 auto; }
+.search-page header h1 { margin-bottom: 4px; }
+.search-page header p { margin: 0; }
+.search-form { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-control); }
+.search-form > .icon { width: 28px; height: 28px; color: var(--ink-soft); }
+.search-form input { flex: 1; min-width: 0; padding: 8px 0; border: 0; background: transparent; font-size: 22px; }
+.search-form input::-webkit-search-cancel-button { display: none; }
+.search-submit { background: var(--ink); color: var(--card); padding: 8px 24px; }
+.search-filters { align-items: flex-start; flex-wrap: wrap; }
+.search-kind-filter, .search-project-filter { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.search-project-filter { flex: 1; }
+.search-filters select { max-width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-control); padding: 8px 12px; }
+.search-project-filter .skeleton { width: 180px; }
+.search-modes:empty, .search-notices:empty, .search-page > div:empty, .search-summary:empty { display: none; }
+.search-summary, .search-explanation, .search-notices p { margin: 0; }
+.search-notices { display: grid; gap: 8px; }
+.search-warning { color: var(--ink-soft); }
+.search-warning .icon { color: var(--amber); }
+.search-result { position: relative; cursor: pointer; }
+.search-result-link { display: flex; align-items: flex-start; gap: 12px; text-decoration: none; color: var(--ink); }
+.search-result-link h2 { font-size: 26px; margin-bottom: 10px; overflow-wrap: anywhere; }
+.search-result-link > .icon { width: 26px; height: 26px; margin-top: 3px; color: var(--ink-soft); }
+.search-snippet { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 12px 38px; }
+.search-snippet mark { background: var(--amber); color: var(--ink); border-radius: 2px; }
+.search-result-meta { flex-wrap: wrap; margin-left: 38px; font-size: 14px; }
+.search-path { overflow-wrap: anywhere; min-width: 0; }
+.search-result-meta time { margin-left: auto; }
+.search-collapsed { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; max-height: 9.6em; }
+.search-more { margin: 0 0 12px 38px; }
