@@ -187,6 +187,8 @@ class HomeTests(BrowserTestCase):
         self.assertFalse(self.driver.execute_script("return homeBefore.recent === document.querySelector('#home-recent .home-row')"))
         self.assertEqual(self.driver.execute_script("return window.scrollY"), self.driver.execute_script("return homeBefore.scroll"))
         self.driver.execute_script("location.hash = '/bilgi'")
-        self.wait_until(lambda driver: driver.find_element("css selector", "#main h1").text == self.messages["page.knowledge.title"])
+        # Read the heading in one script call: the page is being replaced while we look at it.
+        self.wait_until(lambda driver: driver.execute_script(
+            "return document.querySelector('#main h1')?.textContent") == self.messages["page.knowledge.title"])
         self.driver.execute_script("document.dispatchEvent(new CustomEvent('beyin:changed'))")
         self.assertEqual(self.driver.find_elements("css selector", ".home-page"), [])

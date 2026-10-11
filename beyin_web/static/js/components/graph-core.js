@@ -22,12 +22,15 @@ export function screenToWorld(point, transform = { x: 0, y: 0, k: 1 }) {
   return { x: (point.x - transform.x) / transform.k, y: (point.y - transform.y) / transform.k };
 }
 
-export function findNode(nodes, point, radius = 10) {
+export function findNode(nodes, point, radius = 10, boxes = false) {
   let found = null;
   let distance = Infinity;
   for (const node of nodes) {
     const squared = (node.x - point.x) ** 2 + (node.y - point.y) ** 2;
-    if (squared <= (node.radius ?? radius) ** 2 && squared < distance) {
+    const inside = boxes && node.width && node.height ?
+      Math.abs(node.x - point.x) <= node.width / 2 && Math.abs(node.y - point.y) <= node.height / 2 :
+      squared <= (node.radius ?? radius) ** 2;
+    if (inside && squared < distance) {
       found = node;
       distance = squared;
     }
@@ -35,7 +38,16 @@ export function findNode(nodes, point, radius = 10) {
   return found;
 }
 
-export function createSimulation(d3, nodes, edges, { focus = null, distance = 70, charge = -100 } = {}) {
+export function projectColor(project) {
+  const palette = ["--sage-deep", "--blue", "--amber", "--red", "--ink-soft"];
+  let hash = 0;
+  for (const character of String(project ?? "")) hash = (hash * 31 + character.codePointAt(0)) >>> 0;
+  return palette[hash % palette.length];
+}
+
+export function createSimulation(d3, nodes, edges, {
+  focus = null, distance = 70, charge = -100, collision = 22, center = false,
+} = {}) {
   // d3 mutates its inputs; copy API objects so cached responses remain reusable.
   const workingNodes = nodes.map(node => ({ ...node }));
   const ids = new Set(workingNodes.map(node => node.id));
@@ -45,10 +57,12 @@ export function createSimulation(d3, nodes, edges, { focus = null, distance = 70
   })).filter(edge => ids.has(edge.source) && ids.has(edge.target));
   const selected = workingNodes.find(node => node.id === focus);
   if (selected) { selected.fx = 0; selected.fy = 0; selected.x = 0; selected.y = 0; }
-  return d3.forceSimulation(workingNodes)
+  const simulation = d3.forceSimulation(workingNodes)
     .force("link", d3.forceLink(workingEdges).id(node => node.id).distance(distance))
     .force("charge", d3.forceManyBody().strength(charge))
-    .force("collision", d3.forceCollide(22))
+    .force("collision", d3.forceCollide(collision))
     .force("x", d3.forceX(0).strength(0.04))
     .force("y", d3.forceY(0).strength(0.04));
+  if (center) simulation.force("center", d3.forceCenter(0, 0));
+  return simulation;
 }
