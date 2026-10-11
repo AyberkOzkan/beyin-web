@@ -1,0 +1,24 @@
+#!/bin/sh
+
+script=$0
+while :; do
+    directory=$(CDPATH= cd -P "$(dirname "$script")" && pwd) || exit 1
+    script=$directory/$(basename "$script")
+    [ -L "$script" ] || break
+    target=$(readlink "$script") || exit 1
+    case $target in
+        /*) script=$target ;;
+        *) script=$directory/$target ;;
+    esac
+done
+root=$(CDPATH= cd -P "$directory/.." && pwd) || exit 1
+PYTHONPATH=$root${PYTHONPATH:+:$PYTHONPATH}
+export PYTHONPATH
+
+if command -v python3 >/dev/null 2>&1; then
+    exec python3 -P -m beyin_web "$@"
+elif command -v python >/dev/null 2>&1; then
+    exec python -P -m beyin_web "$@"
+fi
+printf '%s\n' 'Python bulunamadı. Python 3.11 ya da üstünü kurun.' >&2
+exit 127
