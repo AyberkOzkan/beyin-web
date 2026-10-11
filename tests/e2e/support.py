@@ -62,7 +62,7 @@ class BrowserTestCase(unittest.TestCase):
             cls.driver.execute_script("return document.readyState")
         except Exception as error:
             raise unittest.SkipTest(f"Edge could not start: {error}") from error
-        temporary = tempfile.TemporaryDirectory()
+        temporary = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         cls.addClassCleanup(temporary.cleanup)
         vault = make_vault(Path(temporary.name))
         cls.source = MarkdownSource(vault)
@@ -79,6 +79,13 @@ class BrowserTestCase(unittest.TestCase):
         cls.server.shutdown()
         cls.thread.join(timeout=5)
         cls.server.server_close()
+
+    def setUp(self) -> None:
+        super().setUp()
+        # The page left by the previous test may still be polling a server that has stopped;
+        # leave it and drop whatever it logged, so each test only answers for its own console.
+        self.driver.get("about:blank")
+        self.driver.get_log("browser")
 
     def open(self, hash: str = "#/") -> None:
         self.driver.get(self.base_url + "/" + hash)
@@ -101,6 +108,9 @@ class BrowserTestCase(unittest.TestCase):
         try:
             self.assertEqual(self.console_errors(), [], "Browser console contains errors or CSP violations")
         finally:
+            # Leave the page before the cleanups stop its server and delete its files:
+            # a request still in flight would keep a file open, which Windows will not delete.
+            self.driver.get("about:blank")
             super().tearDown()
 
 
@@ -119,7 +129,7 @@ class PageTestCase(BrowserTestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        temporary = tempfile.TemporaryDirectory()
+        temporary = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.addCleanup(temporary.cleanup)
         self.vault = make_vault(Path(temporary.name))
         static = Path(__file__).resolve().parents[2] / "beyin_web" / "static"

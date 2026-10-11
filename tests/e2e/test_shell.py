@@ -16,7 +16,13 @@ class ShellTests(BrowserTestCase):
         self.assertEqual([link.text for link in links], ["Ana Sayfa", "Projeler", "Bilgi", "Günlükler", "Grafik", "Arama", "Hafıza"])
         for link, route in zip(links, ["#/", "#/projeler", "#/bilgi", "#/gunlukler", "#/grafik", "#/arama", "#/hafiza"]):
             link.click()
-            WebDriverWait(self.driver, 5).until(lambda driver: driver.current_url.endswith(route) and link.get_attribute("aria-current") == "page")
+            # A page may move on to its first item (#/bilgi -> #/bilgi/{rid}); the menu entry stays current.
+            def arrived(driver: object, route: str = route, link: object = link) -> bool:
+                current = "#" + driver.current_url.partition("#")[2]
+                inside = current == route or (route != "#/" and current.startswith(route + "/"))
+                return inside and link.get_attribute("aria-current") == "page"
+
+            WebDriverWait(self.driver, 5).until(arrived)
             if route == "#/":
                 self.wait_for('.home-page[aria-busy="false"]')
             else:

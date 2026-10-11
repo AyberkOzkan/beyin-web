@@ -1,1 +1,39 @@
 /* Styles of the knowledge page and of the components introduced with it. */
+.knowledge-columns, .record-columns { align-items: start; }
+.record-columns { display: grid; grid-template-columns: minmax(0, 1fr) var(--context-width); gap: var(--gap); }
+.record-columns > *, .knowledge-reader, .knowledge-context, .context-panel, .record-reader { min-width: 0; }
+.knowledge-sidebar { padding: 16px; }
+.knowledge-sidebar .filter-box { margin-bottom: 16px; }
+.knowledge-group > summary { padding: 12px 0; font-weight: 600; cursor: pointer; }
+.knowledge-group .list-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.knowledge-group .list-row strong { overflow-wrap: anywhere; }
+.reader-header { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 16px; }
+.reader-header > h2 { flex: 1; min-width: 0; }
+.reader-title { font-size: 36px; overflow-wrap: anywhere; }
+.reader-metadata { margin-bottom: 24px; font-size: 14px; }
+.reader-menu { flex-shrink: 0; }
+.reader-menu > summary { display: flex; justify-content: center; padding: 8px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.reader-menu .button { margin-top: 8px; }
+.reader-path { display: block; width: 100%; background: var(--paper-side); border: 1px solid var(--line); padding: 8px; margin-bottom: 12px; }
+.reader-untrusted { color: var(--red); }
+.reader-body, .reader-task-body { margin-top: 24px; min-width: 0; }
+.reader-task-body > summary { cursor: pointer; font-weight: 600; }
+.reader-task { padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-control); }
+.context-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 8px 12px; margin: 0; }
+.context-fields dt { color: var(--ink-soft); }
+.context-fields dd { margin: 0; overflow-wrap: anywhere; }
+.context-path { font-size: 13px; }
+.context-panel .card-title h2 { font-size: 23px; }
+.context-panel h3 { font-size: 18px; margin: 20px 0 8px; }
+.context-panel .list-row { padding: 12px 0; }
+.context-panel .list-row strong, .context-panel .list-row small { overflow-wrap: anywhere; }
+.context-unresolved { display: grid; gap: 8px; }
+.context-unresolved span { padding: 8px 0; overflow-wrap: anywhere; }
+.context-graph-link { display: block; margin-top: 12px; }
+.mini-graph-canvas { display: block; width: 100%; height: 200px; cursor: pointer; }
+.mini-graph-empty { margin: 0; }
+.knowledge-reader .reader-task { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1199px) {
+  .record-columns { grid-template-columns: minmax(0, 1fr); }
+  .record-columns .context-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

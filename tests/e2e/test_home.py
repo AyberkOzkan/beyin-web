@@ -22,7 +22,7 @@ from tests.support import FIXTURES, make_vault
 class HomeTests(BrowserTestCase):
     def setUp(self) -> None:
         super().setUp()
-        temporary = tempfile.TemporaryDirectory()
+        temporary = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.vault = make_vault(self.root)
