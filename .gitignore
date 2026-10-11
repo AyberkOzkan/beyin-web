@@ -6,6 +6,13 @@ __pycache__/
 /dist/
 /.venv/
 
+/venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # Node (only at the repo root; the fixture vault keeps its own node_modules on purpose)
 /node_modules/
 
@@ -17,10 +24,23 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+desktop.ini
+*.swp
+*~
 
-# Local scratch
+# Tools that keep their own state in the repo folder
+/.trunk/
+/.claude/settings.local.json
+/.codex/
+
+# Local scratch and secrets
 /tmp/
 *.patch
+*.log
+*.orig
+*.rej
+.env
+.env.*
 
 # Screenshots taken for design review may show real vault content
 /design/screenshots/
