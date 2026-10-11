@@ -1,0 +1,35 @@
+{
+  "generation": 1,
+  "groups": [
+    {
+      "project": null,
+      "records": [
+        {
+          "rid": "f202c75b1940",
+          "title": "Kavram iki",
+          "kind": "fact",
+          "project": null,
+          "path": "knowledge/concepts/kavram-iki.md",
+          "mtime": "2026-01-06T09:00:00+00:00",
+          "excerpt": "Bu bilgi notunun proje alanı yoktur.",
+          "summary": "Projesiz kavramın özeti."
+        }
+      ]
+    },
+    {
+      "project": "atlas",
+      "records": [
+        {
+          "rid": "bd66b921adc5",
+          "title": "Kavram bir",
+          "kind": "fact",
+          "project": "atlas",
+          "path": "knowledge/concepts/kavram-bir.md",
+          "mtime": "2026-01-05T15:00:00+00:00",
+          "excerpt": "Atlas projesinde küçük adımların sonucu izlenir.",
+          "summary": "Atlas için temel kavramın özeti."
+        }
+      ]
+    }
+  ]
+}

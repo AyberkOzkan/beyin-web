@@ -1,0 +1,274 @@
+{
+  "generation": 1,
+  "greeting": {
+    "period": "day",
+    "display_name": "Deniz"
+  },
+  "last_session": {
+    "date": "2026-01-12",
+    "time": "2026-01-12T15:30:00+03:00",
+    "label": "claude",
+    "session": "session-cinar-20260112",
+    "items": [
+      [
+        "Özet",
+        "Çınar projesinin değerlendirmesi hazırlandı."
+      ],
+      [
+        "Sonraki adım",
+        "İlk görevi gözden geçir."
+      ]
+    ],
+    "next_step": "İlk görevi gözden geçir.",
+    "raw": "## 2026-01-12 15:30 · claude · session-cinar-20260112\n\n- **Özet:** Çınar projesinin değerlendirmesi hazırlandı.\n- **Sonraki adım:** İlk görevi gözden geçir.\n\n"
+  },
+  "counts": {
+    "notes": {
+      "total": 7,
+      "last_7_days": 2
+    },
+    "knowledge": {
+      "total": 2,
+      "last_7_days": 1
+    },
+    "open_tasks": {
+      "total": 4,
+      "last_7_days": 2
+    },
+    "receipts": {
+      "total": 6,
+      "last_7_days": 4
+    }
+  },
+  "threads": [
+    {
+      "title": "Atlas değerlendirmesi",
+      "owner": "Deniz",
+      "status": "Etkin",
+      "status_date": "2026-01-07",
+      "open": "İkinci örnek tamamlanacak.",
+      "next_step": "Atlas A3 görevini gözden geçir.",
+      "extra": [],
+      "raw": "### Atlas değerlendirmesi\n\n- **Sahip:** Deniz\n- **Durum (2026-01-07):** Etkin\n- **Açık:** İkinci örnek tamamlanacak.\n- **Sonraki adım:** Atlas A3 görevini gözden geçir.\n\n"
+    },
+    {
+      "title": "Çınar için serbest konu",
+      "owner": "",
+      "status": "",
+      "status_date": "",
+      "open": "",
+      "next_step": "",
+      "extra": [],
+      "raw": "### Çınar için serbest konu\n\nBu konu etiket kullanmadan yazılmış serbest metindir.\n\n"
+    }
+  ],
+  "projects": [
+    {
+      "name": "cinar",
+      "note_rid": "7b2b5e377946",
+      "title": "Çınar Projesi",
+      "summary": "Çınar projesinin ilk değerlendirmesi 12 Ocak 2026 tarihinde yapılır.",
+      "task_rids": [
+        "3009e4568992"
+      ],
+      "knowledge_rids": [],
+      "receipt_rids": [
+        "9f6cedb41369",
+        "cc8d114910b7"
+      ],
+      "done": 0,
+      "total": 1,
+      "last_activity": "2026-01-12T12:00:00.250000+00:00",
+      "quiet": false,
+      "note_count": 1
+    },
+    {
+      "name": "atlas",
+      "note_rid": "df96cd83303a",
+      "title": "Atlas",
+      "summary": "Atlas, Deniz'in Ocak 2026 için hazırladığı sentetik projedir.",
+      "task_rids": [
+        "94c444847f82",
+        "95f7f782de5c",
+        "053d847a8de2",
+        "df7b9bc04355",
+        "f679f5b8b22d",
+        "ab2bb3ba5e07"
+      ],
+      "knowledge_rids": [
+        "bd66b921adc5"
+      ],
+      "receipt_rids": [
+        "8fc877084ad8",
+        "7bba71b24fde",
+        "b8abe216a0c2"
+      ],
+      "done": 2,
+      "total": 5,
+      "last_activity": "2026-01-07T08:00:00+00:00",
+      "quiet": false,
+      "note_count": 1
+    }
+  ],
+  "tasks": [
+    {
+      "rid": "053d847a8de2",
+      "id": "atlas-a3",
+      "title": "Atlas A3: Örnekleri doğrula",
+      "status": "active",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": "İkinci örneği doğrula.",
+      "due_at": null,
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 2,
+      "checklist_total": 4,
+      "record": {
+        "rid": "053d847a8de2",
+        "title": "Atlas A3: Örnekleri doğrula",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a3.md",
+        "mtime": "2026-01-07T08:00:00+00:00",
+        "excerpt": "- [x] İlk not hazırlandı. - [x] İlk örnek doğrulandı. - [ ] İkinci örnek doğrulanacak. - [ ] Son değerlendirme yapılacak."
+      }
+    },
+    {
+      "rid": "df7b9bc04355",
+      "id": "atlas-a4",
+      "title": "Atlas A4: Değerlendirmeyi bekle",
+      "status": "waiting",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": null,
+      "due_at": "2026-01-20",
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 0,
+      "checklist_total": 0,
+      "record": {
+        "rid": "df7b9bc04355",
+        "title": "Atlas A4: Değerlendirmeyi bekle",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a4.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Atlas projesi için 4. sentetik görev."
+      }
+    },
+    {
+      "rid": "f679f5b8b22d",
+      "id": "atlas-a5",
+      "title": "Atlas A5: Eksik girdiyi edin",
+      "status": "blocked",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": null,
+      "due_at": null,
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 0,
+      "checklist_total": 0,
+      "record": {
+        "rid": "f679f5b8b22d",
+        "title": "Atlas A5: Eksik girdiyi edin",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a5.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Atlas projesi için 5. sentetik görev."
+      }
+    }
+  ],
+  "recent": [
+    {
+      "rid": "7b2b5e377946",
+      "title": "Çınar Projesi",
+      "kind": "note",
+      "project": "cinar",
+      "path": "notes/Çınar Projesi.md",
+      "mtime": "2026-01-12T11:00:00+00:00",
+      "excerpt": "Çınar projesinin ilk değerlendirmesi 12 Ocak 2026 tarihinde yapılır."
+    },
+    {
+      "rid": "3009e4568992",
+      "title": "Çınar 1: İlk değerlendirme",
+      "kind": "task",
+      "project": "cinar",
+      "path": "tasks/cinar-1.md",
+      "mtime": "2026-01-12T10:00:00+00:00",
+      "excerpt": "Çınar projesini değerlendirme kuyruğuna al."
+    },
+    {
+      "rid": "053d847a8de2",
+      "title": "Atlas A3: Örnekleri doğrula",
+      "kind": "task",
+      "project": "atlas",
+      "path": "tasks/atlas-a3.md",
+      "mtime": "2026-01-07T08:00:00+00:00",
+      "excerpt": "- [x] İlk not hazırlandı. - [x] İlk örnek doğrulandı. - [ ] İkinci örnek doğrulanacak. - [ ] Son değerlendirme yapılacak."
+    },
+    {
+      "rid": "c0e78776da78",
+      "title": "Serbest not",
+      "kind": "note",
+      "project": null,
+      "path": "notes/serbest.md",
+      "mtime": "2026-01-07T07:00:00+00:00",
+      "excerpt": "Deniz'in frontmatter kullanmadan yazdığı sentetik not."
+    },
+    {
+      "rid": "f202c75b1940",
+      "title": "Kavram iki",
+      "kind": "fact",
+      "project": null,
+      "path": "knowledge/concepts/kavram-iki.md",
+      "mtime": "2026-01-06T09:00:00+00:00",
+      "excerpt": "Bu bilgi notunun proje alanı yoktur."
+    }
+  ],
+  "week": {
+    "days": {
+      "2026-01-12": 1,
+      "2026-01-13": 0,
+      "2026-01-14": 0,
+      "2026-01-15": 0,
+      "2026-01-16": 0,
+      "2026-01-17": 0,
+      "2026-01-18": 0
+    },
+    "receipts": 1,
+    "changed": 2
+  },
+  "upcoming": [
+    {
+      "record": {
+        "rid": "3009e4568992",
+        "title": "Çınar 1: İlk değerlendirme",
+        "kind": "task",
+        "project": "cinar",
+        "path": "tasks/cinar-1.md",
+        "mtime": "2026-01-12T10:00:00+00:00",
+        "excerpt": "Çınar projesini değerlendirme kuyruğuna al."
+      },
+      "field": "review_at",
+      "date": "2026-01-15",
+      "value": "2026-01-15"
+    },
+    {
+      "record": {
+        "rid": "df7b9bc04355",
+        "title": "Atlas A4: Değerlendirmeyi bekle",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a4.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Atlas projesi için 4. sentetik görev."
+      },
+      "field": "due_at",
+      "date": "2026-01-20",
+      "value": "2026-01-20"
+    }
+  ]
+}

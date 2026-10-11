@@ -1,0 +1,66 @@
+{
+  "generation": 1,
+  "health_summary": {
+    "installed_version": "0.1.0",
+    "latest_version": "0.1.0",
+    "up_to_date": true,
+    "checked_at": "2026-01-01T00:00:00+00:00",
+    "last_sync_at": "2026-01-01T00:00:00+00:00",
+    "last_sync_status": "succeeded",
+    "potential_missing_receipts": 1,
+    "memory_files": {
+      "Core.md": {
+        "chars": 90,
+        "limit": null,
+        "over_limit": null
+      },
+      "Kurallar.md": {
+        "chars": 100,
+        "limit": null,
+        "over_limit": null
+      },
+      "Journal.md": {
+        "chars": 110,
+        "limit": null,
+        "over_limit": null
+      },
+      "Last-Session.md": {
+        "chars": 120,
+        "limit": 1200,
+        "over_limit": false
+      },
+      "Threads.md": {
+        "chars": 130,
+        "limit": 2400,
+        "over_limit": false
+      }
+    },
+    "memory_limits": {
+      "Last-Session.md": 1200,
+      "Threads.md": 2400
+    },
+    "companion_dir": "🔮 850-Companion"
+  },
+  "warnings": [
+    {
+      "code": "frontmatter_unclosed",
+      "path": "notes/bozuk.md"
+    },
+    {
+      "code": "invalid_visibility",
+      "path": null
+    }
+  ],
+  "hidden_private": 3,
+  "records": 30,
+  "counts": {
+    "index": 2,
+    "knowledge": 2,
+    "memory": 5,
+    "note": 7,
+    "receipt": 6,
+    "rejected": 1,
+    "task": 7
+  },
+  "beyin_available": true
+}

@@ -16,7 +16,7 @@ from beyin_web.config import Settings
 from beyin_web.http.security import (
     SECURITY_HEADERS, authenticated, session_cookie, valid_host, valid_token,
 )
-from beyin_web.runtime.beyin_cli import BeyinRuntime, health_summary
+from beyin_web.runtime.beyin_cli import BeyinRuntime
 from beyin_web.vault.scan import VaultSource
 
 
@@ -29,7 +29,7 @@ CONTENT_TYPES: dict[str, str] = {
     ".png": "image/png",
     ".woff2": "font/woff2",
 }
-APIHandler = Callable[["RequestHandler", re.Match[str]], Mapping[str, object]]
+APIHandler = Callable[["RequestHandler", re.Match[str]], Mapping[str, object] | None]
 
 
 class BeyinHTTPServer(ThreadingHTTPServer):
@@ -47,7 +47,8 @@ class BeyinHTTPServer(ThreadingHTTPServer):
         self.activity = threading.Condition()
         self.last_request = time.monotonic()
         super().__init__(("127.0.0.1", settings.port), RequestHandler)
-        self.register(r"/api/v1/pulse", _pulse)
+        from beyin_web.http.api import register_api
+        self.api = register_api(self)
 
     def server_bind(self) -> None:
         # HTTPServer's default bind performs an unnecessary reverse DNS lookup.
@@ -104,12 +105,11 @@ class RequestHandler(BaseHTTPRequestHandler):
     def send_json(
         self, data: Mapping[str, object], status: int = 200,
         headers: Mapping[str, str] | None = None,
+        *, etag: str | None = None,
     ) -> None:
         body = json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf-8")
-        generation = data.get("generation")
         response_headers = dict(headers or {})
-        if status == 200 and isinstance(generation, int):
-            etag = f'"{generation}"'
+        if status == 200 and etag is not None:
             response_headers["ETag"] = etag
             validators = self.headers.get("If-None-Match", "").split(",")
             if any(value.strip().removeprefix("W/") in {etag, "*"} for value in validators):
@@ -189,7 +189,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             for pattern, handler in application.routes:
                 match = pattern.fullmatch(path)
                 if match is not None:
-                    self.send_json(handler(self, match))
+                    data = handler(self, match)
+                    if data is not None:
+                        self.send_json(data)
                     return
             self.send_error(404)
         elif path.startswith("/static/"):
@@ -214,24 +216,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         self.send_body(status, body, content_type)
-
-
-def _pulse(request: RequestHandler, match: re.Match[str]) -> Mapping[str, object]:
-    snapshot = request.application.source.snapshot()
-    runtime = request.application.runtime
-    available = runtime.available
-    health = health_summary(runtime.doctor() if available else None)
-    return {
-        "generation": snapshot.generation,
-        "scanned_at": snapshot.scanned_at.isoformat(),
-        "records": len(snapshot.records),
-        "hidden_private": snapshot.hidden_private,
-        "beyin": {
-            "available": available,
-            "version": health["installed_version"],
-            "up_to_date": health["up_to_date"],
-        },
-    }
 
 
 def create_server(

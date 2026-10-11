@@ -1,0 +1,166 @@
+{
+  "generation": 1,
+  "tasks": [
+    {
+      "rid": "94c444847f82",
+      "id": "atlas-a1",
+      "title": "Atlas A1: Temel notu hazırla",
+      "status": "done",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": null,
+      "due_at": null,
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 0,
+      "checklist_total": 0,
+      "record": {
+        "rid": "94c444847f82",
+        "title": "Atlas A1: Temel notu hazırla",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a1.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Atlas projesi için 1. sentetik görev."
+      }
+    },
+    {
+      "rid": "95f7f782de5c",
+      "id": "atlas-a2",
+      "title": "Atlas A2: İkinci aşamayı tamamla",
+      "status": "done",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": null,
+      "due_at": null,
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 0,
+      "checklist_total": 0,
+      "record": {
+        "rid": "95f7f782de5c",
+        "title": "Atlas A2: İkinci aşamayı tamamla",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a2.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Atlas projesi için 2. sentetik görev."
+      }
+    },
+    {
+      "rid": "053d847a8de2",
+      "id": "atlas-a3",
+      "title": "Atlas A3: Örnekleri doğrula",
+      "status": "active",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": "İkinci örneği doğrula.",
+      "due_at": null,
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 2,
+      "checklist_total": 4,
+      "record": {
+        "rid": "053d847a8de2",
+        "title": "Atlas A3: Örnekleri doğrula",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a3.md",
+        "mtime": "2026-01-07T08:00:00+00:00",
+        "excerpt": "- [x] İlk not hazırlandı. - [x] İlk örnek doğrulandı. - [ ] İkinci örnek doğrulanacak. - [ ] Son değerlendirme yapılacak."
+      }
+    },
+    {
+      "rid": "df7b9bc04355",
+      "id": "atlas-a4",
+      "title": "Atlas A4: Değerlendirmeyi bekle",
+      "status": "waiting",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": null,
+      "due_at": "2026-01-20",
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 0,
+      "checklist_total": 0,
+      "record": {
+        "rid": "df7b9bc04355",
+        "title": "Atlas A4: Değerlendirmeyi bekle",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a4.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Atlas projesi için 4. sentetik görev."
+      }
+    },
+    {
+      "rid": "f679f5b8b22d",
+      "id": "atlas-a5",
+      "title": "Atlas A5: Eksik girdiyi edin",
+      "status": "blocked",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": null,
+      "due_at": null,
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 0,
+      "checklist_total": 0,
+      "record": {
+        "rid": "f679f5b8b22d",
+        "title": "Atlas A5: Eksik girdiyi edin",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a5.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Atlas projesi için 5. sentetik görev."
+      }
+    },
+    {
+      "rid": "ab2bb3ba5e07",
+      "id": "atlas-a6",
+      "title": "Atlas A6: Eski denemeyi kapat",
+      "status": "cancelled",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": null,
+      "due_at": null,
+      "review_at": null,
+      "project": "atlas",
+      "checklist_done": 0,
+      "checklist_total": 0,
+      "record": {
+        "rid": "ab2bb3ba5e07",
+        "title": "Atlas A6: Eski denemeyi kapat",
+        "kind": "task",
+        "project": "atlas",
+        "path": "tasks/atlas-a6.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Atlas projesi için 6. sentetik görev."
+      }
+    },
+    {
+      "rid": "3009e4568992",
+      "id": "cinar-1",
+      "title": "Çınar 1: İlk değerlendirme",
+      "status": "inbox",
+      "owner": "Deniz",
+      "revision": 1,
+      "next_action": null,
+      "due_at": null,
+      "review_at": "2026-01-15",
+      "project": "cinar",
+      "checklist_done": 0,
+      "checklist_total": 0,
+      "record": {
+        "rid": "3009e4568992",
+        "title": "Çınar 1: İlk değerlendirme",
+        "kind": "task",
+        "project": "cinar",
+        "path": "tasks/cinar-1.md",
+        "mtime": "2026-01-12T10:00:00+00:00",
+        "excerpt": "Çınar projesini değerlendirme kuyruğuna al."
+      }
+    }
+  ]
+}

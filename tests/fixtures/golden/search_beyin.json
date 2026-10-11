@@ -1,0 +1,18 @@
+{
+  "generation": 1,
+  "results": [
+    {
+      "rid": "7b2b5e377946",
+      "title": "Çınar Projesi",
+      "kind": "note",
+      "project": "cinar",
+      "path": "notes/Çınar Projesi.md",
+      "mtime": "2026-01-12T11:00:00+00:00",
+      "excerpt": "Çınar projesinin ilk değerlendirmesi 12 Ocak 2026 tarihinde yapılır.",
+      "text": "Sentetik bağlam"
+    }
+  ],
+  "abstained": false,
+  "stale_count": 0,
+  "omitted": 0
+}

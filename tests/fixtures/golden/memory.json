@@ -1,0 +1,112 @@
+{
+  "generation": 1,
+  "identity": {
+    "structured": false,
+    "raw": "# Kimlik\n\nHitap: **Deniz**\n\nDeniz, Atlas ve Çınar projeleriyle ilgili sentetik örnekleri inceler.\n",
+    "records": [
+      {
+        "rid": "d108ea4ad0fe",
+        "title": "Kimlik",
+        "kind": "note",
+        "project": null,
+        "path": "🔮 850-Companion/Core.md",
+        "mtime": "2026-01-01T00:00:00+00:00",
+        "excerpt": "Hitap: Deniz",
+        "body": "# Kimlik\n\nHitap: **Deniz**\n\nDeniz, Atlas ve Çınar projeleriyle ilgili sentetik örnekleri inceler.\n"
+      }
+    ]
+  },
+  "rules": {
+    "structured": true,
+    "raw": "# Kurallar\n\n- **2026-01-05 · Küçük adımlar (kapsam: atlas):** Her adımı ayrı değerlendir. **neden:** Sonuçların kaynağı açık kalır. Kaynak: notes/atlas.md\n- **2026-01-07 · Kısa açıklama (kapsam: genel):** Açıklamayı kısa tut. Kaynak: notes/serbest.md\n- Serbest biçimli bu madde yapılandırılmış kural değildir.\n",
+    "items": [
+      {
+        "date": "2026-01-05",
+        "title": "Küçük adımlar",
+        "scope": "atlas",
+        "text": "Her adımı ayrı değerlendir.",
+        "reason": "Sonuçların kaynağı açık kalır.",
+        "source": "notes/atlas.md",
+        "raw": "- **2026-01-05 · Küçük adımlar (kapsam: atlas):** Her adımı ayrı değerlendir. **neden:** Sonuçların kaynağı açık kalır. Kaynak: notes/atlas.md\n"
+      },
+      {
+        "date": "2026-01-07",
+        "title": "Kısa açıklama",
+        "scope": "genel",
+        "text": "Açıklamayı kısa tut.",
+        "reason": "",
+        "source": "notes/serbest.md",
+        "raw": "- **2026-01-07 · Kısa açıklama (kapsam: genel):** Açıklamayı kısa tut. Kaynak: notes/serbest.md\n"
+      },
+      {
+        "date": "",
+        "title": "",
+        "scope": "",
+        "text": "Serbest biçimli bu madde yapılandırılmış kural değildir.",
+        "reason": "",
+        "source": "",
+        "raw": "- Serbest biçimli bu madde yapılandırılmış kural değildir.\n"
+      }
+    ]
+  },
+  "last_session": {
+    "structured": true,
+    "raw": "# Son oturum\n\n## 2026-01-12 15:30 · claude · session-cinar-20260112\n\n- **Özet:** Çınar projesinin değerlendirmesi hazırlandı.\n- **Sonraki adım:** İlk görevi gözden geçir.\n\n## 2026-01-05 · codex · win-offline\n\n- **Özet:** Atlas örneği çevrimdışı incelendi.\n- **Sonraki adım:** Kavram bir notunu oku.\n\n## Önceki oturumlar\n\nÖnceki oturumların ayrıntıları arşivde tutulur.\n",
+    "card": {
+      "date": "2026-01-12",
+      "time": "2026-01-12T15:30:00+03:00",
+      "label": "claude",
+      "session": "session-cinar-20260112",
+      "items": [
+        [
+          "Özet",
+          "Çınar projesinin değerlendirmesi hazırlandı."
+        ],
+        [
+          "Sonraki adım",
+          "İlk görevi gözden geçir."
+        ]
+      ],
+      "next_step": "İlk görevi gözden geçir.",
+      "raw": "## 2026-01-12 15:30 · claude · session-cinar-20260112\n\n- **Özet:** Çınar projesinin değerlendirmesi hazırlandı.\n- **Sonraki adım:** İlk görevi gözden geçir.\n\n"
+    }
+  },
+  "threads": {
+    "structured": true,
+    "raw": "# Konular\n\n## Active Threads\n\n### Atlas değerlendirmesi\n\n- **Sahip:** Deniz\n- **Durum (2026-01-07):** Etkin\n- **Açık:** İkinci örnek tamamlanacak.\n- **Sonraki adım:** Atlas A3 görevini gözden geçir.\n\n### Çınar için serbest konu\n\nBu konu etiket kullanmadan yazılmış serbest metindir.\n\n## Closed Threads\n\n### İlk hazırlık\n\n- **Sahip:** Deniz\n- **Durum (2026-01-05):** Kapandı\n- **Açık:** Yok.\n- **Sonraki adım:** Yok.\n",
+    "active": [
+      {
+        "title": "Atlas değerlendirmesi",
+        "owner": "Deniz",
+        "status": "Etkin",
+        "status_date": "2026-01-07",
+        "open": "İkinci örnek tamamlanacak.",
+        "next_step": "Atlas A3 görevini gözden geçir.",
+        "extra": [],
+        "raw": "### Atlas değerlendirmesi\n\n- **Sahip:** Deniz\n- **Durum (2026-01-07):** Etkin\n- **Açık:** İkinci örnek tamamlanacak.\n- **Sonraki adım:** Atlas A3 görevini gözden geçir.\n\n"
+      },
+      {
+        "title": "Çınar için serbest konu",
+        "owner": "",
+        "status": "",
+        "status_date": "",
+        "open": "",
+        "next_step": "",
+        "extra": [],
+        "raw": "### Çınar için serbest konu\n\nBu konu etiket kullanmadan yazılmış serbest metindir.\n\n"
+      }
+    ],
+    "closed": [
+      {
+        "title": "İlk hazırlık",
+        "owner": "Deniz",
+        "status": "Kapandı",
+        "status_date": "2026-01-05",
+        "open": "Yok.",
+        "next_step": "Yok.",
+        "extra": [],
+        "raw": "### İlk hazırlık\n\n- **Sahip:** Deniz\n- **Durum (2026-01-05):** Kapandı\n- **Açık:** Yok.\n- **Sonraki adım:** Yok.\n"
+      }
+    ]
+  }
+}

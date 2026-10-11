@@ -1,0 +1,70 @@
+{
+  "generation": 1,
+  "date": "2026-01-12",
+  "receipts": [
+    {
+      "rid": "9f6cedb41369",
+      "time": "2026-01-12T15:00:00.250000+03:00",
+      "event_id": "0000000000000000000000000000000000000000000000000000000000000006",
+      "harness": "claude",
+      "session": "session-cinar-20260112",
+      "summary": "cinar: İlk değerlendirme hazırlandı.",
+      "learned": null,
+      "projects": [
+        "cinar"
+      ],
+      "project_inferred": false,
+      "refs": [
+        {
+          "rid": "7b2b5e377946",
+          "title": "Çınar Projesi",
+          "kind": "note",
+          "project": "cinar",
+          "path": "notes/Çınar Projesi.md",
+          "mtime": "2026-01-12T11:00:00+00:00",
+          "excerpt": "Çınar projesinin ilk değerlendirmesi 12 Ocak 2026 tarihinde yapılır."
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "date": "2026-01-12",
+      "time": "2026-01-12T15:30:00+03:00",
+      "label": "claude",
+      "session": "session-cinar-20260112",
+      "items": [
+        [
+          "Özet",
+          "Çınar projesinin değerlendirmesi hazırlandı."
+        ],
+        [
+          "Sonraki adım",
+          "İlk görevi gözden geçir."
+        ]
+      ],
+      "next_step": "İlk görevi gözden geçir.",
+      "raw": "## 2026-01-12 15:30 · claude · session-cinar-20260112\n\n- **Özet:** Çınar projesinin değerlendirmesi hazırlandı.\n- **Sonraki adım:** İlk görevi gözden geçir.\n\n"
+    }
+  ],
+  "changed": [
+    {
+      "rid": "3009e4568992",
+      "title": "Çınar 1: İlk değerlendirme",
+      "kind": "task",
+      "project": "cinar",
+      "path": "tasks/cinar-1.md",
+      "mtime": "2026-01-12T10:00:00+00:00",
+      "excerpt": "Çınar projesini değerlendirme kuyruğuna al."
+    },
+    {
+      "rid": "7b2b5e377946",
+      "title": "Çınar Projesi",
+      "kind": "note",
+      "project": "cinar",
+      "path": "notes/Çınar Projesi.md",
+      "mtime": "2026-01-12T11:00:00+00:00",
+      "excerpt": "Çınar projesinin ilk değerlendirmesi 12 Ocak 2026 tarihinde yapılır."
+    }
+  ]
+}

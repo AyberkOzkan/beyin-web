@@ -1,0 +1,49 @@
+{
+  "generation": 1,
+  "projects": [
+    {
+      "name": "atlas",
+      "note_rid": "df96cd83303a",
+      "title": "Atlas",
+      "summary": "Atlas, Deniz'in Ocak 2026 için hazırladığı sentetik projedir.",
+      "task_rids": [
+        "94c444847f82",
+        "95f7f782de5c",
+        "053d847a8de2",
+        "df7b9bc04355",
+        "f679f5b8b22d",
+        "ab2bb3ba5e07"
+      ],
+      "knowledge_rids": [
+        "bd66b921adc5"
+      ],
+      "receipt_rids": [
+        "8fc877084ad8",
+        "7bba71b24fde",
+        "b8abe216a0c2"
+      ],
+      "done": 2,
+      "total": 5,
+      "last_activity": "2026-01-07T08:00:00+00:00",
+      "quiet": false
+    },
+    {
+      "name": "cinar",
+      "note_rid": "7b2b5e377946",
+      "title": "Çınar Projesi",
+      "summary": "Çınar projesinin ilk değerlendirmesi 12 Ocak 2026 tarihinde yapılır.",
+      "task_rids": [
+        "3009e4568992"
+      ],
+      "knowledge_rids": [],
+      "receipt_rids": [
+        "9f6cedb41369",
+        "cc8d114910b7"
+      ],
+      "done": 0,
+      "total": 1,
+      "last_activity": "2026-01-12T12:00:00.250000+00:00",
+      "quiet": false
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "generation": 1,
+  "rid": "df96cd83303a",
+  "title": "Atlas",
+  "kind": "note",
+  "project": "atlas",
+  "path": "notes/atlas.md",
+  "mtime": "2026-01-05T08:00:00+00:00",
+  "excerpt": "Atlas, Deniz'in Ocak 2026 için hazırladığı sentetik projedir.",
+  "meta": {},
+  "body": "# Atlas\n\nAtlas, Deniz'in Ocak 2026 için hazırladığı sentetik projedir.\n\n[[kavram-bir]] temel bilgiyi, [[atlas-a2|ikinci aşama]] tamamlanan görevi gösterir.\n[[kavram-iki#Bölüm]] bir başlığa gider; [[olmayan-not]] ve [[gizli]] çözülmez.\n\n```text\n[[kod-icinde]]\n```\n",
+  "links_out": [
+    {
+      "rid": "bd66b921adc5",
+      "title": "Kavram bir",
+      "kind": "fact",
+      "project": "atlas",
+      "path": "knowledge/concepts/kavram-bir.md",
+      "mtime": "2026-01-05T15:00:00+00:00",
+      "excerpt": "Atlas projesinde küçük adımların sonucu izlenir."
+    },
+    {
+      "rid": "f202c75b1940",
+      "title": "Kavram iki",
+      "kind": "fact",
+      "project": null,
+      "path": "knowledge/concepts/kavram-iki.md",
+      "mtime": "2026-01-06T09:00:00+00:00",
+      "excerpt": "Bu bilgi notunun proje alanı yoktur."
+    },
+    {
+      "rid": "95f7f782de5c",
+      "title": "Atlas A2: İkinci aşamayı tamamla",
+      "kind": "task",
+      "project": "atlas",
+      "path": "tasks/atlas-a2.md",
+      "mtime": "2026-01-01T00:00:00+00:00",
+      "excerpt": "Atlas projesi için 2. sentetik görev."
+    }
+  ],
+  "links_in": [
+    {
+      "rid": "f202c75b1940",
+      "title": "Kavram iki",
+      "kind": "fact",
+      "project": null,
+      "path": "knowledge/concepts/kavram-iki.md",
+      "mtime": "2026-01-06T09:00:00+00:00",
+      "excerpt": "Bu bilgi notunun proje alanı yoktur."
+    }
+  ],
+  "unresolved": [
+    "gizli",
+    "olmayan-not"
+  ],
+  "receipts": [
+    {
+      "rid": "8fc877084ad8",
+      "time": "2026-01-06T01:30:00+03:00",
+      "event_id": "0000000000000000000000000000000000000000000000000000000000000003",
+      "harness": "claude",
+      "session": null,
+      "summary": "atlas: Akşam değerlendirmesi tamamlandı.",
+      "learned": null,
+      "projects": [
+        "atlas"
+      ],
+      "project_inferred": false,
+      "refs": [
+        {
+          "rid": "df96cd83303a",
+          "title": "Atlas",
+          "kind": "note",
+          "project": "atlas",
+          "path": "notes/atlas.md",
+          "mtime": "2026-01-05T08:00:00+00:00",
+          "excerpt": "Atlas, Deniz'in Ocak 2026 için hazırladığı sentetik projedir."
+        }
+      ]
+    },
+    {
+      "rid": "7bba71b24fde",
+      "time": "2026-01-05T18:30:00+03:00",
+      "event_id": "0000000000000000000000000000000000000000000000000000000000000002",
+      "harness": "codex",
+      "session": null,
+      "summary": "atlas: Kavram bir ve proje notu birlikte incelendi.",
+      "learned": "Küçük adımların sonuçları ayrı ayrı izlenebilir.",
+      "projects": [
+        "atlas"
+      ],
+      "project_inferred": false,
+      "refs": [
+        {
+          "rid": "bd66b921adc5",
+          "title": "Kavram bir",
+          "kind": "fact",
+          "project": "atlas",
+          "path": "knowledge/concepts/kavram-bir.md",
+          "mtime": "2026-01-05T15:00:00+00:00",
+          "excerpt": "Atlas projesinde küçük adımların sonucu izlenir."
+        },
+        {
+          "rid": "df96cd83303a",
+          "title": "Atlas",
+          "kind": "note",
+          "project": "atlas",
+          "path": "notes/atlas.md",
+          "mtime": "2026-01-05T08:00:00+00:00",
+          "excerpt": "Atlas, Deniz'in Ocak 2026 için hazırladığı sentetik projedir."
+        }
+      ]
+    },
+    {
+      "rid": "b8abe216a0c2",
+      "time": "2026-01-05T11:10:00+03:00",
+      "event_id": "0000000000000000000000000000000000000000000000000000000000000001",
+      "harness": "claude",
+      "session": null,
+      "summary": "atlas: Temel not hazırlandı.",
+      "learned": null,
+      "projects": [
+        "atlas"
+      ],
+      "project_inferred": false,
+      "refs": [
+        {
+          "rid": "df96cd83303a",
+          "title": "Atlas",
+          "kind": "note",
+          "project": "atlas",
+          "path": "notes/atlas.md",
+          "mtime": "2026-01-05T08:00:00+00:00",
+          "excerpt": "Atlas, Deniz'in Ocak 2026 için hazırladığı sentetik projedir."
+        }
+      ]
+    }
+  ],
+  "wikilinks": {
+    "atlas-a2": "95f7f782de5c",
+    "kavram-bir": "bd66b921adc5",
+    "kavram-iki": "f202c75b1940"
+  }
+}

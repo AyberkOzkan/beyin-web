@@ -1,0 +1,72 @@
+{
+  "generation": 1,
+  "nodes": [
+    {
+      "id": "7ea70366b088",
+      "title": "index",
+      "kind": "note",
+      "project": null,
+      "degree": 2
+    },
+    {
+      "id": "95f7f782de5c",
+      "title": "Atlas A2: İkinci aşamayı tamamla",
+      "kind": "task",
+      "project": "atlas",
+      "degree": 1
+    },
+    {
+      "id": "bd66b921adc5",
+      "title": "Kavram bir",
+      "kind": "fact",
+      "project": "atlas",
+      "degree": 2
+    },
+    {
+      "id": "df96cd83303a",
+      "title": "Atlas",
+      "kind": "note",
+      "project": "atlas",
+      "degree": 4
+    },
+    {
+      "id": "f202c75b1940",
+      "title": "Kavram iki",
+      "kind": "fact",
+      "project": null,
+      "degree": 3
+    }
+  ],
+  "edges": [
+    {
+      "source": "7ea70366b088",
+      "target": "bd66b921adc5",
+      "type": "link"
+    },
+    {
+      "source": "7ea70366b088",
+      "target": "f202c75b1940",
+      "type": "link"
+    },
+    {
+      "source": "df96cd83303a",
+      "target": "95f7f782de5c",
+      "type": "link"
+    },
+    {
+      "source": "df96cd83303a",
+      "target": "bd66b921adc5",
+      "type": "link"
+    },
+    {
+      "source": "df96cd83303a",
+      "target": "f202c75b1940",
+      "type": "link"
+    },
+    {
+      "source": "f202c75b1940",
+      "target": "df96cd83303a",
+      "type": "link"
+    }
+  ]
+}

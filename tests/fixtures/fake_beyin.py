@@ -65,8 +65,8 @@ def main() -> int:
         output = {
             "records": [{
                 "id": "fake-1", "kind": "note", "revision": 1,
-                "source": "notes/Çınar Projesi.md", "source_sha256": "0" * 64,
-                "text": "Sentetik bağlam", "visibility": "internal",
+                "source": os.environ.get("FAKE_BEYIN_SOURCE", "notes/Çınar Projesi.md"), "source_sha256": "0" * 64,
+                "text": os.environ.get("FAKE_BEYIN_TEXT", "Sentetik bağlam"), "visibility": "internal",
                 "text_truncated": False, "facts": {}, "supersedes": [],
             }],
             "citations": [{"id": "fake-1", "source": "notes/Çınar Projesi.md"}],
