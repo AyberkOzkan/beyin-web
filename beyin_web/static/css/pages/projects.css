@@ -1,1 +1,41 @@
 /* Styles of the projects page and of the components introduced with it. */
+.projects-page { align-items: start; overflow-wrap: anywhere; }
+.projects-left, .projects-right { align-content: start; }
+.projects-left h1 { font-size: 36px; margin-bottom: 0; }
+.projects-controls .filter-box input { min-width: 0; }
+.projects-controls .tab { flex: 1; }
+.projects-project { display: grid; gap: 12px; padding: 20px; color: var(--ink); text-decoration: none; }
+.projects-project > strong { font: 700 25px/1.2 var(--font-heading); }
+.projects-summary { margin: 0; color: var(--ink-soft); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.projects-project time { font-size: 12px; color: var(--ink-soft); }
+.projects-project:hover { background: var(--paper-side); }
+.projects-quiet { opacity: .6; }
+.projects-selected { background: var(--line); }
+.projects-selected > strong { color: var(--sage-deep); }
+.projects-page .progress { min-width: 0; }
+.projects-page .progress meter { min-width: 0; flex: 1; }
+.projects-detail-heading { border-bottom: 1px solid var(--line); margin-bottom: 24px; padding-bottom: 20px; }
+.projects-detail-heading h2 { font-size: 40px; }
+.projects-status { color: var(--ink-soft); font-size: 13px; }
+.projects-status .progress { flex: 1 1 160px; }
+.projects-status time { flex: 1 1 160px; }
+.projects-middle .skeleton { margin-bottom: 16px; }
+.projects-right .card { padding: 20px; }
+.projects-right .card-title h2 { font-size: 25px; }
+.projects-right .list-row { align-items: flex-start; }
+.projects-right .list-row > .icon { margin-top: 3px; }
+.projects-right .list-row-content strong { font-weight: 500; line-height: 1.4; }
+.projects-right .list-row-content small { font-size: 13px; margin-top: 4px; }
+.projects-task[data-status="cancelled"] strong { text-decoration: line-through; color: var(--ink-soft); }
+.projects-right .list-row:hover strong { text-decoration: underline; }
+.projects-task[data-status="cancelled"]:hover strong { text-decoration: underline line-through; }
+.projects-toc { background: var(--paper-side); border: 1px solid var(--line); border-radius: var(--radius-control); padding: 16px; margin-bottom: 24px; }
+.projects-toc h3 { font-size: 23px; margin-bottom: 12px; }
+.projects-toc ol { padding-left: 24px; margin: 0 0 16px; }
+.projects-toc li { margin: 6px 0; }
+.projects-expand { max-width: 100%; }
+.projects-note-intro { margin-bottom: 20px; }
+.projects-note-section { border-top: 1px solid var(--line); padding: 16px 0; scroll-margin-top: 24px; }
+.projects-note-section summary { cursor: pointer; font: 700 25px/1.25 var(--font-heading); }
+.projects-section-body { padding-top: 16px; min-width: 0; }
+.projects-middle pre { max-width: 100%; }
