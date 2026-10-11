@@ -2,7 +2,9 @@ import { get, startPulse } from "./api.js";
 import { setMessages, t, formatDate, formatTime } from "./i18n.js";
 import { el, icon, prepareIcons } from "./dom.js";
 import { parseRoute } from "./router.js";
-import { errorState, healthDrawer, statusDot, skeleton, illustrationSlot, setDrawings } from "./components/index.js";
+import { errorState, statusDot, skeleton, illustrationSlot, setDrawings } from "./components/index.js";
+import { healthDrawer } from "./components/health-drawer.js";
+import { indicatorState } from "./pages/memory-model.js";
 import * as placeholder from "./pages/placeholder.js";
 import * as showcase from "./pages/showcase.js";
 import * as home from "./pages/home.js";
@@ -51,6 +53,10 @@ function showLogin() {
 }
 
 function updatePulse(data) {
+  const indicator = document.querySelector(".local-status");
+  const status = indicatorState(data);
+  indicator.setAttribute("aria-label", t(status.key));
+  indicator.replaceChildren(statusDot(status.tone, t(status.key)), t("shell.local"));
   document.getElementById("brand-version").textContent = data.beyin.version ? t("shell.version", { version: data.beyin.version }) : t("shell.plainMode");
   document.getElementById("vault-status").replaceChildren(
     el("p", { class: "vault-name" }, statusDot("active", t("shell.local")), el("strong", {}, data.vault_name)),

@@ -1,1 +1,29 @@
 /* Styles of the memory page and of the components introduced with it. */
+.memory-page { max-width: 1120px; margin: 0 auto; overflow-wrap: anywhere; }
+.memory-tabs { margin-bottom: 24px; flex-wrap: wrap; }
+.memory-section { scroll-margin-top: 24px; }
+.memory-filter { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.memory-filter select { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-control); padding: 8px 12px; max-width: 100%; }
+.memory-meta { margin-bottom: 16px; }
+.memory-rule p:last-child, .memory-field p, .memory-thread p:last-child { margin-bottom: 0; }
+.memory-field { margin-bottom: 16px; }
+.memory-field > strong { display: block; margin-bottom: 4px; }
+.memory-next-step { background: var(--paper-side); padding: 16px; border-radius: var(--radius-control); }
+.memory-reason summary, .memory-closed summary { cursor: pointer; padding: 8px 0; }
+.memory-reason[open] summary, .memory-closed[open] summary { margin-bottom: 12px; }
+.memory-reason .memory-field:first-of-type { margin-top: 12px; }
+.memory-raw { white-space: pre-wrap; }
+.health-drawer { width: 460px; max-width: calc(100vw - 48px); height: 100dvh; overflow-y: auto; overflow-wrap: anywhere; }
+.health-body > .card { padding: 20px; }
+.health-summary { margin: 0; }
+.health-entry { margin-bottom: 12px; }
+.health-entry:last-child { margin-bottom: 0; }
+.health-entry dt { color: var(--ink-soft); }
+.health-entry dd { margin: 0; }
+.health-file { min-width: 0; }
+.health-file p { margin-bottom: 8px; }
+.health-over-limit { background: var(--paper-side); padding: 16px; border-radius: var(--radius-control); }
+.health-over-limit meter::-webkit-meter-optimum-value { background: var(--red); }
+.health-warnings { margin: 0; padding-left: 20px; }
+.health-warnings li { margin-bottom: 12px; }
+.health-warnings code { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }

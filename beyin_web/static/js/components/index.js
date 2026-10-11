@@ -100,22 +100,3 @@ export function illustrationSlot(name, available = drawings) {
   if (!source || !source.startsWith(`/static/img/${name}.`) || /[?#]/.test(source)) return null;
   return el("img", { class: "illustration", src: source, alt: "", onerror: event => event.target.remove() });
 }
-
-export function healthDrawer() {
-  const dialog = el("dialog", { class: "health-drawer", "aria-labelledby": "health-title" },
-    el("div", { class: "drawer-heading" }, el("h2", { id: "health-title" }, t("health.title")),
-      el("button", { class: "icon-button", type: "button", "aria-label": t("action.close"), onclick: () => dialog.close() }, icon("x"))),
-    emptyState(t("health.pendingTitle"), t("health.pendingMessage")));
-  let opener;
-  dialog.addEventListener("close", () => opener?.focus());
-  dialog.addEventListener("click", event => {
-    if (event.target !== dialog) return;
-    const bounds = dialog.getBoundingClientRect();
-    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
-  });
-  return {
-    root: dialog,
-    open: () => { if (!dialog.open) { opener = document.activeElement; dialog.showModal(); } },
-    close: () => { if (dialog.open) dialog.close(); },
-  };
-}
