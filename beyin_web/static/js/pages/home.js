@@ -180,6 +180,8 @@ async function load(state) {
   }
 }
 
+export const handlesChanges = true;
+
 export function render(root) {
   destroy();
   const state = { root: el("div", { class: "home-page", "aria-busy": "true" }),

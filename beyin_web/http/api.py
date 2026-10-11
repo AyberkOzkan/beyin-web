@@ -319,7 +319,8 @@ class API:
                     "changed": [record_summary(record) for record in result["changed"]]}
         if path == "journal/heatmap":
             weeks = self._integer(params, "weeks", 20, 520, 0)
-            return {"days": journal.heatmap(weeks, now.date(), models.receipts, tz)}
+            # The client must not guess the date from its own clock or zone.
+            return {"today": now.date().isoformat(), "days": journal.heatmap(weeks, now.date(), models.receipts, tz)}
         if path == "graph":
             flags = {}
             for name, default in (("receipts", "0"), ("unresolved", "0"), ("connected_only", "1")):

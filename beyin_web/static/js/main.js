@@ -6,13 +6,20 @@ import { errorState, healthDrawer, statusDot, skeleton, illustrationSlot, setDra
 import * as placeholder from "./pages/placeholder.js";
 import * as showcase from "./pages/showcase.js";
 import * as home from "./pages/home.js";
+import * as projects from "./pages/projects.js";
+import * as knowledge from "./pages/knowledge.js";
+import * as record from "./pages/record.js";
+import * as journal from "./pages/journal.js";
+import * as graph from "./pages/graph.js";
+import * as search from "./pages/search.js";
+import * as memory from "./pages/memory.js";
 
 const navigation = [
   ["home", "#/", "house"], ["projects", "#/projeler", "folder-kanban"],
   ["knowledge", "#/bilgi", "book-open"], ["journal", "#/gunlukler", "calendar-days"],
   ["graph", "#/grafik", "waypoints"], ["search", "#/arama", "search"], ["memory", "#/hafiza", "brain"],
 ];
-const pages = { showcase, home };
+const pages = { showcase, home, projects, knowledge, record, journal, graph, search, memory };
 let currentPage;
 let stopPulse = () => {};
 let unauthorized = false;
@@ -85,7 +92,8 @@ function buildShell(pulse) {
     }
   });
   document.addEventListener("beyin:health", drawer.open);
-  document.addEventListener("beyin:changed", () => { if (currentPage !== home) route(); });
+  // A page that refreshes itself exports handlesChanges; the others are simply rendered again.
+  document.addEventListener("beyin:changed", () => { if (!currentPage?.handlesChanges) route(); });
   window.addEventListener("hashchange", route);
   document.getElementById("startup").replaceChildren();
   document.getElementById("shell").hidden = false;

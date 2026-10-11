@@ -3,6 +3,7 @@ const routes = [
   [/^\/projeler$/, "projects", []],
   [/^\/projeler\/([^/]+)$/, "projects", ["name"]],
   [/^\/bilgi$/, "knowledge", []],
+  [/^\/bilgi\/([^/]+)$/, "knowledge", ["rid"]],
   [/^\/not\/([^/]+)$/, "record", ["rid"]],
   [/^\/gunlukler$/, "journal", []],
   [/^\/gunlukler\/(\d{4}-\d{2}-\d{2})$/, "journal", ["date"]],

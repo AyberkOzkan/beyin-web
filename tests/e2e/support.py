@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import tempfile
@@ -101,3 +102,81 @@ class BrowserTestCase(unittest.TestCase):
             self.assertEqual(self.console_errors(), [], "Browser console contains errors or CSP violations")
         finally:
             super().tearDown()
+
+
+class PageTestCase(BrowserTestCase):
+    """A fresh vault copy and server per test, with the clock of the golden files.
+
+    Page tests subclass this: the pages then show exactly what tests/fixtures/golden/*.json
+    contains. Set ``beyin = False`` for plain mode and ``display_name`` as needed, or change
+    ``self.vault`` and call ``restart_server()``.
+    """
+
+    beyin: bool = True
+    display_name: str = ""
+    vault: Path
+    messages: dict[str, Any]
+
+    def setUp(self) -> None:
+        super().setUp()
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.vault = make_vault(Path(temporary.name))
+        static = Path(__file__).resolve().parents[2] / "beyin_web" / "static"
+        self.messages = json.loads((static / "i18n" / "tr.json").read_text(encoding="utf-8"))
+        self.driver.set_window_size(1672, 941)
+        self._stop_page_server: Any = None
+        self.restart_server()
+        self.addCleanup(self.stop_page_server)
+
+    def restart_server(self) -> None:
+        from scripts.altin_guncelle import NOW, TZ
+        self.stop_page_server()
+        self.settings = Settings(vault=self.vault, port=0, token_enabled=False, display_name=self.display_name)
+        self.source = MarkdownSource(self.vault, min_interval=0)
+        self.runtime = BeyinRuntime(self.vault, script=FIXTURES / "fake_beyin.py", enabled=self.beyin)
+        server = create_server(self.settings, self.source, self.runtime)
+        server.api.clock = lambda: NOW
+        server.api.tz = TZ
+        thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
+        thread.start()
+        self.server = server
+        self.base_url = f"http://127.0.0.1:{server.server_address[1]}"
+
+        def stop() -> None:
+            server.shutdown()
+            thread.join(timeout=5)
+            server.server_close()
+
+        self._stop_page_server = stop
+
+    def stop_page_server(self) -> None:
+        if self._stop_page_server is not None:
+            self._stop_page_server()
+            self._stop_page_server = None
+
+    def golden(self, name: str) -> Any:
+        return json.loads((FIXTURES / "golden" / f"{name}.json").read_text(encoding="utf-8"))
+
+    def wait_until(self, condition: Any, timeout: float = 5) -> Any:
+        from selenium.webdriver.support.ui import WebDriverWait
+        return WebDriverWait(self.driver, timeout).until(condition)
+
+    def all(self, css: str) -> list[Any]:
+        return list(self.driver.find_elements("css selector", css))
+
+    def hash(self) -> str:
+        return str(self.driver.execute_script("return location.hash"))
+
+    def assert_no_overflow(self, widths: tuple[int, ...] = (1280, 1672)) -> None:
+        for width in widths:
+            self.driver.set_window_size(width, 941)
+            overflow = self.driver.execute_script(
+                "return document.documentElement.scrollWidth - document.documentElement.clientWidth")
+            self.assertLessEqual(overflow, 0, f"horizontal overflow at {width}px")
+        self.driver.set_window_size(1672, 941)
+
+    def assert_clean_text(self, css: str = "#main") -> None:
+        words = self.text(css).split()
+        for leaked in ("null", "undefined", "NaN", "[object"):
+            self.assertNotIn(leaked, words)
