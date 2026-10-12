@@ -12,13 +12,13 @@ import { setMessages } from "../../beyin_web/static/js/i18n.js";
 setMessages(JSON.parse(readFileSync(new URL("../../beyin_web/static/i18n/tr.json", import.meta.url), "utf8")));
 
 test("navigation arrows wrap and Home and End select the endpoints", () => {
-  assert.equal(navigationIndex("ArrowDown", 6, 7), 0);
-  assert.equal(navigationIndex("ArrowUp", 0, 7), 6);
-  assert.equal(navigationIndex("ArrowDown", 2, 7), 3);
-  assert.equal(navigationIndex("ArrowUp", 2, 7), 1);
-  assert.equal(navigationIndex("Home", 4, 7), 0);
-  assert.equal(navigationIndex("End", 4, 7), 6);
-  assert.equal(navigationIndex("Tab", 4, 7), -1);
+  assert.equal(navigationIndex("ArrowDown", 7, 8), 0);
+  assert.equal(navigationIndex("ArrowUp", 0, 8), 7);
+  assert.equal(navigationIndex("ArrowDown", 2, 8), 3);
+  assert.equal(navigationIndex("ArrowUp", 2, 8), 1);
+  assert.equal(navigationIndex("Home", 4, 8), 0);
+  assert.equal(navigationIndex("End", 4, 8), 7);
+  assert.equal(navigationIndex("Tab", 4, 8), -1);
   assert.equal(navigationIndex("End", 0, 0), -1);
 });
 
@@ -28,7 +28,7 @@ test("focus moves only when changing page or addressed record", () => {
   assert.equal(shouldFocusMain(route("home"), route("record", { rid: "a" })), true);
   assert.equal(shouldFocusMain(route("record", { rid: "a" }), route("record", { rid: "b" })), true);
   assert.equal(shouldFocusMain(route("record", { rid: "a" }), route("record", { rid: "a", q: "x" })), false);
-  for (const page of ["projects", "knowledge", "journal", "graph", "search", "memory"]) {
+  for (const page of ["projects", "knowledge", "journal", "graph", "search", "memory", "reports"]) {
     assert.equal(shouldFocusMain(route(page), route(page, { tab: "active", date: "2026-01-12", bolum: "kurallar" })), false);
   }
 });

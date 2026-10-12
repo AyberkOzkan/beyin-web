@@ -17,6 +17,7 @@ from beyin_web.domain import graph, journal
 from beyin_web.domain.obsidian import obsidian_uri, obsidian_vault_uri
 from beyin_web.domain.projects import Project, build_projects
 from beyin_web.domain.receipts import Receipt, build_receipts
+from beyin_web.domain.reports import build_report
 from beyin_web.domain.search import search
 from beyin_web.domain.tasks import OPEN_STATUSES, TASK_STATUSES, Task, build_tasks
 from beyin_web.runtime.beyin_cli import RuntimeUnavailable, health_summary
@@ -156,6 +157,7 @@ class API:
             "tasks": {"project", "status"}, "search": {"q", "mode", "kind", "project", "limit"},
             "graph": {"kinds", "project", "receipts", "unresolved", "connected_only", "focus", "depth"},
             "journal/heatmap": {"weeks"},
+            "reports": {"week"},
         }.get(path, set())
         for name, values in query.items():
             if name not in allowed or len(values) != 1:
@@ -189,7 +191,7 @@ class API:
             digest = hashlib.sha256(json.dumps(data, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:20]
             return data, f'"{snapshot.generation}-{digest}"'
         dynamic = (now.date().isoformat(), _period(now)) if path in {"home", "journal/heatmap"} else (
-            (now.date().isoformat(),) if path == "projects" or path.startswith("projects/") else ())
+            (now.date().isoformat(),) if path in {"projects", "reports"} or path.startswith("projects/") else ())
         key = (path, tuple(sorted(params.items())), *dynamic)
         beyin_search = path == "search" and params.get("mode") == "beyin"
         if beyin_search or key not in self._responses:
@@ -254,6 +256,28 @@ class API:
     ) -> dict[str, object]:
         tz = now.tzinfo
         assert tz is not None
+        if path == "reports":
+            raw = params.get("week", now.date().isoformat())
+            try:
+                if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", raw):
+                    raise ValueError
+                anchor = date.fromisoformat(raw)
+                start = anchor - timedelta(days=anchor.weekday())
+                if start > now.date() - timedelta(days=now.weekday()):
+                    raise ValueError
+                end = start + timedelta(days=6)
+                min(end, now.date()) - timedelta(days=29)
+            except (ValueError, OverflowError):
+                raise APIError(400, "bad_request", "week") from None
+            result = build_report(snapshot, models.links, models.tasks, models.receipts,
+                                  self._projects(snapshot, models, now), anchor, now.date(), tz)
+            knowledge = cast(dict[str, object], result["knowledge"])
+            worked = cast(list[dict[str, object]], knowledge["most_worked"])
+            knowledge["most_worked"] = [
+                {"record": record_summary(snapshot.records[cast(str, item["rid"])]), "receipts": item["receipts"]}
+                for item in worked
+            ]
+            return result
         if path == "projects":
             return {"projects": self._projects(snapshot, models, now)}
         if path.startswith("projects/"):
@@ -445,7 +469,7 @@ def register_api(
     server: BeyinHTTPServer, *, clock: Callable[[], datetime] | None = None, tz: tzinfo | None = None,
 ) -> API:
     api = API(server, clock=clock, tz=tz)
-    pattern = r"/api/v1/(?P<endpoint>pulse|home|projects(?:/[^/]+)?|tasks|knowledge|records/[^/]+|journal/(?:months/[^/]+|days/[^/]+|heatmap)|graph|search|memory|health)"
+    pattern = r"/api/v1/(?P<endpoint>pulse|home|projects(?:/[^/]+)?|tasks|knowledge|records/[^/]+|journal/(?:months/[^/]+|days/[^/]+|heatmap)|graph|search|memory|reports|health)"
     server.routes = [(route, handler) for route, handler in server.routes if route.pattern != pattern]
     server.register(pattern, api.handle)
     server.api = api

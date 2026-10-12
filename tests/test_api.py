@@ -147,7 +147,7 @@ class APITests(unittest.TestCase):
         self.assertIn("Yeni içerik.", json.loads(after)["body"])
 
     def test_time_dependent_etags(self) -> None:
-        endpoints = ("/home", "/projects", "/projects/atlas", "/journal/heatmap")
+        endpoints = ("/home", "/projects", "/projects/atlas", "/journal/heatmap", "/reports")
         old = {endpoint: request(self.server, endpoint)[1]["ETag"] for endpoint in endpoints}
         self.now += timedelta(days=1)
         for endpoint in endpoints:
@@ -166,6 +166,41 @@ class APITests(unittest.TestCase):
         self.assertFalse(before["project"]["quiet"])
         self.now += timedelta(days=1)
         self.assertTrue(self.payload("/projects/quiet")["project"]["quiet"])
+
+    def test_reports_default_week_validation_and_midnight(self) -> None:
+        before = self.payload("/reports")
+        self.assertEqual(before["week"]["start"], "2026-01-12")
+        self.assertEqual(before, self.payload("/reports?week=2026-01-18"))
+        self.assertEqual(before["today"], "2026-01-12")
+        self.assertEqual(before["month"]["end"], before["today"])
+        _, headers, _ = request(self.server, "/reports")
+        self.assertEqual(request(self.server, "/reports", headers["ETag"])[0], 304)
+        self.now += timedelta(days=1)
+        status, after_headers, body = request(self.server, "/reports", headers["ETag"])
+        self.assertEqual(status, 200)
+        self.assertNotEqual(headers["ETag"], after_headers["ETag"])
+        self.assertNotEqual(json.loads(body), before)
+        for query, parameter in (("week=20260107", "week"), ("week=2026-02-30", "week"),
+                                 ("week=2026-01-19", "week"), ("week=", "week"),
+                                 ("week=2026-01-07&week=2026-01-08", "week"), ("other=secret", "other")):
+            with self.subTest(query=query):
+                self.assertEqual(self.payload("/reports?" + query, 400)["error"],
+                                 {"code": "bad_request", "message": "invalid_parameter: " + parameter})
+
+    def test_reports_private_records_and_receipts_do_not_affect_any_values(self) -> None:
+        before = self.payload("/reports?week=2026-01-07")
+        (self.vault / "notes" / "private-report.md").write_text(
+            '---\nvisibility: private\nproject: secret\n---\n# SECRET-NOTE\n', encoding="utf-8")
+        (self.vault / "receipts" / "private-report.md").write_text(
+            '---\nkind: receipt\nvisibility: private\ncreated_at: "2026-01-07T12:00:00+03:00"\n'
+            'refs: [notes/atlas.md]\n---\nSECRET-SUMMARY\nÖğrenilen: SECRET-LEARNED\n', encoding="utf-8")
+        after = self.payload("/reports?week=2026-01-07")
+        self.assertEqual({key: value for key, value in before.items() if key != "generation"},
+                         {key: value for key, value in after.items() if key != "generation"})
+        self.assertNotIn("SECRET", json.dumps(after))
+        for item in after["knowledge"]["most_worked"]:
+            record = self.server.source.snapshot().records[item["record"]["rid"]]
+            self.assertEqual(item["record"], api.record_summary(record))
 
     def test_runtime_dependent_etags(self) -> None:
         for endpoint in ("/pulse", "/health"):

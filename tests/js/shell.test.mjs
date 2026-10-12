@@ -52,6 +52,7 @@ test("every route in the contract parses with decoded parameters", () => {
     ["#/grafik?odak=abc", "graph", { odak: "abc" }], ["#/grafik", "graph", {}],
     ["#/arama?q=%C4%B1%C5%9F%C4%B1k+ve+bilgi", "search", { q: "ışık ve bilgi" }],
     ["#/hafiza", "memory", {}], ["#/_vitrin", "showcase", {}],
+    ["#/raporlar", "reports", {}], ["#/raporlar?hafta=2026-01-07", "reports", { hafta: "2026-01-07" }],
     ["#/missing", "notFound", {}], ["#/projeler/%XX", "notFound", {}],
   ];
   for (const [hash, page, params] of cases) assert.deepEqual(parseRoute(hash), { page, params });

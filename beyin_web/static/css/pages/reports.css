@@ -1,0 +1,44 @@
+.reports-page { display: grid; gap: 24px; }
+.reports-notice { display: flex; align-items: center; gap: 8px; color: var(--ink-soft); }
+.reports-navigation { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; }
+.reports-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.reports-grid > .card { min-width: 0; }
+.reports-body { margin-top: 16px; }
+.reports-period { display: grid; gap: 20px; }
+.reports-chart { display: block; width: 100%; min-width: 0; }
+.reports-chart text { fill: var(--ink-soft); font-size: 12px; }
+.reports-axis { stroke: var(--line); }
+.reports-bar, .reports-area { fill: var(--sage); }
+.reports-line { fill: none; stroke: var(--sage-deep); stroke-width: 2; }
+.reports-dot { fill: var(--sage-deep); }
+.reports-stats { margin: 0; display: grid; gap: 12px; }
+.reports-stats > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+.reports-stats dd { margin: 0; text-align: right; }
+.reports-stats small { grid-column: 1 / -1; color: var(--ink-soft); }
+.reports-project { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.reports-project:last-child { border-bottom: 0; }
+.reports-project h3 { margin: 0 0 8px; }
+.reports-project p { margin: 8px 0; }
+.reports-project a, .reports-worked, .reports-learned { color: var(--ink); text-decoration: none; }
+.reports-project a:hover h3, .reports-worked:hover strong, .reports-learned:hover p { text-decoration: underline; text-underline-offset: 3px; }
+.reports-quiet, .reports-quiet a { color: var(--ink-soft); }
+#reports-knowledge h3 { margin: 28px 0 8px; font-size: 20px; }
+.reports-counts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; text-align: center; }
+.reports-counts strong { display: block; font-size: 26px; }
+.reports-counts span { font-size: 14px; }
+.reports-distribution { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; align-items: center; gap: 12px; padding: 6px 0; }
+.reports-distribution span { overflow-wrap: anywhere; }
+.reports-distribution strong { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
+.reports-distribution-bar { width: 100%; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.reports-worked { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; }
+.reports-worked strong { min-width: 0; overflow-wrap: anywhere; }
+.reports-worked small { flex-shrink: 0; color: var(--ink-soft); }
+.reports-learned { display: block; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.reports-learned:last-child { border-bottom: 0; }
+.reports-learned time { color: var(--ink-soft); font-size: 14px; }
+.reports-learned p { color: var(--ink); margin: 8px 0; overflow-wrap: anywhere; }
+@media (min-width: 1200px) {
+  .reports-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #reports-learned { grid-column: 1 / -1; }
+  .reports-period { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: center; }
+}

@@ -35,6 +35,7 @@ ENDPOINTS: dict[str, str] = {
     "journal_heatmap": "/journal/heatmap", "graph": "/graph",
     "search": "/search?q=Atlas", "search_beyin": "/search?q=Atlas&mode=beyin",
     "memory": "/memory", "health": "/health",
+    "reports": "/reports?week=2026-01-07",
 }
 
 

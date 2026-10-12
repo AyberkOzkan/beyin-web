@@ -132,7 +132,8 @@ def measure_api(server: BeyinHTTPServer, snapshot: VaultSnapshot, repeat: int) -
         measure_endpoint(server, "/search?" + query + "&mode=beyin", repeat)
     else:
         skipped("/search?mode=beyin", "başlıklarda arama sözcüğü yok")
-    measure_endpoint(server, "/memory", repeat)
+    for endpoint in ("/memory", "/reports"):
+        measure_endpoint(server, endpoint, repeat)
     if server.runtime.available:
         measure_endpoint(server, "/health", repeat)
     else:

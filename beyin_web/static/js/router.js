@@ -10,6 +10,7 @@ const routes = [
   [/^\/grafik$/, "graph", []],
   [/^\/arama$/, "search", []],
   [/^\/hafiza$/, "memory", []],
+  [/^\/raporlar$/, "reports", []],
   [/^\/_vitrin$/, "showcase", []],
 ];
 

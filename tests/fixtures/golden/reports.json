@@ -1,0 +1,148 @@
+{
+  "generation": 1,
+  "today": "2026-01-12",
+  "week": {
+    "start": "2026-01-05",
+    "end": "2026-01-11",
+    "days": {
+      "2026-01-05": 2,
+      "2026-01-06": 1,
+      "2026-01-07": 2,
+      "2026-01-08": 0,
+      "2026-01-09": 0,
+      "2026-01-10": 0,
+      "2026-01-11": 0
+    },
+    "receipts": 5,
+    "previous_receipts": 0,
+    "active_days": 3,
+    "worked_notes": 2,
+    "learned_count": 1
+  },
+  "month": {
+    "start": "2025-12-13",
+    "end": "2026-01-11",
+    "days": {
+      "2025-12-13": 0,
+      "2025-12-14": 0,
+      "2025-12-15": 0,
+      "2025-12-16": 0,
+      "2025-12-17": 0,
+      "2025-12-18": 0,
+      "2025-12-19": 0,
+      "2025-12-20": 0,
+      "2025-12-21": 0,
+      "2025-12-22": 0,
+      "2025-12-23": 0,
+      "2025-12-24": 0,
+      "2025-12-25": 0,
+      "2025-12-26": 0,
+      "2025-12-27": 0,
+      "2025-12-28": 0,
+      "2025-12-29": 0,
+      "2025-12-30": 0,
+      "2025-12-31": 0,
+      "2026-01-01": 0,
+      "2026-01-02": 0,
+      "2026-01-03": 0,
+      "2026-01-04": 0,
+      "2026-01-05": 2,
+      "2026-01-06": 1,
+      "2026-01-07": 2,
+      "2026-01-08": 0,
+      "2026-01-09": 0,
+      "2026-01-10": 0,
+      "2026-01-11": 0
+    },
+    "receipts": 5,
+    "previous_receipts": 0,
+    "active_days": 3,
+    "worked_notes": 2,
+    "learned_count": 1
+  },
+  "learned": [
+    {
+      "rid": "7bba71b24fde",
+      "time": "2026-01-05T18:30:00+03:00",
+      "day": "2026-01-05",
+      "text": "Küçük adımların sonuçları ayrı ayrı izlenebilir.",
+      "projects": [
+        "atlas"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "atlas",
+      "title": "Atlas",
+      "done": 2,
+      "total": 5,
+      "quiet": false,
+      "open_tasks": 3,
+      "week_receipts": 3,
+      "month_receipts": 3
+    },
+    {
+      "name": "cinar",
+      "title": "Çınar Projesi",
+      "done": 0,
+      "total": 1,
+      "quiet": false,
+      "open_tasks": 1,
+      "week_receipts": 1,
+      "month_receipts": 1
+    }
+  ],
+  "knowledge": {
+    "counts": {
+      "notes": 7,
+      "knowledge": 2,
+      "tasks": 7,
+      "receipts": 6,
+      "links": 6
+    },
+    "by_project": [
+      {
+        "project": "atlas",
+        "notes": 1,
+        "knowledge": 1
+      },
+      {
+        "project": "cinar",
+        "notes": 1,
+        "knowledge": 0
+      },
+      {
+        "project": null,
+        "notes": 5,
+        "knowledge": 1
+      }
+    ],
+    "most_worked": [
+      {
+        "record": {
+          "rid": "df96cd83303a",
+          "title": "Atlas",
+          "kind": "note",
+          "project": "atlas",
+          "path": "notes/atlas.md",
+          "mtime": "2026-01-05T08:00:00+00:00",
+          "excerpt": "Atlas, Deniz'in Ocak 2026 için hazırladığı sentetik projedir."
+        },
+        "receipts": 3
+      },
+      {
+        "record": {
+          "rid": "bd66b921adc5",
+          "title": "Kavram bir",
+          "kind": "fact",
+          "project": "atlas",
+          "path": "knowledge/concepts/kavram-bir.md",
+          "mtime": "2026-01-05T15:00:00+00:00",
+          "excerpt": "Atlas projesinde küçük adımların sonucu izlenir."
+        },
+        "receipts": 1
+      }
+    ]
+  }
+}

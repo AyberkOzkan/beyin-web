@@ -50,7 +50,7 @@ class MeasureTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         matches = TIMING.findall(result.stdout)
         endpoints = {endpoint.split("?", 1)[0] for endpoint, *_ in matches}
-        self.assertEqual(len(matches), 13, result.stdout)
+        self.assertEqual(len(matches), 14, result.stdout)
         self.assertTrue({"/pulse", "/home", "/projects", "/tasks", "/knowledge",
                          "/journal/heatmap", "/graph", "/search", "/memory"} <= endpoints)
         for prefix in ("/projects/", "/records/", "/journal/months/", "/journal/days/"):
@@ -91,7 +91,7 @@ class MeasureTests(unittest.TestCase):
         for endpoint in ("/projects/<project>", "/records/<rid>", "/journal/months/<month>",
                          "/journal/days/<day>", "/search", "/search?mode=beyin", "/health"):
             self.assertIn(f"api {endpoint}: atlandı", result.stdout)
-        self.assertEqual(len(TIMING.findall(result.stdout)), 8, result.stdout)
+        self.assertEqual(len(TIMING.findall(result.stdout)), 9, result.stdout)
         self.assertTrue(all(row[-1] == "200" for row in TIMING.findall(result.stdout)))
         self.assertEqual(list(empty.iterdir()), [])
 
@@ -141,7 +141,7 @@ class MeasureTests(unittest.TestCase):
                 contextlib.redirect_stdout(output):
             self.assertEqual(measure.main([str(self.vault), "--api", "--repeat", "2"]), 0)
         matches = TIMING.findall(output.getvalue())
-        self.assertEqual(len(matches), 15, output.getvalue())
+        self.assertEqual(len(matches), 16, output.getvalue())
         self.assertTrue(all(row[-1] == "200" for row in matches))
         commands = [call.args[0][2:] for call in run.call_args_list]
         self.assertEqual(sum(command == ["doctor"] for command in commands), 1)

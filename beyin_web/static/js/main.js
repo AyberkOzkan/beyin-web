@@ -16,13 +16,15 @@ import * as journal from "./pages/journal.js";
 import * as graph from "./pages/graph.js";
 import * as search from "./pages/search.js";
 import * as memory from "./pages/memory.js";
+import * as reports from "./pages/reports.js";
 
 const navigation = [
   ["home", "#/", "house"], ["projects", "#/projeler", "folder-kanban"],
   ["knowledge", "#/bilgi", "book-open"], ["journal", "#/gunlukler", "calendar-days"],
   ["graph", "#/grafik", "waypoints"], ["search", "#/arama", "search"], ["memory", "#/hafiza", "brain"],
+  ["reports", "#/raporlar", "scroll-text"],
 ];
-const pages = { showcase, home, projects, knowledge, record, journal, graph, search, memory };
+const pages = { showcase, home, projects, knowledge, record, journal, graph, search, memory, reports };
 let currentPage;
 let stopPulse = () => {};
 let unauthorized = false;

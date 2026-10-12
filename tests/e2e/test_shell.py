@@ -61,8 +61,8 @@ class ShellTests(BrowserTestCase):
         from selenium.webdriver.support.ui import WebDriverWait
         self.open()
         links = self.driver.find_elements(By.CSS_SELECTOR, ".nav-link")
-        self.assertEqual([link.text for link in links], ["Ana Sayfa", "Projeler", "Bilgi", "Günlükler", "Grafik", "Arama", "Hafıza"])
-        for link, route in zip(links, ["#/", "#/projeler", "#/bilgi", "#/gunlukler", "#/grafik", "#/arama", "#/hafiza"]):
+        self.assertEqual([link.text for link in links], ["Ana Sayfa", "Projeler", "Bilgi", "Günlükler", "Grafik", "Arama", "Hafıza", "Raporlar"])
+        for link, route in zip(links, ["#/", "#/projeler", "#/bilgi", "#/gunlukler", "#/grafik", "#/arama", "#/hafiza", "#/raporlar"]):
             link.click()
             # A page may move on to its first item (#/bilgi -> #/bilgi/{rid}); the menu entry stays current.
             def arrived(driver: object, route: str = route, link: object = link) -> bool:
