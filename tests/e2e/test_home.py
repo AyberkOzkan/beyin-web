@@ -90,8 +90,8 @@ class HomeTests(BrowserTestCase):
     def test_note_project_and_memory_links(self) -> None:
         cases = [("#home-recent .home-row", "#/not/" + self.golden["recent"][0]["rid"]),
                  ("#home-projects .home-row", "#/projeler/" + self.golden["projects"][0]["name"]),
-                 ("#home-last_session .home-session-link", "#/hafiza"),
-                 ("#home-threads .home-row", "#/hafiza")]
+                 ("#home-last_session .home-session-link", "#/hafiza?bolum=oturum"),
+                 ("#home-threads .home-row", "#/hafiza?bolum=konular")]
         for selector, route in cases:
             self.open()
             self.filled()
@@ -99,7 +99,7 @@ class HomeTests(BrowserTestCase):
             self.wait_until(lambda driver: driver.current_url.endswith(route))
         for selector, route in [("#home-recent .home-all", "#/bilgi"),
                                 ("#home-projects .home-all", "#/projeler"),
-                                ("#home-threads .home-all", "#/hafiza"),
+                                ("#home-threads .home-all", "#/hafiza?bolum=konular"),
                                 ("#home-tasks .home-footer-link", "#/projeler")]:
             self.open()
             self.filled()

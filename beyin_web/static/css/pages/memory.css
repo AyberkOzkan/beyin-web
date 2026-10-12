@@ -1,17 +1,28 @@
 /* Styles of the memory page and of the components introduced with it. */
 .memory-page { max-width: 1120px; margin: 0 auto; overflow-wrap: anywhere; }
 .memory-tabs { margin-bottom: 24px; flex-wrap: wrap; }
-.memory-section { scroll-margin-top: 24px; }
+.memory-section[hidden] { display: none; }
+.memory-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.memory-search { flex: 1 1 240px; background: var(--card); }
+.memory-rule-count { display: block; }
+.memory-rule { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.memory-rule:last-child { border-bottom: 0; }
+.memory-rule summary { cursor: pointer; }
+.memory-rule summary h3 { display: inline; margin: 0 12px 0 4px; font-size: 20px; }
+.memory-rule summary .badge { margin-right: 12px; }
+.memory-rule[open] summary { margin-bottom: 12px; }
+.memory-rule > p { margin: 0 0 12px; }
+.memory-rule .memory-field:last-child { margin-bottom: 0; }
 .memory-filter { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.memory-filter select { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-control); padding: 8px 12px; max-width: 100%; }
+.memory-filter select { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-control); padding: 8px 12px; max-width: min(100%, 280px); }
+.memory-toggle { margin-left: auto; }
 .memory-meta { margin-bottom: 16px; }
 .memory-rule p:last-child, .memory-field p, .memory-thread p:last-child { margin-bottom: 0; }
 .memory-field { margin-bottom: 16px; }
 .memory-field > strong { display: block; margin-bottom: 4px; }
 .memory-next-step { background: var(--paper-side); padding: 16px; border-radius: var(--radius-control); }
-.memory-reason summary, .memory-closed summary { cursor: pointer; padding: 8px 0; }
-.memory-reason[open] summary, .memory-closed[open] summary { margin-bottom: 12px; }
-.memory-reason .memory-field:first-of-type { margin-top: 12px; }
+.memory-closed summary { cursor: pointer; padding: 8px 0; }
+.memory-closed[open] summary { margin-bottom: 12px; }
 .memory-raw { white-space: pre-wrap; }
 .health-drawer { width: 460px; max-width: calc(100vw - 48px); height: 100dvh; overflow-y: auto; overflow-wrap: anywhere; }
 .health-body > .card { padding: 20px; }

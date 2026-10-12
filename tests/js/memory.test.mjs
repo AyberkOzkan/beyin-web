@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { scopeList, filterRules, indicatorState, memorySize, warningsPreview, sectionFromHash,
-  sectionHasContent, warningCodes } from "../../beyin_web/static/js/pages/memory-model.js";
+  sectionHasContent, sectionCount, warningCodes } from "../../beyin_web/static/js/pages/memory-model.js";
 
 const golden = name => JSON.parse(readFileSync(new URL(`../fixtures/golden/${name}.json`, import.meta.url), "utf8"));
 const memory = golden("memory");
@@ -19,6 +19,30 @@ test("scope list omits empty scopes, sorts unique values and filters exact match
   assert.deepEqual(filterRules(items, "missing"), []);
   assert.deepEqual(scopeList(), []);
   assert.deepEqual(filterRules(), []);
+});
+
+test("rules are searched by every word, in any field, with Turkish case", () => {
+  const items = memory.rules.items;
+  assert.deepEqual(filterRules(items, "", "KISA"), [items[1]]);
+  assert.deepEqual(filterRules(items, "", "kisa"), []);
+  assert.deepEqual(filterRules(items, "", "  adımı   kaynağı "), [items[0]]);
+  assert.deepEqual(filterRules(items, "", "notes/"), [items[0], items[1]]);
+  assert.deepEqual(filterRules(items, "", "serbest"), [items[1], items[2]]);
+  assert.deepEqual(filterRules(items, "genel", "serbest"), [items[1]]);
+  assert.deepEqual(filterRules(items, "atlas", "serbest"), []);
+  assert.deepEqual(filterRules(items, "", "   "), items);
+  assert.deepEqual(filterRules([{ title: "IŞIK", text: null }], "", "ışık").length, 1);
+});
+
+test("tabs count rules and active threads, and say nothing when there is nothing to count", () => {
+  assert.equal(sectionCount(memory.rules, "rules"), 3);
+  assert.equal(sectionCount(memory.threads, "threads"), 2);
+  assert.equal(sectionCount(memory.identity, "identity"), null);
+  assert.equal(sectionCount(memory.last_session, "last_session"), null);
+  assert.equal(sectionCount({ structured: false, raw: "# Serbest" }, "rules"), null);
+  assert.equal(sectionCount({ structured: true, items: [] }, "rules"), null);
+  assert.equal(sectionCount({ structured: true, active: [], closed: [{}] }, "threads"), null);
+  assert.equal(sectionCount(undefined, "rules"), null);
 });
 
 test("pulse indicator selects green, amber and gray with translated accessible names", () => {

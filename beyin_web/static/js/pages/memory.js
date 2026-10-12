@@ -2,13 +2,14 @@ import { get } from "../api.js";
 import { el } from "../dom.js";
 import { t, formatDate, formatTime } from "../i18n.js";
 import { mountMarkdown } from "../markdown.js";
-import { scrollTo } from "../accessibility.js";
-import { card, tabs, emptyState, errorState, skeleton } from "../components/index.js";
+import { card, tabs, filterBox, emptyState, errorState, skeleton } from "../components/index.js";
 import { withoutLeadingTitle } from "./knowledge-model.js";
-import { sections, sectionFromHash, scopeList, filterRules, sectionHasContent } from "./memory-model.js";
+import { sections, sectionFromHash, scopeList, filterRules, sectionHasContent, sectionCount } from "./memory-model.js";
 
 const names = ["identity", "rules", "last_session", "threads"];
 let active = null;
+// The search text is not in the address: choosing a scope redraws the page and must not clear it.
+let ruleQuery = "";
 
 function markdown(body) {
   const root = el("div", { class: "memory-markdown" });
@@ -29,16 +30,15 @@ function empty(name) {
   return emptyState(t(`memory.${name}.title`), t(`memory.${name}.empty`));
 }
 
-function ruleCard(item) {
-  if (!item.date) return el("article", { class: "card memory-rule" }, el("p", {}, item.text));
-  return el("article", { class: "card memory-rule" },
-    el("div", { class: "row memory-meta" }, date(item.date),
-      item.scope && el("span", { class: "badge memory-scope" }, item.scope)),
-    el("h3", {}, item.title), el("p", {}, item.text),
-    (item.reason || item.source) && el("details", { class: "memory-reason" },
-      el("summary", {}, t("memory.why")),
-      item.reason && field(t("memory.reason"), item.reason),
-      item.source && field(t("memory.source"), item.source)));
+// A rule is one line until it is opened: with a dozen rules the list stays readable at a glance.
+function ruleRow(item) {
+  if (!item.date) return el("article", { class: "memory-rule memory-rule-plain" }, el("p", {}, item.text));
+  return el("details", { class: "memory-rule" },
+    el("summary", {}, el("h3", {}, item.title),
+      item.scope && el("span", { class: "badge memory-scope" }, item.scope), date(item.date)),
+    el("p", {}, item.text),
+    item.reason && field(t("memory.reason"), item.reason),
+    item.source && field(t("memory.source"), item.source));
 }
 
 function rules(data, state) {
@@ -52,8 +52,32 @@ function rules(data, state) {
     location.hash = `/hafiza?${query}`;
   } }, el("option", { value: "", selected: !scope }, t("memory.allScopes")),
   options.map(value => el("option", { value, selected: value === scope }, value)));
-  return [el("label", { class: "memory-filter", for: "memory-scope" }, t("memory.scopeFilter"), select),
-    el("div", { class: "stack memory-rules" }, filterRules(data.items, scope).map(ruleCard))];
+  const list = el("div", { class: "memory-rules" });
+  const count = el("small", { class: "muted memory-rule-count", role: "status" });
+  const toggle = el("button", { type: "button", class: "button memory-toggle", onclick: () => {
+    const rows = [...list.querySelectorAll("details")];
+    const open = rows.some(row => !row.open);
+    rows.forEach(row => { row.open = open; });
+    label();
+  } });
+  function label() {
+    const rows = [...list.querySelectorAll("details")];
+    toggle.hidden = !rows.length;
+    toggle.textContent = t(rows.some(row => !row.open) ? "memory.expandAll" : "memory.collapseAll");
+  }
+  function show() {
+    const shown = filterRules(data.items, scope, ruleQuery);
+    count.textContent = t("memory.ruleCount", { shown: shown.length, total: data.items.length });
+    list.replaceChildren(...(shown.length ? shown.map(ruleRow) :
+      [emptyState(t("memory.noMatchTitle"), t("memory.noMatch"))]));
+    list.querySelectorAll("details").forEach(row => row.addEventListener("toggle", label));
+    label();
+  }
+  const search = filterBox({ label: t("memory.ruleSearch"), value: ruleQuery, onInput: value => { ruleQuery = value; show(); } });
+  search.classList.add("memory-search");
+  show();
+  return [el("div", { class: "memory-tools" }, search,
+    el("label", { class: "memory-filter", for: "memory-scope" }, t("memory.scopeFilter"), select), toggle), count, list];
 }
 
 function session(data) {
@@ -109,11 +133,6 @@ function content(name, data, state) {
   return [markdown(data.raw)];
 }
 
-function scrollToSection(state) {
-  if (active !== state || !state.params.bolum) return;
-  scrollTo(state.bodies.get(state.selected)?.parentElement);
-}
-
 async function load(state) {
   state.root.setAttribute("aria-busy", "true");
   state.bodies.forEach(body => body.replaceChildren(skeleton(3)));
@@ -124,10 +143,16 @@ async function load(state) {
       state.navigation.hidden = true;
       state.layout.replaceChildren(emptyState(t("memory.emptyTitle"), t("memory.emptyMessage")));
     } else {
-      names.forEach((name, index) => state.bodies.get(sections[index]).replaceChildren(...content(name, data[name], state)));
+      names.forEach((name, index) => {
+        state.bodies.get(sections[index]).replaceChildren(...content(name, data[name], state));
+        const count = sectionCount(data[name], name);
+        if (count !== null) {
+          state.navigation.querySelector(`[data-tab="${sections[index]}"]`).textContent =
+            t("memory.tabCount", { title: t(`memory.${name}.title`), count });
+        }
+      });
     }
     state.root.setAttribute("aria-busy", "false");
-    scrollToSection(state);
   } catch (error) {
     if (active !== state || error.code === "unauthorized") return;
     state.bodies.forEach(body => body.replaceChildren(errorState(t("memory.error"), () => void load(state))));
@@ -140,21 +165,23 @@ export function render(root, params = {}) {
   const state = { params, selected: sectionFromHash(`?${new URLSearchParams(params)}`),
     root: el("div", { class: "memory-page", "aria-busy": "true" }), bodies: new Map() };
   active = state;
+  if (state.selected !== "kurallar") ruleQuery = "";
   state.navigation = tabs(sections.map((id, index) => ({ id, label: t(`memory.${names[index]}.title`) })), state.selected, id => {
     const query = new URLSearchParams(location.hash.split("?")[1] || "");
     query.set("bolum", id);
-    const hash = `#/hafiza?${query}`;
-    if (location.hash === hash) scrollToSection(state);
-    else location.hash = hash;
+    location.hash = `#/hafiza?${query}`;
   });
   state.navigation.classList.add("memory-tabs");
   state.navigation.querySelectorAll("button").forEach((button, index) => button.setAttribute("aria-controls", `memory-${sections[index]}`));
-  state.layout = el("div", { class: "stack memory-sections" }, sections.map((id, index) => {
+  // One section at a time: the whole memory on one page was a long scroll past things not asked for.
+  state.layout = el("div", { class: "memory-sections" }, sections.map((id, index) => {
     const body = el("div", { class: "stack memory-body" }, skeleton(3));
     state.bodies.set(id, body);
     const section = card(t(`memory.${names[index]}.title`), [body]);
     section.id = `memory-${id}`;
     section.classList.add("memory-section");
+    section.setAttribute("role", "tabpanel");
+    section.hidden = id !== state.selected;
     return section;
   }));
   state.root.append(el("header", { class: "page-heading" }, el("h1", {}, t("page.memory.title")),

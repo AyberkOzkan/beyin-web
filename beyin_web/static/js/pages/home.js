@@ -7,7 +7,7 @@ import { greetingKey, firstSentence, dailyQuote, weeklyBars, changeKey } from ".
 
 const definitions = [
   ["counts", "layers"], ["last_session", "history"], ["recent", "file-text", "#/bilgi"],
-  ["projects", "folder-kanban", "#/projeler"], ["threads", "message-square", "#/hafiza"],
+  ["projects", "folder-kanban", "#/projeler"], ["threads", "message-square", "#/hafiza?bolum=konular"],
   ["week", "activity"], ["tasks", "list-todo"], ["upcoming", "calendar-days"],
 ];
 let active;
@@ -60,7 +60,7 @@ function counts(data) {
 
 function lastSession(data) {
   if (!data) return [empty("last_session")];
-  return [el("a", { class: "home-session-link", href: "#/hafiza" },
+  return [el("a", { class: "home-session-link", href: "#/hafiza?bolum=oturum" },
     el("strong", { class: "home-session-label" }, data.label), time(data.time || data.date, Boolean(data.time)),
     el("span", { class: "home-next-label" }, t("home.nextStep")),
     el("p", {}, data.next_step || t("home.noNextStep")))];
@@ -77,7 +77,7 @@ function projects(data) {
 }
 
 function threads(data) {
-  return data.length ? data.map(thread => row("#/hafiza", thread.title, firstSentence(thread.next_step), "message-square",
+  return data.length ? data.map(thread => row("#/hafiza?bolum=konular", thread.title, firstSentence(thread.next_step), "message-square",
     time(thread.status_date))) : [empty("threads")];
 }
 

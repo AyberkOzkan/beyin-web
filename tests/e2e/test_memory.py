@@ -11,6 +11,15 @@ class MemoryTests(PageTestCase):
     def filled(self) -> None:
         self.wait_for('.memory-page[aria-busy="false"]')
 
+    def shown(self) -> list[str]:
+        return [section.get_attribute("id") for section in self.all(".memory-section") if section.is_displayed()]
+
+    def choose(self, section: str) -> None:
+        self.wait_for(f'.memory-tabs [data-tab="{section}"]').click()
+        self.wait_until(lambda driver: f"bolum={section}" in self.hash())
+        self.filled()
+        self.assertEqual(self.shown(), [f"memory-{section}"])
+
     def test_sections_rules_and_scope_filter(self) -> None:
         from selenium.webdriver.support.ui import Select
 
@@ -23,36 +32,82 @@ class MemoryTests(PageTestCase):
         # Core.md opens with "# Kimlik"; the card title must not be repeated below itself.
         self.assertEqual(self.text("#memory-kimlik").count(self.messages["memory.identity.title"]), 1)
         self.assertEqual(self.all("#memory-kimlik .memory-markdown h3"), [])
+        # Only the chosen section is on screen; the tabs say how much the others hold.
+        self.assertEqual(self.shown(), ["memory-kimlik"])
+        self.assertEqual(self.text('.memory-tabs [data-tab="kurallar"]'), "Kurallar (3)")
+        self.assertEqual(self.text('.memory-tabs [data-tab="konular"]'), "Konular (2)")
+        self.assertEqual(self.text('.memory-tabs [data-tab="kimlik"]'), "Kimlik")
+        self.choose("kurallar")
+        items = memory["rules"]["items"]
         rules = self.all(".memory-rule")
-        self.assertEqual(len(rules), len(memory["rules"]["items"]))
-        self.assertIn(memory["rules"]["items"][2]["text"], rules[2].text)
-        self.assertEqual(rules[2].find_elements("css selector", "details, h3, time, .badge"), [])
-        reason = rules[0].find_element("css selector", "details")
-        self.assertFalse(reason.get_attribute("open"))
-        reason.find_element("css selector", "summary").click()
-        self.assertIn(memory["rules"]["items"][0]["reason"], reason.text)
-        self.assertIn(memory["rules"]["items"][0]["source"], reason.text)
-        second = rules[1].find_element("css selector", "details")
-        second.find_element("css selector", "summary").click()
-        self.assertNotIn(self.messages["memory.reason"], second.text)
-        self.assertIn(memory["rules"]["items"][1]["source"], second.text)
+        self.assertEqual(len(rules), len(items))
+        self.assertIn(items[2]["text"], rules[2].text)
+        self.assertEqual(rules[2].find_elements("css selector", "summary, h3, time, .badge"), [])
+        # A rule is one line until it is opened.
+        self.assertFalse(rules[0].get_attribute("open"))
+        self.assertIn(items[0]["title"], rules[0].text)
+        self.assertIn(items[0]["scope"], rules[0].text)
+        self.assertNotIn(items[0]["text"], rules[0].text)
+        self.assertEqual(self.text(".memory-toggle"), self.messages["memory.expandAll"])
+        rules[0].find_element("css selector", "summary").click()
+        for key in ("text", "reason", "source"):
+            self.assertIn(items[0][key], rules[0].text)
+        self.assertEqual(self.text(".memory-toggle"), self.messages["memory.expandAll"])
+        self.wait_for(".memory-toggle").click()
+        self.assertTrue(rules[1].get_attribute("open"))
+        self.assertNotIn(self.messages["memory.reason"], rules[1].text)
+        self.assertIn(items[1]["source"], rules[1].text)
+        self.assertEqual(self.text(".memory-toggle"), self.messages["memory.collapseAll"])
+        self.wait_for(".memory-toggle").click()
+        self.assertEqual(self.all(".memory-rule[open]"), [])
         Select(self.wait_for("#memory-scope")).select_by_value("atlas")
         self.wait_until(lambda driver: len(self.all(".memory-rule")) == 1)
         self.assertIn("kapsam=atlas", self.hash())
-        self.assertEqual(self.text(".memory-rule h3"), memory["rules"]["items"][0]["title"])
+        self.assertEqual(self.text(".memory-rule h3"), items[0]["title"])
         self.driver.back()
         self.wait_until(lambda driver: len(self.all(".memory-rule")) == 3)
         self.assert_clean_text()
 
+    def test_rules_are_searched_with_turkish_case(self) -> None:
+        from selenium.webdriver.support.ui import Select
+
+        items = self.golden("memory")["rules"]["items"]
+        self.open("#/hafiza?bolum=kurallar")
+        self.filled()
+        box = self.wait_for(".memory-search input")
+        box.send_keys("KISA")
+        self.wait_until(lambda driver: len(self.all(".memory-rule")) == 1)
+        self.assertEqual(self.text(".memory-rule h3"), items[1]["title"])
+        self.assertEqual(self.text(".memory-rule-count"), self.messages["memory.ruleCount"].format(shown=1, total=3))
+        box.send_keys(" atlas")
+        self.wait_until(lambda driver: not self.all(".memory-rule"))
+        self.assertIn(self.messages["memory.noMatchTitle"], self.text(".memory-rules"))
+        self.assertFalse(self.all(".memory-toggle")[0].is_displayed())
+        box.clear()
+        box.send_keys("kaynağı")
+        self.wait_until(lambda driver: len(self.all(".memory-rule")) == 1)
+        self.assertEqual(self.text(".memory-rule h3"), items[0]["title"])
+        # Choosing a scope redraws the page; what was typed stays.
+        Select(self.wait_for("#memory-scope")).select_by_value("genel")
+        self.wait_until(lambda driver: "kapsam=genel" in self.hash())
+        self.filled()
+        self.assertEqual(self.wait_for(".memory-search input").get_attribute("value"), "kaynağı")
+        self.assertEqual(self.all(".memory-rule"), [])
+        self.choose("kimlik")
+        self.choose("kurallar")
+        self.assertEqual(self.wait_for(".memory-search input").get_attribute("value"), "")
+
     def test_session_and_threads(self) -> None:
         memory = self.golden("memory")
-        self.open("#/hafiza")
+        self.open("#/hafiza?bolum=oturum")
         self.filled()
+        self.assertEqual(self.shown(), ["memory-oturum"])
         session = memory["last_session"]["card"]
         for value in (session["label"], session["session"], session["items"][0][1]):
             self.assertIn(value, self.text(".memory-session"))
         self.assertEqual(self.text(".memory-session .memory-next-step p"), session["next_step"])
         self.assertEqual(self.all(".memory-session time")[1].get_attribute("datetime"), session["time"])
+        self.choose("konular")
         self.assertEqual(len(self.all(".memory-active-threads .memory-thread")), 2)
         first = memory["threads"]["active"][0]
         for key in ("title", "owner", "status", "open", "next_step"):
@@ -99,25 +154,22 @@ class MemoryTests(PageTestCase):
         self.assertIn(self.messages["memory.emptyMessage"], self.text("#main"))
         self.assertEqual(self.all(".memory-section"), [])
 
-    def test_tabs_update_address_scroll_and_back(self) -> None:
+    def test_tabs_show_one_section_and_live_in_the_address(self) -> None:
         self.open("#/hafiza")
         self.filled()
         for section in ("kurallar", "oturum", "konular", "kimlik"):
-            self.wait_for(f'.memory-tabs [aria-controls="memory-{section}"]').click()
-            self.wait_until(lambda driver: f"bolum={section}" in self.hash())
-            self.filled()
-            self.wait_until(lambda driver: driver.execute_script(
-                """
-                const section = document.querySelector(arguments[0]);
-                const target = Math.max(0, section.getBoundingClientRect().top + scrollY - 24);
-                const maximum = document.documentElement.scrollHeight - innerHeight;
-                return Math.abs(scrollY - Math.min(target, maximum)) < 2;
-                """,
-                f"#memory-{section}"))
-            self.assertEqual(self.wait_for(f'.memory-tabs [aria-controls="memory-{section}"]').get_attribute("aria-selected"), "true")
+            self.choose(section)
+            tab = self.wait_for(f'.memory-tabs [aria-controls="memory-{section}"]')
+            self.assertEqual(tab.get_attribute("aria-selected"), "true")
+            self.assertEqual(self.wait_for(f"#memory-{section}").get_attribute("role"), "tabpanel")
         self.driver.back()
         self.wait_until(lambda driver: "bolum=konular" in self.hash())
         self.filled()
+        self.assertEqual(self.shown(), ["memory-konular"])
+        self.open("#/hafiza?bolum=yok")
+        self.filled()
+        self.assertEqual(self.shown(), ["memory-kimlik"])
+        self.assert_no_overflow()
 
     def test_health_drawer_contents_focus_and_keyboard(self) -> None:
         from selenium.webdriver import ActionChains
@@ -201,7 +253,7 @@ class MemoryTests(PageTestCase):
         self.assertEqual(len(self.all(".memory-section [role=alert]")), 4)
         self.driver.execute_script("window.failMemory = false")
         self.wait_for("#memory-kimlik [role=alert] button").click()
-        self.wait_for(".memory-rule")
+        self.wait_until(lambda driver: len(self.all(".memory-rule")) == 3)
         self.assertEqual(self.all(".memory-section [role=alert]"), [])
         path = self.vault / "🔮 850-Companion" / "Core.md"
         path.write_text("# Updated identity\n\nNew synthetic identity.\n", encoding="utf-8")
