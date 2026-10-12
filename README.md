@@ -7,10 +7,11 @@ Beyin vault'unu sade bir web arayüzünde gösteren yerel, salt okunur bir uygul
 | Ana Sayfa | Son oturum, açık işler, yakın etkinlik ve yaklaşan tarihler. |
 | Projeler | Proje notu, görevler, bilgiler ve son receipt'ler (işlem kayıtları). |
 | Bilgi | Konulara ve projelere göre bilgi notları, içerik ve bağlantılar. |
-| Günlükler | Receipt'ler, oturum kartları, gün görünümü ve etkinlik ısı haritası. |
+| Günlükler | Receipt'ler, oturum kartları, gün görünümü, seçili günün özeti, etkinlik ısı haritası ve yaklaşanlar. |
 | Grafik | Notlar arasındaki bağlantılar ve seçili notun bağlamı. |
 | Arama | Yerel kelime araması ve Beyin varsa bağlam araması. |
 | Hafıza | Vault'taki kimlik, kurallar, son oturum ve açık konular. |
+| Raporlar | Haftalık özet, son 30 gün, proje ilerlemeleri, bilgi birikimi ve haftanın öğrenilenleri; yalnızca vault'taki kayıtlardan hesaplanır. |
 
 ![Ana Sayfa: karşılama, bilgi kasası, son oturum, son notlar, projeler ve açık başlıklar](docs/img/home.png)
 
