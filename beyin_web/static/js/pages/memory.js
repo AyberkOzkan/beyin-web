@@ -4,6 +4,7 @@ import { t, formatDate, formatTime } from "../i18n.js";
 import { mountMarkdown } from "../markdown.js";
 import { scrollTo } from "../accessibility.js";
 import { card, tabs, emptyState, errorState, skeleton } from "../components/index.js";
+import { withoutLeadingTitle } from "./knowledge-model.js";
 import { sections, sectionFromHash, scopeList, filterRules, sectionHasContent } from "./memory-model.js";
 
 const names = ["identity", "rules", "last_session", "threads"];
@@ -94,10 +95,13 @@ function threads(data) {
 }
 
 function content(name, data, state) {
+  // The section card already carries the title; a file that opens with the same heading would repeat it.
+  const untitled = body => withoutLeadingTitle(body, t(`memory.${name}.title`));
   if (name === "identity" && data.records?.some(record => record.body?.trim())) {
-    return data.records.filter(record => record.body?.trim()).map(record => markdown(record.body));
+    const bodies = data.records.map(record => untitled(record.body)).filter(body => body.trim());
+    return bodies.length ? bodies.map(markdown) : [empty(name)];
   }
-  if (data.structured === false) return data.raw?.trim() ? [markdown(data.raw)] : [empty(name)];
+  if (data.structured === false) return untitled(data.raw).trim() ? [markdown(untitled(data.raw))] : [empty(name)];
   if (!sectionHasContent(data, name)) return [empty(name)];
   if (name === "rules") return rules(data, state);
   if (name === "last_session") return [session(data)];

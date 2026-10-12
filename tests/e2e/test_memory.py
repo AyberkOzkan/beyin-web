@@ -20,6 +20,9 @@ class MemoryTests(PageTestCase):
         self.assertEqual(len(self.all(".memory-section")), 4)
         self.assertIn("Deniz", self.text("#memory-kimlik strong"))
         self.assertIn("Atlas ve Çınar", self.text("#memory-kimlik"))
+        # Core.md opens with "# Kimlik"; the card title must not be repeated below itself.
+        self.assertEqual(self.text("#memory-kimlik").count(self.messages["memory.identity.title"]), 1)
+        self.assertEqual(self.all("#memory-kimlik .memory-markdown h3"), [])
         rules = self.all(".memory-rule")
         self.assertEqual(len(rules), len(memory["rules"]["items"]))
         self.assertIn(memory["rules"]["items"][2]["text"], rules[2].text)

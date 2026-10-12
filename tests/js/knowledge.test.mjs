@@ -43,6 +43,9 @@ test("a body heading that repeats the title is dropped, any other heading stays"
   assert.equal(withoutLeadingTitle("# Başka başlık\n\nMetin.", "Kavram bir"), "# Başka başlık\n\nMetin.");
   assert.equal(withoutLeadingTitle("Metin.\n\n# Kavram bir", "Kavram bir"), "Metin.\n\n# Kavram bir");
   assert.equal(withoutLeadingTitle("## Kavram bir\n", "Kavram bir"), "## Kavram bir\n");
+  assert.equal(withoutLeadingTitle("# Son oturum\n\nMetin.", "Son Oturum"), "\nMetin.");
+  assert.equal(withoutLeadingTitle("# IŞIK\nMetin.", "ışık"), "Metin.");
+  assert.equal(withoutLeadingTitle("# ISIK\nMetin.", "isik"), "# ISIK\nMetin.");
   assert.equal(withoutLeadingTitle(null, "x"), "");
 });
 

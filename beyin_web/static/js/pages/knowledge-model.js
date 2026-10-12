@@ -30,8 +30,9 @@ export function firstSentence(value) {
 export function withoutLeadingTitle(body, title) {
   const text = typeof body === "string" ? body : "";
   const match = /^\s*#[ \t]+(.+?)[ \t]*#*[ \t]*(?:\r?\n|$)/.exec(text);
-  const same = match && match[1].trim().normalize("NFC") === String(title ?? "").trim().normalize("NFC");
-  return same ? text.slice(match[0].length) : text;
+  // A card titled "Son Oturum" above a file that opens with "# Son oturum" repeats itself too.
+  const fold = value => String(value ?? "").trim().normalize("NFC").toLocaleLowerCase("tr-TR");
+  return match && fold(match[1]) === fold(title) ? text.slice(match[0].length) : text;
 }
 
 export function recordKind(kind) {
