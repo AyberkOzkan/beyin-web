@@ -197,7 +197,8 @@ class API:
         dynamic = (now.date().isoformat(), _period(now)) if path in {"home", "journal/heatmap"} else (
             (now.date().isoformat(),) if path in {"projects", "reports", "goals"} or path.startswith("projects/") else ())
         key = (path, tuple(sorted(params.items())), *dynamic)
-        beyin_search = path == "search" and params.get("mode") == "beyin"
+        # The trash is outside the scan: its list changes without a new generation, so it is never cached.
+        beyin_search = (path == "search" and params.get("mode") == "beyin") or path == "goals/trash"
         if beyin_search or key not in self._responses:
             data = self._build(path, params, snapshot, self._derive(snapshot), now)
             if not beyin_search:
@@ -282,6 +283,9 @@ class API:
                 for item in worked
             ]
             return result
+        if path == "goals/trash":
+            return {"writable": not self.server.settings.read_only,
+                    "items": [{key: item[key] for key in ("id", "title", "kind")} for item in self._trash()]}
         if path == "goals":
             goals = goal_model.build_goals(snapshot)
             themes = [goal for goal in goals if goal.horizon == "theme"]
@@ -430,6 +434,15 @@ class API:
             return self._home(snapshot, models, now)
         raise APIError(404, "not_found")
 
+    def _trash(self) -> list[dict[str, str]]:
+        items = []
+        for name, text in self.writer.trashed():
+            note = goal_model.trashed_note(text, PurePosixPath(name).stem)
+            if note is not None:
+                # The client names a trashed note by this id, never by its file name.
+                items.append({"id": make_rid(".trash/" + name), "name": name, **note})
+        return sorted(items, key=lambda item: (goal_model.fold_name(item["title"]), item["name"]))
+
     def write(self, action: str, request: RequestHandler, match: re.Match[str], body: Mapping[str, object]) -> None:
         snapshot = self.server.source.snapshot()
         now = self.clock()
@@ -506,6 +519,24 @@ class API:
             record = existing("goal")
             self.writer.update(record.path, lambda text: goal_model.set_step(text, int(match["index"]), expected, done))
             return record.rid
+        if action in ("trash_restore", "trash_delete"):
+            only("title")
+            shown = body.get("title")
+            if not isinstance(shown, str):
+                raise APIError(400, "bad_request", "title")
+            item = next((item for item in self._trash() if item["id"] == match["id"]), None)
+            if item is None:
+                raise APIError(404, "not_found")
+            name = item["name"]
+            stem = PurePosixPath(name).stem
+
+            def unchanged(text: str) -> None:
+                goal_model.check_trashed(text, shown, stem)
+
+            if action == "trash_restore":
+                return make_rid(self.writer.restore(name, unchanged))
+            self.writer.purge(name, unchanged)
+            return item["id"]
         if action in ("goal_delete", "habit_delete"):
             only("title")
             shown = body.get("title")
@@ -579,7 +610,7 @@ def register_api(
     server: BeyinHTTPServer, *, clock: Callable[[], datetime] | None = None, tz: tzinfo | None = None,
 ) -> API:
     api = API(server, clock=clock, tz=tz)
-    pattern = r"/api/v1/(?P<endpoint>pulse|home|projects(?:/[^/]+)?|tasks|knowledge|records/[^/]+|journal/(?:months/[^/]+|days/[^/]+|heatmap)|graph|search|memory|reports|goals|health)"
+    pattern = r"/api/v1/(?P<endpoint>pulse|home|projects(?:/[^/]+)?|tasks|knowledge|records/[^/]+|journal/(?:months/[^/]+|days/[^/]+|heatmap)|graph|search|memory|reports|goals(?:/trash)?|health)"
     server.routes = [(route, handler) for route, handler in server.routes if route.pattern != pattern]
     server.register(pattern, api.handle)
     writes = {
@@ -588,6 +619,8 @@ def register_api(
         "day": r"/api/v1/habits/(?P<rid>[0-9a-f]{12})/days/(?P<day>[0-9]{4}-[0-9]{2}-[0-9]{2})",
         "goal_delete": r"/api/v1/goals/(?P<rid>[0-9a-f]{12})/delete",
         "habit_delete": r"/api/v1/habits/(?P<rid>[0-9a-f]{12})/delete",
+        "trash_restore": r"/api/v1/goals/trash/(?P<id>[0-9a-f]{12})/restore",
+        "trash_delete": r"/api/v1/goals/trash/(?P<id>[0-9a-f]{12})/delete",
     }
     server.write_routes = [(route, handler) for route, handler in server.write_routes
                            if route.pattern not in writes.values()]

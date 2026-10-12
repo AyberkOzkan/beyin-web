@@ -171,8 +171,11 @@ class PageTestCase(BrowserTestCase):
         return json.loads((FIXTURES / "golden" / f"{name}.json").read_text(encoding="utf-8"))
 
     def wait_until(self, condition: Any, timeout: float = 5) -> Any:
+        from selenium.common.exceptions import StaleElementReferenceException
         from selenium.webdriver.support.ui import WebDriverWait
-        return WebDriverWait(self.driver, timeout).until(condition)
+        # A page that redraws itself can replace an element between finding it and reading it;
+        # that is "not yet", not a failure.
+        return WebDriverWait(self.driver, timeout, ignored_exceptions=[StaleElementReferenceException]).until(condition)
 
     def all(self, css: str) -> list[Any]:
         return list(self.driver.find_elements("css selector", css))

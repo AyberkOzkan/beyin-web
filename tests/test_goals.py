@@ -21,7 +21,7 @@ from beyin_web.vault.records import make_rid
 from beyin_web.vault.scan import MarkdownSource
 from beyin_web.vault.writer import VaultWriter, WriteConflict
 from scripts.update_golden import NOW, TZ
-from tests.support import add_goals, make_vault
+from tests.support import GOALS, add_goals, make_vault
 
 GOAL = (
     '---\n{\n  "kind": "goal",\n  "horizon": "year",\n  "period": 2026,\n  "area": "Öğrenme"\n}\n---\n'
@@ -76,6 +76,22 @@ class GoalTextTests(unittest.TestCase):
                                ("# Yeni ad\n", "Kitap"), ("başlıksız\n", "Kitap")):
             with self.subTest(expected=expected), self.assertRaises(goals.GoalConflict):
                 goals.check_title(text, expected, "dosya")
+
+    def test_trashed_note_shows_only_goals_and_habits_that_are_not_private(self) -> None:
+        self.assertEqual(goals.trashed_note(GOAL, "dosya"), {"title": "Kitap", "kind": "goal"})
+        self.assertEqual(goals.trashed_note('---\n{"kind": "habit"}\n---\nbaşlıksız\n', "dosya"),
+                         {"title": "dosya", "kind": "habit"})
+        for text in ("# Sıradan not\n", '---\n{"kind": "task"}\n---\n# Görev\n',
+                     '---\n{"kind": "goal", "visibility": "private"}\n---\n# Gizli\n',
+                     '---\n{"kind": "goal", "visibility": "secret"}\n---\n# Tanımsız\n',
+                     '---\nkind: goal\nvisibility: private\n# Kapanmamış\n'):
+            with self.subTest(text=text):
+                self.assertIsNone(goals.trashed_note(text, "dosya"))
+                with self.assertRaises(goals.GoalConflict):
+                    goals.check_trashed(text, "dosya", "dosya")
+        goals.check_trashed(GOAL, "Kitap", "dosya")
+        with self.assertRaises(goals.GoalConflict):
+            goals.check_trashed(GOAL, "Başka", "dosya")
 
     def test_clean_line_and_slug(self) -> None:
         self.assertEqual(goals.clean_line("  Sağlıklı yaşam  ", 20), "Sağlıklı yaşam")
@@ -227,6 +243,46 @@ class VaultWriterTests(unittest.TestCase):
             self.writer.discard("not.md", lambda text: None)
         self.assertEqual(list(outside.iterdir()), [])
         self.assertEqual((self.root / "not.md").read_text(encoding="utf-8"), "bir")
+
+    def test_trash_is_listed_restored_and_purged(self) -> None:
+        self.assertEqual(self.writer.trashed(), [])
+        trash = self.root / ".trash"
+        trash.mkdir()
+        (trash / "bir.md").write_bytes("bir\r\n".encode("utf-8"))
+        (trash / "iki.md").write_text("iki", encoding="utf-8")
+        (trash / "bozuk.md").write_bytes(b"\xff\xfe")
+        (trash / "resim.png").write_bytes(b"png")
+        (trash / "klasör.md").mkdir()
+        self.assertEqual(self.writer.trashed(), [("bir.md", "bir\r\n"), ("iki.md", "iki")])
+        (self.root / "goals").mkdir()
+        (self.root / "goals" / "bir.md").write_text("yerinde duran", encoding="utf-8")
+        self.assertEqual(self.writer.restore("bir.md", lambda text: None), "goals/bir-2.md")
+        self.assertEqual((self.root / "goals" / "bir-2.md").read_bytes(), "bir\r\n".encode("utf-8"))
+        self.assertEqual((self.root / "goals" / "bir.md").read_text(encoding="utf-8"), "yerinde duran")
+
+        def refuse(text: str) -> None:
+            raise goals.GoalConflict("title_changed")
+
+        for action in (self.writer.restore, self.writer.purge):
+            with self.assertRaises(goals.GoalConflict):
+                action("iki.md", refuse)
+        self.assertEqual((trash / "iki.md").read_text(encoding="utf-8"), "iki")
+        self.writer.purge("iki.md", lambda text: None)
+        self.assertFalse((trash / "iki.md").exists())
+        self.assertEqual(self.writer.trashed(), [])
+
+    def test_trash_names_cannot_leave_the_trash(self) -> None:
+        (self.root / ".trash").mkdir()
+        (self.root / "goals").mkdir()
+        (self.root / "goals" / "duran.md").write_text("duran", encoding="utf-8")
+        (self.root / "kök.md").write_text("kök", encoding="utf-8")
+        (self.root / ".trash" / "veri.txt").write_text("x", encoding="utf-8")
+        for name in ("../kök.md", "..\\kök.md", "../goals/duran.md", "/etc/passwd", "yok.md", "veri.txt", "", ".", ".."):
+            for action in (self.writer.restore, self.writer.purge):
+                with self.subTest(name=name, action=action.__name__), self.assertRaises(WriteConflict):
+                    action(name, lambda text: None)
+        self.assertEqual((self.root / "goals" / "duran.md").read_text(encoding="utf-8"), "duran")
+        self.assertEqual((self.root / "kök.md").read_text(encoding="utf-8"), "kök")
 
     def test_update_gives_way_to_a_concurrent_save(self) -> None:
         path = self.root / "not.md"
@@ -424,6 +480,50 @@ class GoalAPITests(GoalServerCase):
             self.assert_refused(405, "method_not_allowed", f"/goals/{other}", {"title": "Anlamlı bir iş üretmek"},
                                 method=method)
 
+    def trash(self) -> list[dict[str, str]]:
+        status, payload = self.call("/goals/trash", method="GET")
+        self.assertEqual(status, 200)
+        return cast(list[dict[str, str]], payload["items"])
+
+    def test_trash_lists_restores_and_purges_goals_only(self) -> None:
+        self.assertEqual(self.trash(), [])
+        trash = self.vault / ".trash"
+        trash.mkdir()
+        (trash / "baska.md").write_text("# Obsidian'da silinen sıradan not\n", encoding="utf-8")
+        (trash / "gizli.md").write_text(
+            '---\n{"kind": "goal", "visibility": "private"}\n---\n# GIZLI-COP\n', encoding="utf-8")
+        self.assertEqual(self.call(f"/goals/{self.rid}/delete", {"title": "12 kitap okumak"})[0], 200)
+        self.assertEqual(self.call(f"/habits/{self.habit}/delete", {"title": "Spor yapmak"})[0], 200)
+        items = self.trash()
+        self.assertEqual([(item["title"], item["kind"]) for item in items],
+                         [("12 kitap okumak", "goal"), ("Spor yapmak", "habit")])
+        self.assertEqual([sorted(item) for item in items], [["id", "kind", "title"]] * 2)
+        self.assertNotIn("GIZLI-COP", json.dumps(items, ensure_ascii=False))
+        goal, habit = items
+        for hidden in (make_rid(".trash/baska.md"), make_rid(".trash/gizli.md"), "0" * 12):
+            for action in ("restore", "delete"):
+                self.assert_refused(404, "not_found", f"/goals/trash/{hidden}/{action}", {"title": "GIZLI-COP"})
+        for action in ("restore", "delete"):
+            self.assert_refused(409, "conflict", f"/goals/trash/{goal['id']}/{action}", {"title": "Spor yapmak"})
+            self.assert_refused(400, "bad_request", f"/goals/trash/{goal['id']}/{action}", {})
+            self.assert_refused(403, "forbidden_origin", f"/goals/trash/{goal['id']}/{action}",
+                                {"title": goal["title"]}, headers={"Origin": "http://evil.example"})
+        generation = self.goals()["generation"]
+        before = self.files()
+        self.assertEqual(self.call(f"/goals/trash/{habit['id']}/delete", {"title": "Spor yapmak"})[0], 200)
+        after = self.files()
+        self.assertEqual(before.pop(".trash/spor.md"), GOALS["spor.md"].encode("utf-8"))
+        self.assertEqual(after, before)
+        # Nothing the scan sees has changed, yet the list must not come from a cache.
+        self.assertEqual(self.goals()["generation"], generation)
+        self.assertEqual([item["title"] for item in self.trash()], ["12 kitap okumak"])
+        status, restored = self.call(f"/goals/trash/{goal['id']}/restore", {"title": "12 kitap okumak"})
+        self.assertEqual((status, restored["rid"]), (200, self.rid))
+        self.assertEqual((self.vault / "goals" / "kitap.md").read_text(encoding="utf-8"), GOALS["kitap.md"])
+        self.assertEqual(self.trash(), [])
+        self.assertIn(self.rid, [item["rid"] for item in cast(list[dict[str, object]], self.goals()["goals"])])
+        self.assertEqual(sorted(path.name for path in trash.iterdir()), ["baska.md", "gizli.md"])
+
     def test_forged_requests_are_refused(self) -> None:
         body = {"title": "Sahte", "horizon": "year"}
         for headers in (
@@ -466,6 +566,16 @@ class GoalAPITests(GoalServerCase):
 class ReadOnlyGoalTests(GoalServerCase):
     read_only = True
 
+    def setUp(self) -> None:
+        super().setUp()
+        (self.vault / ".trash").mkdir()
+        (self.vault / ".trash" / "eski.md").write_text('---\n{"kind": "goal"}\n---\n# Eski hedef\n', encoding="utf-8")
+
+    def test_trash_is_listed_but_not_writable(self) -> None:
+        status, payload = self.call("/goals/trash", method="GET")
+        self.assertEqual((status, payload["writable"]), (200, False))
+        self.assertEqual([item["title"] for item in cast(list[dict[str, str]], payload["items"])], ["Eski hedef"])
+
     def test_goals_response(self) -> None:
         self.assertIs(self.goals()["writable"], False)
 
@@ -474,7 +584,9 @@ class ReadOnlyGoalTests(GoalServerCase):
                            (f"/goals/{self.rid}/steps/1", {"done": True, "text": "İkinci kitap"}),
                            (f"/habits/{self.habit}/days/2026-01-10", {"done": True}),
                            (f"/goals/{self.rid}/delete", {"title": "12 kitap okumak"}),
-                           (f"/habits/{self.habit}/delete", {"title": "Spor yapmak"})):
+                           (f"/habits/{self.habit}/delete", {"title": "Spor yapmak"}),
+                           (f"/goals/trash/{make_rid('.trash/eski.md')}/restore", {"title": "Eski hedef"}),
+                           (f"/goals/trash/{make_rid('.trash/eski.md')}/delete", {"title": "Eski hedef"})):
             with self.subTest(path=path):
                 self.assert_refused(403, "read_only", path, body)
 

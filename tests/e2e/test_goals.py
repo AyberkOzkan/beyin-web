@@ -143,8 +143,66 @@ class GoalsTests(GoalsCase):
         self.wait_for(f'#goals-habits [data-confirm="{habit}"] .goals-danger').click()
         self.wait_until(lambda driver: len(self.all("#goals-habits tbody tr")) == 1)
         self.assertEqual((self.vault / ".trash" / "spor.md").read_text(encoding="utf-8"), GOALS["spor.md"])
+        # The delete control of a habit is a button one can see and hit, not a faint glyph.
+        size = self.wait_for("#goals-habits .goals-delete").size
+        self.assertGreaterEqual(min(size["width"], size["height"]), 28)
         self.assertEqual(self.all(".goals-message")[0].get_attribute("textContent"), "")
         self.assert_clean_text()
+
+    def test_trash_restores_and_deletes_for_good(self) -> None:
+        self.show()
+        self.assertEqual([item for item in self.all("#goals-trash") if item.is_displayed()], [])
+        rid = make_rid("goals/kitap.md")
+        self.goal("kitap.md").find_element("css selector", "summary").click()
+        self.wait_for(f'.goals-goal [data-delete="{rid}"]').click()
+        self.wait_for(f'[data-confirm="{rid}"] .goals-danger').click()
+        self.wait_until(lambda driver: len(self.all("#goals-trash li")) == 1)
+        self.ready()
+        habit = make_rid("goals/okuma.md")
+        self.wait_for(f'#goals-habits [data-delete="{habit}"]').click()
+        self.wait_for(f'#goals-habits [data-confirm="{habit}"] .goals-danger').click()
+        self.wait_until(lambda driver: len(self.all("#goals-trash li")) == 2)
+        rows = self.all("#goals-trash li")
+        self.assertEqual([row.find_element("css selector", "strong").text for row in rows], ["12 kitap okumak", "Kitap okumak"])
+        self.assertIn(self.messages["goals.trash.kind.goal"], rows[0].text)
+        self.assertIn(self.messages["goals.trash.kind.habit"], rows[1].text)
+        rows[0].find_element("css selector", "[data-restore]").click()
+        self.wait_until(lambda driver: len(self.all("#goals-trash li")) == 1)
+        self.assertEqual(self.read("kitap.md"), GOALS["kitap.md"])
+        self.assertIn("1 / 3", self.goal("kitap.md").text)
+        trashed = self.vault / ".trash" / "okuma.md"
+        self.wait_for("#goals-trash [data-purge]").click()
+        box = self.wait_for("#goals-trash [data-confirm]")
+        self.assertIn(self.messages["goals.trash.confirm"].format(title="Kitap okumak"), box.text)
+        box.find_elements("css selector", "button")[1].click()
+        self.assertEqual(self.all("#goals-trash [data-confirm]"), [])
+        self.assertTrue(trashed.is_file())
+        self.wait_for("#goals-trash [data-purge]").click()
+        self.wait_for("#goals-trash [data-confirm] .goals-danger").click()
+        self.wait_until(lambda driver: not [item for item in self.all("#goals-trash") if item.is_displayed()])
+        self.assertFalse(trashed.exists())
+        self.assertEqual(sorted(path.name for path in self.folder.iterdir()), sorted(name for name in GOALS if name != "okuma.md"))
+        self.assert_clean_text()
+        self.assert_no_overflow()
+
+    def test_unrelated_vault_changes_leave_the_page_alone(self) -> None:
+        self.show()
+        self.goal("kitap.md").find_element("css selector", "summary").click()
+        mark = "document.querySelector('#goals-year .goals-goal').dataset.mark"
+        self.driver.execute_script(mark + " = 'kept'")
+        changed = "document.dispatchEvent(new CustomEvent('beyin:changed'))"
+        (self.vault / "notes" / "atlas.md").write_text("# Atlas\n\nBaşka bir not değişti.\n", encoding="utf-8")
+        self.driver.execute_script(changed)
+        self.ready()
+        self.wait_until(lambda driver: driver.execute_script(
+            "return document.querySelector('.goals-page').getAttribute('aria-busy') === 'false' && " + mark) == "kept")
+        # A change to a goal made elsewhere is shown, and the goal the reader opened stays open.
+        (self.folder / "kitap.md").write_text(
+            GOALS["kitap.md"].replace("- [ ] İkinci kitap", "- [x] İkinci kitap"), encoding="utf-8", newline="")
+        self.driver.execute_script(changed)
+        self.wait_until(lambda driver: "2 / 3" in self.goal("kitap.md").text)
+        self.assertIsNone(self.driver.execute_script("return " + mark + " ?? null"))
+        self.assertTrue(self.goal("kitap.md").get_attribute("open"))
 
     def test_months_live_in_the_address(self) -> None:
         self.show()
@@ -220,3 +278,10 @@ class ReadOnlyGoalsTests(GoalsCase):
         self.assertEqual([box.is_enabled() for box in row.find_elements("css selector", ".goals-step input")], [False] * 3)
         self.assertEqual([button for button in self.all(".goals-day") if button.is_enabled()], [])
         self.assertEqual({name: self.read(name) for name in GOALS}, GOALS)
+
+    def test_trash_is_shown_without_buttons(self) -> None:
+        (self.vault / ".trash").mkdir()
+        (self.vault / ".trash" / "eski.md").write_text('---\n{"kind": "goal"}\n---\n# Eski hedef\n', encoding="utf-8")
+        self.show()
+        self.assertIn("Eski hedef", self.text("#goals-trash"))
+        self.assertEqual(self.all("#goals-trash button"), [])

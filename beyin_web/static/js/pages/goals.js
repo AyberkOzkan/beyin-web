@@ -6,7 +6,8 @@ import { monthFromParam, monthDays, monthLabel, monthNavigation, goalsHash, grou
   habitCount, goalPayload } from "./goals-model.js";
 
 export const handlesChanges = true;
-const definitions = [["long", "target"], ["year", "flag"], ["theme", "sun"], ["areas", "tag"], ["habits", "square-check"]];
+const definitions = [["long", "target"], ["year", "flag"], ["theme", "sun"], ["areas", "tag"], ["habits", "square-check"],
+  ["trash", "history"]];
 let active;
 // What the reader had open survives a month change, which renders the page anew.
 let kept = null;
@@ -49,21 +50,46 @@ function field(name, label, attributes = {}, tag = "input", hint = null) {
 }
 
 // Deleting asks once more, in place: a slip of the hand must not cost a goal.
-function confirmDelete(state, kind, item) {
-  return el("div", { class: "goals-confirm", role: "group", "data-confirm": item.rid },
-    el("p", {}, t("goals.confirmDelete", { title: item.title })),
+function confirmBox(state, id, message, yes, run) {
+  return el("div", { class: "goals-confirm", role: "group", "data-confirm": id }, el("p", {}, message),
     el("div", { class: "row" },
-      el("button", { type: "button", class: "button goals-danger", onclick: () => {
-        state.confirm = null;
-        void save(state, `/api/v1/${kind}/${item.rid}/delete`, { title: item.title }, () => state.open.delete(item.rid));
-      } }, t("goals.confirmYes")),
+      el("button", { type: "button", class: "button goals-danger", onclick: () => { state.confirm = null; run(); } }, yes),
       el("button", { type: "button", class: "button", onclick: () => { state.confirm = null; draw(state); } }, t("goals.cancel"))));
 }
 
-function deleteButton(state, item, content) {
-  return el("button", { type: "button", class: "goals-delete", "data-delete": item.rid,
-    "aria-label": t("goals.deleteLabel", { title: item.title }),
-    onclick: () => { state.confirm = item.rid; draw(state); } }, content);
+function confirmDelete(state, kind, item) {
+  return confirmBox(state, item.rid, t("goals.confirmDelete", { title: item.title }), t("goals.confirmYes"), () =>
+    void save(state, `/api/v1/${kind}/${item.rid}/delete`, { title: item.title }, () => state.open.delete(item.rid)));
+}
+
+function deleteButton(state, item, content = null) {
+  const label = t("goals.deleteLabel", { title: item.title });
+  return el("button", { type: "button", class: content ? "goals-delete" : "goals-delete goals-delete-icon",
+    "data-delete": item.rid, "aria-label": label, title: content ? null : label,
+    onclick: () => { state.confirm = item.rid; draw(state); } }, content || icon("x"));
+}
+
+// Deleted goals and habits wait here: they can come back, or go for good after one more question.
+function trash(state) {
+  const { writable } = state.data;
+  return [el("p", { class: "muted goals-trash-note" }, t("goals.trash.note")),
+    el("ul", { class: "goals-trash" }, state.trash.map(item => {
+      const key = `trash:${item.id}`;
+      const body = { title: item.title };
+      return el("li", { "data-trash": item.id },
+        el("div", { class: "goals-trash-row" },
+          el("span", { class: "goals-trash-title" }, el("strong", {}, item.title),
+            el("small", {}, t(`goals.trash.kind.${item.kind}`))),
+          writable && el("div", { class: "row" },
+            el("button", { type: "button", class: "button", "data-restore": item.id,
+              "aria-label": t("goals.trash.restoreLabel", { title: item.title }),
+              onclick: () => void save(state, `/api/v1/goals/trash/${item.id}/restore`, body) }, t("goals.trash.restore")),
+            el("button", { type: "button", class: "button", "data-purge": item.id,
+              "aria-label": t("goals.trash.purgeLabel", { title: item.title }),
+              onclick: () => { state.confirm = key; draw(state); } }, t("goals.trash.purge")))),
+        state.confirm === key && confirmBox(state, key, t("goals.trash.confirm", { title: item.title }),
+          t("goals.trash.confirmYes"), () => void save(state, `/api/v1/goals/trash/${item.id}/delete`, body)));
+    }))];
 }
 
 function closeForm(state) {
@@ -168,7 +194,7 @@ function habits(state) {
     const done = new Set(habit.days);
     return el("tr", { "data-rid": habit.rid },
       el("th", { scope: "row" }, el("span", { class: "goals-habit-title" }, habit.title,
-        data.writable && deleteButton(state, habit, icon("x"))),
+        data.writable && deleteButton(state, habit)),
       el("small", {}, t("goals.habits.count", { count: habitCount(habit, month) }))),
       days.map(day => el("td", {}, el("button", { type: "button", class: "goals-day", "data-day": day,
         "aria-pressed": String(done.has(day)), disabled: day > data.today || !data.writable,
@@ -188,26 +214,33 @@ function draw(state) {
   const { data } = state;
   const groups = groupGoals(data.goals);
   const content = { long: () => goalList(state, "long", groups.long), year: () => goalList(state, "year", groups.year),
-    theme: () => theme(data), areas: () => areas(data), habits: () => habits(state) };
+    theme: () => theme(data), areas: () => areas(data), habits: () => habits(state), trash: () => trash(state) };
   state.notice.hidden = data.writable;
   for (const [key, section] of state.sections) {
-    section.hidden = key === "theme" && !data.theme;
+    section.hidden = (key === "theme" && !data.theme) || (key === "trash" && !state.trash.length);
     if (section.hidden) continue;
     section.querySelector(".goals-actions").replaceChildren(...[["long", "year", "habits"].includes(key) ? addButton(state, key) : null].filter(Boolean));
     section.querySelector(".goals-body").replaceChildren(...content[key]().filter(Boolean));
   }
 }
 
-async function load(state, showSkeleton = true) {
+// A vault change elsewhere reaches this page as "something changed"; when none of it concerns the
+// goals, the page is left as it is: redrawing would take the control under the reader's hand away.
+async function load(state, showSkeleton = true, always = true) {
   const request = ++state.request;
   state.root.setAttribute("aria-busy", "true");
   if (showSkeleton) state.sections.forEach(section => section.querySelector(".goals-body").replaceChildren(skeleton(3)));
   try {
-    const data = await get("/api/v1/goals");
+    const [data, discarded] = await Promise.all([get("/api/v1/goals"), get("/api/v1/goals/trash")]);
     if (active !== state || request !== state.request) return;
+    const month = monthFromParam(state.params.ay, data.today);
+    const shown = JSON.stringify([{ ...data, generation: null }, discarded.items, month]);
+    const unchanged = shown === state.shown;
     state.data = data;
-    state.month = monthFromParam(state.params.ay, data.today);
-    draw(state);
+    state.trash = discarded.items;
+    state.month = month;
+    state.shown = shown;
+    if (always || !unchanged) draw(state);
   } catch (error) {
     if (active !== state || request !== state.request || error.code === "unauthorized") return;
     state.sections.forEach(section => section.querySelector(".goals-body").replaceChildren(
@@ -234,7 +267,7 @@ export function render(root, params = {}) {
   }));
   state.root.append(el("header", { class: "page-heading" }, el("h1", {}, t("page.goals.title")),
     el("p", {}, t("page.goals.description"))), state.notice, state.message, grid);
-  state.changed = () => { if (!state.pending) void load(state, false); };
+  state.changed = () => { if (!state.pending) void load(state, false, false); };
   document.addEventListener("beyin:changed", state.changed);
   root.replaceChildren(state.root);
   void load(state);

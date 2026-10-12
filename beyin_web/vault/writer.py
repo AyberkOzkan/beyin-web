@@ -7,13 +7,19 @@ from collections.abc import Callable
 from pathlib import Path
 
 
+TRASH = ".trash"
+MAX_TRASHED = 500
+MAX_TRASHED_BYTES = 1_000_000
+
+
 class WriteConflict(Exception):
     """The file changed, vanished or cannot be written safely; nothing was written."""
 
 
 class VaultWriter:
     """The only code that writes to the vault: new notes in one folder, edits to given notes,
-    and moving a given note to the vault's trash folder. Nothing is ever deleted for good.
+    moving a given note to the vault's trash folder and back, and removing a note from the trash.
+    Only that last step deletes anything, and only what the caller's check lets through.
 
     Callers pass paths taken from a scan, never from a request. Every edit is a read, a pure
     transformation and an atomic replace, and is dropped when the file changed in between.
@@ -58,32 +64,81 @@ class VaultWriter:
 
         ``check`` sees the note as it is on disk now and raises to keep it where it is.
         """
-        path = self._root / relative
-        trash = self._root / ".trash"
         with self._lock:
-            if path.suffix.lower() != ".md" or not self._inside(path) or not path.is_file():
-                raise WriteConflict("path")
-            try:
-                text = path.read_bytes().decode("utf-8")
-            except (OSError, UnicodeError):
-                raise WriteConflict("read") from None
-            check(text)
-            try:
-                trash.mkdir(exist_ok=True)
-            except OSError:
-                raise WriteConflict("folder") from None
+            path = self._root / relative
+            self._checked(path, check)
+            return self._move(path, self._root / TRASH)
+
+    def trashed(self) -> list[tuple[str, str]]:
+        """Names and texts of the notes lying in the trash folder; what cannot be read is left out."""
+        trash = self._root / TRASH
+        notes: list[tuple[str, str]] = []
+        with self._lock:
             if not trash.is_dir() or not self._inside(trash):
-                raise WriteConflict("folder")
-            for attempt in range(1, 100):
-                target = trash / (path.name if attempt == 1 else f"{path.stem}-{attempt}{path.suffix}")
-                # A note already in the trash under this name is somebody's way back; never replace it.
-                if target.exists() or target.is_symlink():
-                    continue
+                return notes
+            try:
+                entries = sorted(trash.iterdir(), key=lambda entry: entry.name)
+            except OSError:
+                return notes
+            for path in entries[:MAX_TRASHED]:
                 try:
-                    os.rename(path, target)
-                except OSError:
-                    raise WriteConflict("move") from None
-                return target.relative_to(self._root).as_posix()
+                    if path.suffix.lower() != ".md" or path.is_symlink() or not path.is_file():
+                        continue
+                    if path.stat().st_size <= MAX_TRASHED_BYTES:
+                        notes.append((path.name, path.read_bytes().decode("utf-8")))
+                except (OSError, UnicodeError):
+                    continue
+        return notes
+
+    def restore(self, name: str, check: Callable[[str], None]) -> str:
+        """Move a note from the trash back into the notes folder; return its new path."""
+        with self._lock:
+            path = self._trashed(name)
+            self._checked(path, check)
+            return self._move(path, self._root / self._folder)
+
+    def purge(self, name: str, check: Callable[[str], None]) -> None:
+        """Delete a note from the trash for good. This is the one thing here that cannot be undone."""
+        with self._lock:
+            path = self._trashed(name)
+            self._checked(path, check)
+            try:
+                path.unlink()
+            except OSError:
+                raise WriteConflict("delete") from None
+
+    def _trashed(self, name: str) -> Path:
+        if Path(name).name != name or name in {"", ".", ".."}:
+            raise WriteConflict("path")
+        return self._root / TRASH / name
+
+    def _checked(self, path: Path, check: Callable[[str], None]) -> None:
+        """Let ``check`` see the note as it is on disk now; it raises to leave the note alone."""
+        if path.suffix.lower() != ".md" or not self._inside(path) or not path.is_file():
+            raise WriteConflict("path")
+        try:
+            text = path.read_bytes().decode("utf-8")
+        except (OSError, UnicodeError):
+            raise WriteConflict("read") from None
+        check(text)
+
+    def _move(self, path: Path, directory: Path) -> str:
+        try:
+            directory.mkdir(exist_ok=True)
+        except OSError:
+            raise WriteConflict("folder") from None
+        if not directory.is_dir() or not self._inside(directory):
+            raise WriteConflict("folder")
+        for attempt in range(1, 100):
+            target = directory / (path.name if attempt == 1 else f"{path.stem}-{attempt}{path.suffix}")
+            # A note already there under this name is somebody else's; never replace it.
+            if target.exists() or target.is_symlink():
+                continue
+            try:
+                os.rename(path, target)
+            except OSError:
+                raise WriteConflict("move") from None
+            return target.relative_to(self._root).as_posix()
         raise WriteConflict("name")
 
     def update(self, relative: str, transform: Callable[[str], str]) -> bool:

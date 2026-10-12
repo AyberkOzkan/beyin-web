@@ -25,7 +25,17 @@
 .goals-note { color: var(--sage-deep); }
 .goals-delete { display: inline-flex; align-items: center; padding: 2px 6px; background: transparent; border: 0; border-radius: 6px; color: var(--ink-soft); cursor: pointer; }
 .goals-delete:hover { color: var(--ink); background: var(--paper-side); }
-.goals-delete .icon { width: 14px; height: 14px; }
+.goals-delete-icon { width: 30px; height: 30px; justify-content: center; padding: 0; flex-shrink: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); }
+.goals-delete-icon:hover { background: var(--paper-side); border-color: var(--ink-soft); }
+.goals-delete .icon { width: 16px; height: 16px; stroke-width: 2; }
+.goals-trash-note { margin: 0 0 12px; }
+.goals-trash { list-style: none; margin: 0; padding: 0; }
+.goals-trash li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.goals-trash li:last-child { border-bottom: 0; }
+.goals-trash-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.goals-trash-title { min-width: 0; }
+.goals-trash-title strong, .goals-trash-title small { display: block; overflow-wrap: anywhere; }
+.goals-trash-title small { color: var(--ink-soft); }
 .goals-confirm { margin: 12px 0; padding: 16px; background: var(--paper-side); border-radius: var(--radius-control); }
 .goals-confirm p { margin: 0 0 12px; }
 .goals-danger { background: var(--ink); border-color: var(--ink); color: var(--card); }
@@ -63,5 +73,5 @@
 .goals-day[aria-pressed="true"]:disabled { background: var(--sage); border-color: var(--sage); border-style: solid; }
 @media (min-width: 1200px) {
   .goals-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  #goals-habits, #goals-theme[hidden] + #goals-areas { grid-column: 1 / -1; }
+  #goals-habits, #goals-trash, #goals-theme[hidden] + #goals-areas { grid-column: 1 / -1; }
 }

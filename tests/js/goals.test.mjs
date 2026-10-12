@@ -73,4 +73,6 @@ test("every goals message the page asks for exists", () => {
   for (const section of ["long", "year", "habits"]) assert.ok(messages[`goals.${section}.add`]);
   for (const horizon of ["long", "year"]) assert.ok(messages[`goals.field.period.${horizon}`]);
   for (const key of ["previous", "next"]) assert.ok(messages[`goals.habits.${key}`]);
+  for (const kind of ["goal", "habit"]) assert.ok(messages[`goals.trash.kind.${kind}`]);
+  assert.ok(messages["goals.trash.title"]);
 });

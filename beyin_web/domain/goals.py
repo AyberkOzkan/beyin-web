@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 
-from beyin_web.vault.frontmatter import parse_frontmatter
+from beyin_web.vault.frontmatter import declares_private, parse_frontmatter
 from beyin_web.vault.links import fold_name, without_code
 from beyin_web.vault.scan import VaultSnapshot
 
@@ -179,14 +179,36 @@ def set_day(text: str, day: date, done: bool) -> str:
     return text[:offset] + "".join(raw)
 
 
+def _title(meta: dict[str, object], body: str, fallback: str) -> str:
+    title = meta.get("title")
+    if isinstance(title, str) and title.strip():
+        return title.strip()
+    match = re.search(r"^# +(.+?)\s*$", without_code(body), re.MULTILINE)
+    return match[1].strip() if match else fallback
+
+
 def check_title(text: str, expected: str, fallback: str) -> None:
     """Refuse to act on a note whose title is no longer the one the reader was shown."""
     meta, body, _ = parse_frontmatter(text)
-    title = meta.get("title")
-    if not isinstance(title, str) or not title.strip():
-        match = re.search(r"^# +(.+?)\s*$", without_code(body), re.MULTILINE)
-        title = match[1] if match else fallback
-    if title.strip() != expected.strip():
+    if _title(meta, body, fallback) != expected.strip():
+        raise GoalConflict("title_changed")
+
+
+def trashed_note(text: str, fallback: str) -> dict[str, str] | None:
+    """Describe a note found in the trash, if it is a goal or habit that may be shown at all."""
+    meta, body, warning = parse_frontmatter(text)
+    if meta.get("visibility", "internal") not in ("public", "internal") or (warning and declares_private(text)):
+        return None
+    kind = meta.get("kind")
+    if kind not in ("goal", "habit"):
+        return None
+    return {"title": _title(meta, body, fallback), "kind": str(kind)}
+
+
+def check_trashed(text: str, expected: str, fallback: str) -> None:
+    """The trash holds other things too: act only on a goal or habit still titled as shown."""
+    note = trashed_note(text, fallback)
+    if note is None or note["title"] != expected.strip():
         raise GoalConflict("title_changed")
 
 
