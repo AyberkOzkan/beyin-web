@@ -19,6 +19,9 @@ MAX_STEPS = 30
 _STEP = re.compile(r"^([ \t]*- +\[)([xX ])(\][ \t]+)(.*?)[ \t]*$")
 _DAY = re.compile(r"^[ \t]*- +([0-9]{4}-[0-9]{2}-[0-9]{2})[ \t]*$")
 _ASCII = str.maketrans("çğıöşüâîû", "cgiosuaiu")
+# Windows refuses these as file names whatever the extension.
+_RESERVED = frozenset({"con", "prn", "aux", "nul", *(f"com{digit}" for digit in "123456789"),
+                       *(f"lpt{digit}" for digit in "123456789")})
 
 
 class GoalConflict(Exception):
@@ -189,7 +192,8 @@ def clean_line(value: object, limit: int) -> str | None:
 def slug(title: str) -> str:
     folded = unicodedata.normalize("NFKD", fold_name(title).translate(_ASCII))
     name = re.sub(r"[^a-z0-9]+", "-", folded.encode("ascii", "ignore").decode("ascii")).strip("-")
-    return name[:60].rstrip("-")
+    name = name[:60].rstrip("-")
+    return f"{name}-not" if name in _RESERVED else name
 
 
 def _document(meta: dict[str, object], title: str, lines: Sequence[str]) -> str:

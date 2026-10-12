@@ -73,6 +73,8 @@ class GoalTextTests(unittest.TestCase):
             self.assertIsNone(goals.clean_line(value, 20))
         self.assertEqual(goals.slug("Çığ, Şöför & IŞIK İçin 12 Öğün!"), "cig-sofor-isik-icin-12-ogun")
         self.assertEqual(goals.slug("日本語"), "")
+        self.assertEqual([goals.slug(name) for name in ("CON", "Nul", "com1", "LPT9", "conk")],
+                         ["con-not", "nul-not", "com1-not", "lpt9-not", "conk"])
         self.assertLessEqual(len(goals.slug("a" * 200)), 60)
 
     def test_documents_round_trip_through_the_parser(self) -> None:

@@ -52,41 +52,44 @@ function closeForm(state) {
   state.formNode = null;
 }
 
-function form(state, key, fields, submit) {
+// The form outlives the page state that opened it (a month change renders the page anew),
+// so its buttons act on whichever state is current when they are pressed.
+function form(key, fields, path, payload) {
   const node = el("form", { class: "goals-form", "data-form": key, novalidate: true }, fields,
     el("div", { class: "row" },
       el("button", { type: "submit", class: "button goals-primary" }, t("goals.save")),
-      el("button", { type: "button", class: "button", onclick: () => { closeForm(state); draw(state); } }, t("goals.cancel"))));
+      el("button", { type: "button", class: "button", onclick: () => { closeForm(active); draw(active); } }, t("goals.cancel"))));
   node.addEventListener("submit", event => {
     event.preventDefault();
+    const state = active;
     const values = Object.fromEntries(new FormData(node));
     if (!values.title.trim()) { node.elements.title.focus(); return; }
     // A refused save keeps the form and what was typed into it.
-    void submit(values, () => closeForm(state));
+    void save(state, path, payload(values), () => closeForm(state));
   });
   return node;
 }
 
 function goalForm(state, horizon) {
   const areas = el("datalist", { id: `goals-areas-${horizon}` }, state.data.areas.map(area => el("option", { value: area.name })));
-  return form(state, horizon, [
+  return form(horizon, [
     field("title", t("goals.field.title"), { maxlength: 120, required: true }),
     field("period", t("goals.field.period"), { maxlength: 40, placeholder: t(`goals.field.period.${horizon}`) }),
     field("area", t("goals.field.area"), { maxlength: 40, list: areas.id }), areas,
     field("steps", t("goals.field.steps"), { rows: 4 }, "textarea"),
-  ], (values, saved) => save(state, "/api/v1/goals", goalPayload(horizon, values), saved));
+  ], "/api/v1/goals", values => goalPayload(horizon, values));
 }
 
-function habitForm(state) {
-  return form(state, "habits", [field("title", t("goals.field.habit"), { maxlength: 120, required: true })],
-    (values, saved) => save(state, "/api/v1/habits", { title: values.title.trim() }, saved));
+function habitForm() {
+  return form("habits", [field("title", t("goals.field.habit"), { maxlength: 120, required: true })],
+    "/api/v1/habits", values => ({ title: values.title.trim() }));
 }
 
 function addButton(state, key) {
   if (!state.data.writable || state.form === key) return null;
   return el("button", { type: "button", class: "button goals-add", "data-add": key, onclick: () => {
     state.form = key;
-    state.formNode = key === "habits" ? habitForm(state) : goalForm(state, key);
+    state.formNode = key === "habits" ? habitForm() : goalForm(state, key);
     draw(state);
     state.formNode.elements.title.focus();
   } }, t(`goals.${key}.add`));

@@ -130,6 +130,29 @@ class GoalsTests(GoalsCase):
         self.show("#/hedefler?ay=2999-01")
         self.assertEqual(self.text(".goals-month-label"), "Ocak 2026")
 
+    def test_an_open_form_survives_a_month_change(self) -> None:
+        self.show()
+        self.wait_for('[data-add="habits"]').click()
+        self.wait_for('#goals-habits form [name="title"]').send_keys("Erken uyumak")
+        self.wait_for('[data-add="long"]')
+        self.wait_for('[data-month="previous"]').click()
+        self.wait_until(lambda driver: self.text(".goals-month-label") == "Aralık 2025")
+        self.ready()
+        # The page was rendered anew; the form, its text and its buttons are still the reader's.
+        field = self.wait_for('#goals-habits form [name="title"]')
+        self.assertEqual(field.get_attribute("value"), "Erken uyumak")
+        self.wait_for('#goals-habits form [type="submit"]').click()
+        self.wait_until(lambda driver: len(self.all("#goals-habits tbody tr")) == 3)
+        self.assertEqual(self.read("erken-uyumak.md"), goals.habit_document("Erken uyumak"))
+        self.assertEqual(self.all("#goals-habits form"), [])
+        self.wait_for('[data-add="year"]').click()
+        self.wait_for('[data-month="next"]').click()
+        self.wait_until(lambda driver: self.text(".goals-month-label") == "Ocak 2026")
+        self.ready()
+        self.wait_for('#goals-year form [type="button"]').click()
+        self.assertEqual(self.all("#goals-year form"), [])
+        self.assertTrue(self.wait_for('[data-add="year"]').is_displayed())
+
     def test_a_note_changed_elsewhere_is_not_overwritten(self) -> None:
         self.show()
         row = self.goal("kitap.md")
