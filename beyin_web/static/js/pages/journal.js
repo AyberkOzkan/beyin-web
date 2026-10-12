@@ -1,12 +1,13 @@
 import { get } from "../api.js";
 import { el, icon } from "../dom.js";
-import { t } from "../i18n.js";
+import { t, formatDate } from "../i18n.js";
 import { preserveFocus } from "../accessibility.js";
-import { card, emptyState, errorState, listRow, skeleton } from "../components/index.js";
+import { card, emptyState, errorState, listRow, skeleton, statusDot } from "../components/index.js";
 import { calendar } from "../components/calendar.js";
 import { heatmap } from "../components/heatmap.js";
 import { timeline } from "../components/timeline.js";
-import { adjacentReceiptDays, clockText, dayLabel, isDate, latestReceiptDay, receiptDays, shiftMonth } from "./journal-model.js";
+import { adjacentReceiptDays, clockText, dayLabel, daySummary, isDate, latestReceiptDay, receiptDays, shiftMonth, upcomingGroups } from "./journal-model.js";
+import { firstSentence } from "./home-model.js";
 
 let active;
 
@@ -57,6 +58,13 @@ function paintNavigation(state) {
 }
 
 function paintDay(state, data) {
+  const summary = daySummary(data);
+  state.summary.body.replaceChildren(el("div", { class: "journal-summary-grid" },
+    [["receipts", "receipt"], ["workedNotes", "file-text"], ["learned", "lightbulb"], ["sessions", "history"]].map(([key, name]) =>
+      el("div", { class: "journal-summary-tile", role: "img", "data-summary": key,
+        "aria-label": t(`journal.summary.${key}.label`, { count: summary[key] }) },
+      el("div", { class: "journal-summary-content", "aria-hidden": "true" }, icon(name),
+        el("strong", { class: "journal-summary-number" }, summary[key]), el("span", {}, t(`journal.summary.${key}`)))))));
   state.sessions.root.hidden = !data.cards.length;
   state.sessions.body.replaceChildren(...data.cards.map(session => el("article", { class: "journal-session" },
     el("div", { class: "row" }, el("h3", {}, session.label),
@@ -67,6 +75,47 @@ function paintDay(state, data) {
   state.changed.body.replaceChildren(...(data.changed.length ? data.changed.map(record => listRow({
     href: `#/not/${encodeURIComponent(record.rid)}`, title: record.title,
   })) : [empty("changed")]));
+}
+
+function upcomingRow(title, description, rid, leading, date) {
+  return el("a", { class: "journal-upcoming-row", href: `#/not/${encodeURIComponent(rid)}` },
+    date && el("time", { class: "journal-upcoming-date", datetime: date }, formatDate(`${date}T12:00:00`)),
+    el("div", { class: "journal-upcoming-details" }, leading,
+      el("div", { class: "journal-upcoming-copy" }, el("strong", {}, title), el("small", {}, description))));
+}
+
+function paintUpcoming(state, home) {
+  const { dated, steps, moreDated, moreSteps } = upcomingGroups(home);
+  if (!dated.length && !steps.length) {
+    state.upcoming.body.replaceChildren(empty("upcoming"));
+    return;
+  }
+  const group = (key, rows, more) => el("div", { class: `journal-upcoming-group journal-upcoming-${key}` },
+    el("h3", {}, t(`journal.upcoming.${key}`)),
+    rows.length ? rows : el("p", { class: "journal-upcoming-empty" }, t(`journal.upcoming.${key}.empty`)),
+    more > 0 && el("p", { class: "journal-upcoming-more" }, t("journal.upcoming.more", { count: more })));
+  state.upcoming.body.replaceChildren(
+    group("dated", dated.map(item => upcomingRow(item.record.title, t(`home.upcoming.${item.field}`),
+      item.record.rid, icon(item.field === "due_at" ? "flag" : "calendar"), item.date)), moreDated),
+    group("steps", steps.map(task => upcomingRow(task.title, firstSentence(task.next_action),
+      task.rid, statusDot(task.status))), moreSteps));
+}
+
+async function loadUpcoming(state) {
+  if (active !== state) return;
+  const request = ++state.upcomingRequest;
+  busy(state, "upcoming", true);
+  state.upcoming.body.replaceChildren(skeleton());
+  try {
+    // The shell recreates this page on every day change; api.js answers the repeat from its ETag cache.
+    const data = await get("/api/v1/home");
+    if (active === state && request === state.upcomingRequest) paintUpcoming(state, data);
+  } catch (error) {
+    if (active !== state || request !== state.upcomingRequest || error.code === "unauthorized") return;
+    state.upcoming.body.replaceChildren(failure(t("journal.upcoming.error"), "upcoming"));
+  } finally {
+    if (active === state && request === state.upcomingRequest) busy(state, "upcoming", false);
+  }
 }
 
 function busy(state, key, value) {
@@ -104,13 +153,13 @@ async function loadDay(state) {
   const request = ++state.dayRequest;
   busy(state, "day", true);
   state.sessions.root.hidden = false;
-  for (const part of [state.sessions, state.timeline, state.changed]) part.body.replaceChildren(skeleton());
+  for (const part of [state.summary, state.sessions, state.timeline, state.changed]) part.body.replaceChildren(skeleton());
   try {
     const data = await get(`/api/v1/journal/days/${state.date}`);
     if (active === state && request === state.dayRequest) paintDay(state, data);
   } catch (error) {
     if (active !== state || request !== state.dayRequest || error.code === "unauthorized") return;
-    for (const part of [state.sessions, state.timeline, state.changed]) {
+    for (const part of [state.summary, state.sessions, state.timeline, state.changed]) {
       part.body.replaceChildren(failure(t("journal.day.error"), "day"));
     }
   } finally {
@@ -139,7 +188,7 @@ async function loadHeatmap(state) {
     if (active !== state || request !== state.heatRequest || error.code === "unauthorized") return;
     state.heatmap.body.replaceChildren(failure(t("journal.heatmap.error"), "heatmap"));
     if (!state.date) {
-      for (const part of [state.calendar, state.monthDays, state.sessions, state.timeline, state.changed]) {
+      for (const part of [state.summary, state.calendar, state.monthDays, state.sessions, state.timeline, state.changed]) {
         part.body.replaceChildren(failure(t("journal.heatmap.error"), "heatmap"));
       }
     }
@@ -156,8 +205,9 @@ export function render(root, params = {}) {
     calendar: section("calendar", "calendar-days"), monthDays: section("month", "list-todo"),
     sessions: section("sessions", "history"), timeline: section("timeline", "clock"),
     heatmap: section("heatmap", "activity"), changed: section("changed", "file-text"),
+    summary: section("summary", "receipt"), upcoming: section("upcoming", "calendar-days"),
     navigation: el("div", { class: "row journal-day-navigation" }),
-    pending: {}, monthRequest: 0, dayRequest: 0, heatRequest: 0,
+    pending: {}, monthRequest: 0, dayRequest: 0, heatRequest: 0, upcomingRequest: 0,
   };
   active = state;
   const heading = el("header", { class: "page-heading" }, el("h1", {}, t("page.journal.title")),
@@ -169,7 +219,7 @@ export function render(root, params = {}) {
   state.root.append(heading, el("div", { class: "three-columns journal-columns" },
     el("aside", { class: "stack journal-left" }, state.calendar.root, state.monthDays.root),
     el("div", { class: "stack journal-center" }, selected, state.sessions.root, state.timeline.root),
-    el("aside", { class: "stack journal-right" }, state.heatmap.root, state.changed.root)));
+    el("aside", { class: "stack journal-right" }, state.summary.root, state.heatmap.root, state.changed.root, state.upcoming.root)));
   state.click = event => {
     if (active !== state) return;
     const monthButton = event.target.closest("button[data-month-direction]");
@@ -183,9 +233,11 @@ export function render(root, params = {}) {
     if (retryButton?.dataset.retry === "month") void loadMonth(state, state.month);
     if (retryButton?.dataset.retry === "day") void loadDay(state);
     if (retryButton?.dataset.retry === "heatmap") void loadHeatmap(state);
+    if (retryButton?.dataset.retry === "upcoming") void loadUpcoming(state);
   };
   state.root.addEventListener("click", state.click);
   root.replaceChildren(state.root);
+  void loadUpcoming(state);
   void loadHeatmap(state);
   if (state.date) {
     if (state.month) void loadMonth(state, state.month);

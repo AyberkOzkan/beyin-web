@@ -3,11 +3,57 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  adjacentReceiptDays, calendarGrid, clockText, dayLabel, heatmapWeeks, isDate,
-  latestReceiptDay, monthLabel, receiptDays, shiftMonth, toneBucket,
+  adjacentReceiptDays, calendarGrid, clockText, dayLabel, daySummary, heatmapWeeks, isDate,
+  latestReceiptDay, monthLabel, receiptDays, shiftMonth, toneBucket, upcomingGroups,
 } from "../../beyin_web/static/js/pages/journal-model.js";
 
 const golden = JSON.parse(readFileSync(new URL("../fixtures/golden/journal_heatmap.json", import.meta.url), "utf8"));
+const goldenDay = JSON.parse(readFileSync(new URL("../fixtures/golden/journal_day.json", import.meta.url), "utf8"));
+const goldenHome = JSON.parse(readFileSync(new URL("../fixtures/golden/home.json", import.meta.url), "utf8"));
+
+test("day summary counts receipts, distinct sources, learned lines and session cards", () => {
+  assert.deepEqual(daySummary(goldenDay), { receipts: 1, workedNotes: 1, learned: 0, sessions: 1 });
+  const data = {
+    receipts: [
+      { refs: [{ rid: "shared" }, { rid: "second" }], learned: "A lesson." },
+      { refs: [{ rid: "shared" }, { rid: "shared" }], learned: null },
+      { learned: "" }, { refs: [], learned: "  " },
+    ], cards: [{}, {}],
+  };
+  assert.deepEqual(daySummary(data), { receipts: 4, workedNotes: 2, learned: 1, sessions: 2 });
+  assert.deepEqual(daySummary({}), { receipts: 0, workedNotes: 0, learned: 0, sessions: 0 });
+});
+
+test("upcoming groups keep the golden server order and drop tasks without actions", () => {
+  assert.deepEqual(upcomingGroups(goldenHome), {
+    dated: goldenHome.upcoming, steps: [goldenHome.tasks[0]], moreDated: 0, moreSteps: 0,
+  });
+  const tasks = [{ rid: "missing" }, { next_action: null }, { next_action: "" }, { next_action: " \n " },
+    { rid: "action", next_action: "Continue." }];
+  assert.deepEqual(upcomingGroups({ tasks }).steps, [tasks[4]]);
+});
+
+test("upcoming groups apply each limit independently and count the remainder", () => {
+  const home = {
+    upcoming: Array.from({ length: 8 }, (_, index) => ({ rid: `date-${8 - index}` })),
+    tasks: Array.from({ length: 6 }, (_, index) => ({ rid: `task-${6 - index}`, next_action: "Continue." })),
+  };
+  const before = structuredClone(home);
+  for (const limit of [0, 2, 5, 10]) {
+    assert.deepEqual(upcomingGroups(home, limit), {
+      dated: home.upcoming.slice(0, limit), steps: home.tasks.slice(0, limit),
+      moreDated: Math.max(0, 8 - limit), moreSteps: Math.max(0, 6 - limit),
+    });
+  }
+  assert.deepEqual(upcomingGroups(home), upcomingGroups(home, 5));
+  assert.deepEqual(home, before);
+});
+
+test("empty home has two empty upcoming groups", () => {
+  const empty = { dated: [], steps: [], moreDated: 0, moreSteps: 0 };
+  assert.deepEqual(upcomingGroups({}), empty);
+  assert.deepEqual(upcomingGroups({ upcoming: [], tasks: [] }), empty);
+});
 
 test("calendar begins on Monday and pads both ends to complete weeks", () => {
   for (const [month, offset, length] of [

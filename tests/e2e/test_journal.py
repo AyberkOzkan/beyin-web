@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 from unittest.mock import patch
 
@@ -216,3 +217,195 @@ class JournalTests(PageTestCase):
         self.open_day("2026-01-12")
         self.assert_no_overflow()
         self.assert_clean_text()
+
+    def assert_summary(self, data: dict[str, Any]) -> None:
+        receipts = data["receipts"]
+        counts = {
+            "receipts": len(receipts),
+            "workedNotes": len({ref["rid"] for receipt in receipts for ref in receipt.get("refs", [])}),
+            "learned": sum(bool((receipt.get("learned") or "").strip()) for receipt in receipts),
+            "sessions": len(data["cards"]),
+        }
+        self.assertEqual(len(self.all("#journal-summary .journal-summary-tile")), 4)
+        for key, count in counts.items():
+            selector = f'#journal-summary [data-summary="{key}"]'
+            self.assertEqual(self.text(selector + " .journal-summary-number"), str(count))
+            tile = self.wait_for(selector)
+            self.assertEqual(tile.get_attribute("aria-label"),
+                             self.messages[f"journal.summary.{key}.label"].format(count=count))
+            self.assertEqual(self.wait_for(selector + " .journal-summary-content").get_attribute("aria-hidden"), "true")
+            self.assertEqual(self.driver.execute_script(
+                "return document.querySelector(arguments[0] + ' .icon').getAttribute('aria-hidden')", selector), "true")
+
+    def test_selected_summary_updates_and_upcoming_stays_between_days(self) -> None:
+        original = self.server.api._build
+        responses: dict[str, Any] = {}
+        builds: list[str] = []
+
+        def counting(path: str, *args: Any) -> Any:
+            data = original(path, *args)
+            responses[path] = data
+            builds.append(path)
+            return data
+
+        def home_requests() -> int:
+            # The page asks again on every day change; the server answers the repeats from its cache.
+            return builds.count("home")
+
+        with patch.object(self.server.api, "_build", side_effect=counting):
+            self.open_day("2026-01-12")
+            self.assert_summary(self.golden("journal_day"))
+            self.assertEqual(self.driver.execute_script(
+                "return [...document.querySelector('.journal-right').children].map(node => node.id)"),
+                ["journal-summary", "journal-heatmap", "journal-changed", "journal-upcoming"])
+            first = self.text("#journal-upcoming")
+            self.go_day(".journal-previous-day", "2026-01-07")
+            self.assert_summary(responses["journal/days/2026-01-07"])
+            self.go_day('.journal-calendar-day[data-date="2026-01-08"]', "2026-01-08")
+            self.assert_summary(responses["journal/days/2026-01-08"])
+            self.assertEqual(self.text("#journal-upcoming"), first)
+            self.assertEqual(home_requests(), 1)
+            self.driver.back()
+            self.wait_until(lambda driver: self.hash() == "#/gunlukler/2026-01-07")
+            self.filled("2026-01-07")
+            self.assert_summary(responses["journal/days/2026-01-07"])
+            self.assertEqual(home_requests(), 1)
+
+    def test_upcoming_golden_rows_icons_and_links(self) -> None:
+        home = self.golden("home")
+        self.open_day("2026-01-12")
+        rows = self.all(".journal-upcoming-dated .journal-upcoming-row")
+        self.assertEqual([row.find_element("css selector", "strong").text for row in rows],
+                         [item["record"]["title"] for item in home["upcoming"]])
+        for row, item in zip(rows, home["upcoming"]):
+            self.assertIn(self.messages["home.upcoming." + item["field"]], row.text)
+            self.assertEqual(row.find_element("css selector", "time").get_attribute("datetime"), item["date"])
+            icon_name = "flag" if item["field"] == "due_at" else "calendar"
+            self.assertTrue(row.find_element("css selector", "use").get_attribute("href").endswith("#" + icon_name))
+        task = next(task for task in home["tasks"] if task["next_action"])
+        step = self.wait_for(".journal-upcoming-steps .journal-upcoming-row")
+        self.assertIn(task["title"], step.text)
+        self.assertIn(task["next_action"], step.text)
+        self.assertEqual(step.find_element("css selector", ".status-dot").get_attribute("aria-label"),
+                         self.messages["status." + task["status"]])
+        step.click()
+        self.wait_until(lambda driver: self.hash() == "#/not/" + task["rid"])
+        self.wait_until(lambda driver: not self.all(".journal-page"))
+        self.open_day("2026-01-12")
+        self.wait_for(".journal-upcoming-dated .journal-upcoming-row").click()
+        self.wait_until(lambda driver: self.hash() == "#/not/" + home["upcoming"][0]["record"]["rid"])
+
+    def test_upcoming_empty_after_tasks_and_dates_are_removed(self) -> None:
+        for task in (self.vault / "tasks").glob("*.md"):
+            task.unlink()
+        for path in self.vault.rglob("*.md"):
+            body = path.read_text(encoding="utf-8")
+            cleaned = re.sub(r"^(?:due_at|review_at):[^\n]*\n", "", body, flags=re.MULTILINE)
+            if cleaned != body:
+                path.write_text(cleaned, encoding="utf-8")
+        self.restart_server()
+        self.open_day("2026-01-12")
+        self.assertIn(self.messages["journal.upcoming.empty"], self.text("#journal-upcoming .state"))
+        self.assertEqual(self.all(".journal-upcoming-row"), [])
+        self.assert_clean_text()
+
+    def test_upcoming_error_is_isolated_and_retry_recovers(self) -> None:
+        original = self.server.api._build
+        responses: dict[str, Any] = {}
+
+        def failing(path: str, *args: Any) -> Any:
+            if path == "home":
+                raise RuntimeError("synthetic_failure")
+            data = original(path, *args)
+            responses[path] = data
+            return data
+
+        with patch.object(self.server.api, "_build", side_effect=failing):
+            self.open_day("2026-01-12")
+            retry = self.wait_for('#journal-upcoming [data-retry="upcoming"]')
+            self.assertIn(self.messages["journal.upcoming.error"], self.text("#journal-upcoming"))
+            self.assertEqual(retry.text, self.messages["action.retry"])
+            self.assertEqual(len(self.all("#main [role=alert]")), 1)
+            self.assert_summary(self.golden("journal_day"))
+            self.go_day(".journal-previous-day", "2026-01-07")
+            self.assert_summary(responses["journal/days/2026-01-07"])
+            errors = self.console_errors()
+            self.assertTrue(errors)
+            self.assertTrue(all("500" in entry["message"] and "/api/v1/home" in entry["message"]
+                                for entry in errors), errors)
+        self.wait_for('#journal-upcoming [data-retry="upcoming"]').click()
+        self.filled("2026-01-07")
+        self.assertEqual(self.all("#journal-upcoming [role=alert]"), [])
+        self.assertIn(self.golden("home")["tasks"][0]["next_action"], self.text("#journal-upcoming"))
+
+    def test_summary_day_error_and_retry(self) -> None:
+        original = self.server.api._build
+
+        def failing(path: str, *args: Any) -> Any:
+            if path == "journal/days/2026-01-12":
+                raise RuntimeError("synthetic_failure")
+            return original(path, *args)
+
+        with patch.object(self.server.api, "_build", side_effect=failing):
+            self.open_day("2026-01-12")
+            retry = self.wait_for('#journal-summary [data-retry="day"]')
+            self.assertIn(self.messages["journal.day.error"], self.text("#journal-summary"))
+            self.assertEqual(self.all("#journal-upcoming [role=alert]"), [])
+            errors = self.console_errors()
+            self.assertTrue(errors)
+            self.assertTrue(all("500" in entry["message"] and "/api/v1/journal/days/2026-01-12" in entry["message"]
+                                for entry in errors), errors)
+        retry.click()
+        self.filled("2026-01-12")
+        self.assert_summary(self.golden("journal_day"))
+
+    def test_new_panels_layout_at_minimum_width(self) -> None:
+        self.open_day("2026-01-12")
+        self.assert_no_overflow((1024, 1199, 1200, 1672))
+        self.assert_clean_text()
+        self.assertEqual(self.all("#main [style], #main style, #main script"), [])
+
+    def test_pending_upcoming_response_cannot_change_a_destroyed_page(self) -> None:
+        self.open("#/bilgi")
+        self.wait_for(".record-reader")
+        self.driver.execute_script(
+            "const original = window.fetch; const home = arguments[0];"
+            "window.fetch = (url, options) => {"
+            "  if (new URL(url, location.origin).pathname !== '/api/v1/home') return original(url, options);"
+            "  return new Promise(resolve => { window.releaseJournalHome = () => resolve("
+            "    new Response(JSON.stringify(home), {status: 200, headers: {'Content-Type': 'application/json'}})); });"
+            "}; location.hash = '/gunlukler/2026-01-12';", self.golden("home"))
+        self.wait_for("#journal-summary .journal-summary-tile")
+        self.wait_for("#journal-upcoming .skeleton")
+        self.driver.execute_script("window.pendingJournal = document.querySelector('.journal-page'); location.hash = '/bilgi'")
+        self.wait_until(lambda driver: not self.all(".journal-page"))
+        self.wait_for(".record-reader")
+        before = self.driver.execute_script("return window.pendingJournal.outerHTML")
+        self.driver.execute_async_script(
+            "const done = arguments[arguments.length - 1]; window.releaseJournalHome();"
+            "requestAnimationFrame(() => requestAnimationFrame(() => done()));")
+        self.assertEqual(self.driver.execute_script("return window.pendingJournal.outerHTML"), before)
+        self.assertEqual(self.all(".journal-page"), [])
+
+    def test_upcoming_group_empty_messages_limits_and_first_sentence(self) -> None:
+        for group, more, empty_group in [("steps", 2, "dated"), ("dated", 1, "steps")]:
+            self.restart_server()
+            original = self.server.api._build
+            home = self.golden("home")
+            home["upcoming"] = home["upcoming"] * 3 if group == "dated" else []
+            home["tasks"] = ([dict(home["tasks"][0], next_action="İlk adımı yap. İkinci adımı yap.")
+                              for _ in range(7)] if group == "steps" else [])
+
+            def synthetic(path: str, *args: Any) -> Any:
+                return home if path == "home" else original(path, *args)
+
+            with patch.object(self.server.api, "_build", side_effect=synthetic):
+                self.open_day("2026-01-12")
+                self.assertIn(self.messages[f"journal.upcoming.{empty_group}.empty"],
+                              self.text(f".journal-upcoming-{empty_group}"))
+                self.assertEqual(len(self.all(f".journal-upcoming-{group} .journal-upcoming-row")), 5)
+                self.assertEqual(self.text(f".journal-upcoming-{group} .journal-upcoming-more"),
+                                 self.messages["journal.upcoming.more"].format(count=more))
+                if group == "steps":
+                    self.assertEqual([row.text for row in self.all(".journal-upcoming-steps .journal-upcoming-copy small")],
+                                     ["İlk adımı yap."] * 5)

@@ -76,3 +76,22 @@ export function monthLabel(month) {
     month: "long", year: "numeric", timeZone: "UTC",
   }).format(utcDate(`${month}-01`));
 }
+
+export function daySummary(data = {}) {
+  const receipts = data.receipts || [];
+  return {
+    receipts: receipts.length,
+    workedNotes: new Set(receipts.flatMap(receipt => (receipt.refs || []).map(record => record.rid))).size,
+    learned: receipts.filter(receipt => typeof receipt.learned === "string" && receipt.learned.trim()).length,
+    sessions: (data.cards || []).length,
+  };
+}
+
+export function upcomingGroups(home = {}, limit = 5) {
+  const dated = home.upcoming || [];
+  const steps = (home.tasks || []).filter(task => typeof task.next_action === "string" && task.next_action.trim());
+  return {
+    dated: dated.slice(0, limit), steps: steps.slice(0, limit),
+    moreDated: Math.max(0, dated.length - limit), moreSteps: Math.max(0, steps.length - limit),
+  };
+}
