@@ -90,6 +90,8 @@ class BeyinHTTPServer(ThreadingHTTPServer):
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+    _body_read = False
+
     @property
     def application(self) -> BeyinHTTPServer:
         return cast(BeyinHTTPServer, self.server)
@@ -112,6 +114,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     ) -> None:
         if self.request_version == "HTTP/0.9":
             self.request_version = "HTTP/1.0"
+        self._drain()
         error_code = {
             400: "bad_request", 401: "unauthorized", 403: "forbidden_host",
             404: "not_found", 405: "method_not_allowed", 500: "internal_error",
@@ -228,6 +231,28 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             self._serve_file("index.html")
 
+    def _drain(self) -> None:
+        """Take a small unread request body off the socket before refusing the request.
+
+        Closing a connection with unread data makes some systems reset it, and the client then
+        sees a broken connection instead of the 401, 403 or 405 it was sent.
+        """
+        headers = getattr(self, "headers", None)
+        length = headers.get("Content-Length", "") if headers is not None else ""
+        if not self._body_read and re.fullmatch(r"[0-9]{1,9}", length) and 0 < int(length) <= MAX_WRITE_BODY:
+            self._read_body(int(length))
+
+    def _read_body(self, length: int) -> bytes:
+        self._body_read = True
+        # A client that announces a body and never sends it must not hold this thread for good.
+        self.connection.settimeout(5)
+        try:
+            return self.rfile.read(length)
+        except OSError:
+            return b""
+        finally:
+            self.connection.settimeout(None)
+
     def _refuse(self, status: int, code: str) -> None:
         self.send_json({"error": {"code": code, "message": code}}, status)
 
@@ -237,9 +262,12 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._refuse(400, "bad_request")
             return
         # Read the body before any refusal, so the client receives the answer instead of a reset.
-        raw = self.rfile.read(min(int(length), MAX_WRITE_BODY + 1))
+        raw = self._read_body(min(int(length), MAX_WRITE_BODY + 1))
         if int(length) > MAX_WRITE_BODY:
             self._refuse(413, "payload_too_large")
+            return
+        if len(raw) != int(length):
+            self._refuse(400, "bad_request")
             return
         if self.application.settings.read_only:
             self._refuse(403, "read_only")

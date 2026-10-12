@@ -352,6 +352,21 @@ class GoalAPITests(GoalServerCase):
         self.assertEqual(self.call("/goals", body, headers={"Origin": f"http://localhost:{self.port}",
                                                              "Content-Type": "application/json; charset=utf-8"})[0], 200)
 
+    def test_a_body_that_never_arrives_is_refused(self) -> None:
+        before = self.files()
+        connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        try:
+            connection.putrequest("POST", "/api/v1/goals")
+            for name, value in (("Origin", f"http://127.0.0.1:{self.port}"), ("Content-Type", "application/json"),
+                                ("X-Beyin-Web", "1"), ("Content-Length", "64")):
+                connection.putheader(name, value)
+            connection.endheaders(b'{"title": "Half')
+            response = connection.getresponse()
+            self.assertEqual((response.status, json.loads(response.read())["error"]["code"]), (400, "bad_request"))
+        finally:
+            connection.close()
+        self.assertEqual(self.files(), before)
+
     def test_only_post_reaches_a_write_route(self) -> None:
         for method in ("PUT", "PATCH", "DELETE"):
             with self.subTest(method=method):
