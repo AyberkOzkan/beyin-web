@@ -47,6 +47,24 @@
 
 `/pulse`'ın ilk isteği vault'un ilk taramasını içerir. Gerçek süreçte (`python3 -m beyin_web`) aynı ilk istek 1,73 sn sürdü; fark, açılışta bir kez çağrılan `doctor` komutudur.
 
+## Ölçek: 2.000 notluk vault (2026-10-12)
+
+PLAN'ın rahat hedefi olan boyut, `scripts/synthetic_vault.py --notes 2000` ile üretilen vault'ta ölçüldü (tek klasörde 2.000 dosya; 500 `fact`, 1.500 `note`). Önceki sütun commit `ffc0a39`, sonraki sütun tarama ölçeği paketi (dosya başına `resolve()` kalktı; stat ve okuma en çok 8 iş parçacığıyla).
+
+| Ortam | Ölçü | Önce | Sonra |
+|---|---|---:|---:|
+| WSL, vault `/mnt/c` altında | İlk tarama | 31,3 sn | 0,52–0,54 sn (iki koşu) |
+| WSL, vault `/mnt/c` altında | Değişiklik yokken yeniden tarama | 693 ms | 164–165 ms |
+| Windows (NTFS) | İlk tarama | 1,29 sn | 0,21 sn (Kodzilla'nın ölçümü) |
+| Windows (NTFS) | Değişiklik yokken yeniden tarama | 50 ms | 44 ms |
+| WSL, gerçek vault (123 dosya) | İlk tarama | 0,88–0,90 sn | 0,10 sn |
+| WSL, gerçek vault (123 dosya) | Değişiklik yokken yeniden tarama | 71–103 ms | 61 ms |
+
+- Darboğaz dosya başına `path.resolve()` idi: `/mnt/c` üzerinde yolun her parçası ayrı sorgulanıyordu (400 dosyada 4,8 sn). Okuma sıralıyken 400 dosyada 1,7 sn, 8 iş parçacığıyla 0,13 sn sürdü.
+- Paketten önce `measure.py --api` bu vault'ta düşüyordu (ilk istek 30 sn'lik zaman aşımını geçiyordu); şimdi biter. Önbellekten API yanıtları 2.000 notta da hedefin altında: en yavaş uç `/graph`, ortanca 12 ms, en büyük 13 ms; ötekilerin ortancası 0,4–2,0 ms. Sunucu belleği 40,0 MB.
+- Denetim aralığı taramanın süresine uyar: yeniden tarama 165 ms sürdüğünde sonraki denetim en erken 2 sn sonra, 1 sn sürdüğünde 10 sn sonra yapılır (üst sınır 30 sn).
+- Windows'taki ilk koşu 8,6 sn sürdü (yeni üretilen dosyalara ilk dokunuş); tabloda ikinci koşular var.
+
 ## Yöntem
 
 - **Tarama, API, süreç içi işlemci ve bellek:** `python3 scripts/measure.py VAULT --api --repeat 20 --idle 60`. Betik sunucuyu kendi sürecinde, `127.0.0.1`'de boş bir portta açar; işlemci için 60 sn hiç istek atmadan bekler ve `time.process_time()` farkını duvar saatine oranlar; belleği `/proc/self/status`'taki `VmRSS`'ten okur. Bu rakamlar ölçen istemciyi de içerir.
@@ -58,6 +76,6 @@
 
 ## Sınırlar
 
-- Tek makinede, tek vault boyutunda ölçüldü. PLAN'ın rahat hedefi olan 2.000 notluk vault'ta tarama ölçülmedi.
+- Tek makinede ölçüldü. 2.000 notluk ölçüm sentetik vault'tadır: dosyalar küçük, tek klasörde ve frontmatter'ları düzgündür; gerçek bir 2.000 notluk vault'un dosyaları daha büyük ve klasörleri daha derindir.
 - Tarayıcı ölçümü başsız Edge'dedir; görünür pencerede ve başka tarayıcılarda ölçülmedi.
 - Windows'ta bellek ölçülmedi (`measure.py` orada `rss_mb: unavailable` yazar).
