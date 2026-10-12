@@ -41,7 +41,7 @@
 .home-row-copy strong { display: block; font-weight: 500; line-height: 1.4; }
 .home-row-copy small { display: block; font-size: 13px; line-height: 1.5; margin-top: 3px; }
 .home-row > time { flex: 0 0 auto; max-width: 110px; text-align: right; font-size: 12px; }
-.home-quiet { opacity: .6; }
+.home-quiet { color: var(--ink-soft); }
 .home-row:hover strong, .home-session-link:hover .home-session-label { text-decoration: underline; text-underline-offset: 3px; }
 .home-footer-link { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 18px; font-size: 14px; }
 .home-empty { margin: 0; padding: 12px 0; }

@@ -33,7 +33,7 @@ function files(data) {
       el("strong", {}, name),
       el("p", {}, t(size.limit === null ? "health.size" : "health.sizeLimit", { chars: size.chars, limit: size.limit })),
       size.limit !== null && progressBar(Math.round(size.ratio * 100), 100, t("health.fileProgress", { name })),
-      size.overLimit && el("strong", { class: "tone-error" }, t("health.overLimit")));
+      size.overLimit && el("strong", { class: "badge tone-error" }, t("health.overLimit")));
   }));
 }
 

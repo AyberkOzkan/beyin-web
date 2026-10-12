@@ -16,7 +16,6 @@
 .reader-menu .button { display: flex; margin-top: 8px; }
 .reader-menu:not([open]) > .button { display: none; }
 .reader-path { display: block; width: 100%; background: var(--paper-side); border: 1px solid var(--line); padding: 8px; margin-bottom: 12px; }
-.reader-untrusted { color: var(--red); }
 .reader-body, .reader-task-body { margin-top: 24px; min-width: 0; }
 .reader-task-body > summary { cursor: pointer; font-weight: 600; }
 .reader-task { padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-control); }

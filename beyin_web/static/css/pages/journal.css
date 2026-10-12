@@ -40,7 +40,7 @@
 .journal-receipt-content::before { content: ""; position: absolute; top: 10px; left: 64px; width: 9px; height: 9px; border-radius: 50%; background: var(--sage); }
 .journal-receipt-badges { gap: 6px; margin-bottom: 12px; }
 .journal-harness .icon { width: 14px; height: 14px; }
-.journal-project-inferred { opacity: .55; }
+.journal-project-inferred { color: var(--ink-soft); }
 .journal-summary, .journal-learned span, .journal-session dd { white-space: pre-wrap; }
 .journal-summary { margin-bottom: 12px; }
 .journal-learned { padding: 12px; background: color-mix(in srgb, var(--sage) 15%, var(--card)); border-radius: 8px; margin-bottom: 12px; }

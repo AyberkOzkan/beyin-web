@@ -9,7 +9,7 @@
 .projects-summary { margin: 0; color: var(--ink-soft); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .projects-project time { font-size: 12px; color: var(--ink-soft); }
 .projects-project:hover { background: var(--paper-side); }
-.projects-quiet { opacity: .6; }
+.projects-quiet { color: var(--ink-soft); }
 .projects-selected { background: var(--line); }
 .projects-selected > strong { color: var(--sage-deep); }
 .projects-page .progress { min-width: 0; }

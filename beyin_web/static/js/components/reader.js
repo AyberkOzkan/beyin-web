@@ -44,7 +44,7 @@ export function createReader(record) {
   document.addEventListener("keydown", escape);
   document.addEventListener("click", outside);
   const metadata = el("div", { class: "row reader-metadata" }, badge(recordKind(record.kind)),
-    record.kind === "untrusted" && el("span", { class: "badge reader-untrusted" }, t("knowledge.untrusted")),
+    record.kind === "untrusted" && el("span", { class: "badge tone-error reader-untrusted" }, t("knowledge.untrusted")),
     record.project && el("a", { href: `#/projeler/${encodeURIComponent(record.project)}` }, record.project),
     el("time", { datetime: record.mtime, title: t("knowledge.modified"), class: "muted" },
       t("knowledge.dateTime", { date: formatDate(record.mtime), time: formatTime(record.mtime) })));

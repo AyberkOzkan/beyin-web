@@ -69,8 +69,11 @@ class JournalTests(PageTestCase):
         inferred = self.receipt_selector(4) + " .journal-project"
         self.assertEqual(self.text(inferred), "cinar")
         self.assertIn("journal-project-inferred", self.wait_for(inferred).get_attribute("class"))
-        self.assertLess(float(self.driver.execute_script(
-            "return getComputedStyle(document.querySelector(arguments[0])).opacity", inferred)), 1)
+        # An inferred project is set apart by the soft ink colour; fading it with opacity made it unreadable.
+        self.assertTrue(self.driver.execute_script(
+            "const style = getComputedStyle(document.querySelector(arguments[0]));"
+            "return style.opacity === '1' && style.color === getComputedStyle(document.querySelector('.journal-receipt-time')).color"
+            " && style.color !== getComputedStyle(document.querySelector('.journal-harness')).color", inferred))
         self.assertEqual(self.all(self.receipt_selector(5) + " .journal-project"), [])
         self.assertEqual([item.text for item in self.all(".journal-harness")], ["claude", "claude"])
         self.open_day("2026-01-05")
