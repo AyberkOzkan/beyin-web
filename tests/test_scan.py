@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +32,110 @@ class ScanTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
         return path
+
+    def add_many_notes(self) -> list[Path]:
+        return [self.write(f"many/note-{index:02d}.md", f"# Note {index}\n") for index in range(40)]
+
+    def test_pooled_scan_matches_sequential_and_independent_sources(self) -> None:
+        self.add_many_notes()
+        with patch("beyin_web.vault.scan.ThreadPoolExecutor", wraps=ThreadPoolExecutor) as pool:
+            pooled = self.source.snapshot()
+        self.assertEqual(pool.call_count, 2)
+        self.assertTrue(all(call.kwargs == {"max_workers": 8} for call in pool.call_args_list))
+        with patch("beyin_web.vault.scan._MAX_WORKERS", 1), \
+                patch("beyin_web.vault.scan.ThreadPoolExecutor", side_effect=AssertionError("Unexpected pool")):
+            sequential = MarkdownSource(self.vault, min_interval=0).snapshot()
+        independent = MarkdownSource(self.vault, min_interval=0).snapshot()
+        for snapshot in (sequential, independent):
+            self.assertEqual(list(pooled.records.items()), list(snapshot.records.items()))
+            self.assertEqual(pooled.warnings, snapshot.warnings)
+            self.assertEqual(pooled.hidden_private, snapshot.hidden_private)
+            self.assertEqual(pooled.generation, snapshot.generation)
+
+    def test_fewer_than_eight_changed_files_are_read_without_pool(self) -> None:
+        self.add_many_notes()
+        self.source.snapshot()
+        for index in range(7):
+            self.write(f"many/note-{index:02d}.md", f"# Changed note {index}\n")
+        files = self.source._walk()
+        with patch.object(self.source, "_walk", return_value=files), \
+                patch("beyin_web.vault.scan.ThreadPoolExecutor", side_effect=AssertionError("Unexpected pool")), \
+                patch.object(self.source, "_read_file", wraps=self.source._read_file) as read:
+            self.source.snapshot()
+        self.assertEqual(read.call_count, 7)
+
+    def test_pooled_read_failure_is_isolated(self) -> None:
+        paths = self.add_many_notes()
+        original = self.source._read_file
+
+        def read(path: Path) -> str:
+            if path == paths[0]:
+                raise OSError("unreadable marker")
+            return original(path)
+
+        with patch.object(self.source, "_read_file", side_effect=read):
+            snapshot = self.source.snapshot()
+        self.assertNotIn(make_rid("many/note-00.md"), snapshot.records)
+        self.assertEqual(sum(record.path.startswith("many/") for record in snapshot.records.values()), 39)
+        self.assertEqual(snapshot.warnings.count("unreadable"), 1)
+        self.assertNotIn("unreadable marker", repr(snapshot))
+
+    def test_pools_close_after_scan(self) -> None:
+        self.add_many_notes()
+        before = threading.active_count()
+        self.source.snapshot()
+        self.assertEqual(threading.active_count(), before)
+        self.source.snapshot()
+        self.assertEqual(threading.active_count(), before)
+
+    def test_unexpected_pool_exception_propagates(self) -> None:
+        self.add_many_notes()
+        for error in (ValueError, RuntimeError):
+            with self.subTest(error=error), \
+                    patch.object(self.source, "_read_file", side_effect=error("unexpected")):
+                with self.assertRaisesRegex(error, "unexpected"):
+                    self.source.snapshot()
+        with patch("beyin_web.vault.scan._stat_entry", side_effect=ValueError("unexpected")):
+            with self.assertRaisesRegex(ValueError, "unexpected"):
+                self.source.snapshot()
+
+    def test_pooled_stat_failure_is_walk_error(self) -> None:
+        self.add_many_notes()
+        original = os.scandir
+
+        class FailedEntry:
+            def __init__(self, entry: os.DirEntry[str]) -> None:
+                self.entry = entry
+                self.name = entry.name
+                self.path = entry.path
+
+            def is_symlink(self) -> bool:
+                return self.entry.is_symlink()
+
+            def is_dir(self, *, follow_symlinks: bool) -> bool:
+                return self.entry.is_dir(follow_symlinks=follow_symlinks)
+
+            def is_file(self, *, follow_symlinks: bool) -> bool:
+                return self.entry.is_file(follow_symlinks=follow_symlinks)
+
+            def stat(self, *, follow_symlinks: bool) -> os.stat_result:
+                raise OSError("stat marker")
+
+        class Entries:
+            def __init__(self, path: Path) -> None:
+                self.entries = original(path)
+
+            def __enter__(self) -> Iterator[os.DirEntry[str] | FailedEntry]:
+                return (FailedEntry(entry) if entry.name == "note-00.md" else entry for entry in self.entries)
+
+            def __exit__(self, *args: object) -> None:
+                self.entries.close()
+
+        with patch("beyin_web.vault.scan.os.scandir", side_effect=Entries):
+            snapshot = self.source.snapshot()
+        self.assertEqual(snapshot.warnings.count("walk_error"), 1)
+        self.assertEqual(sum(record.path.startswith("many/") for record in snapshot.records.values()), 39)
+        self.assertNotIn("stat marker", repr(snapshot))
 
     def test_fixture_snapshot(self) -> None:
         snapshot = self.source.snapshot()
@@ -79,19 +184,29 @@ class ScanTests(unittest.TestCase):
         self.assertNotIn(make_rid("notes/alias.md"), snapshot.records)
         self.assertFalse(any(record.path.startswith("alias-dir/") for record in snapshot.records.values()))
 
-    def test_resolved_outside_entry_is_rejected(self) -> None:
+    def test_file_replaced_by_outside_symlink_after_walk_is_skipped(self) -> None:
+        if not has_outside_link(self.vault):
+            self.skipTest("Symbolic links are unavailable on this platform")
+        before = self.source.snapshot()
+        path = self.write("notes/replaced.md", "# Before replacement\n")
         outside = self.vault.parent / "outside" / "hedef.md"
-        original = Path.resolve
+        original = self.source._walk
 
-        def resolve(path: Path, *args: object, **kwargs: object) -> Path:
-            if path == self.vault / "notes" / "atlas.md":
-                return outside
-            return original(path, *args, **kwargs)
+        def walk() -> tuple[dict[str, tuple[Path, os.stat_result]], tuple[str, ...]]:
+            result = original()
+            self.assertIn("notes/replaced.md", result[0])
+            path.unlink()
+            path.symlink_to(outside)
+            return result
 
-        with patch.object(Path, "resolve", resolve):
+        with patch.object(self.source, "_walk", side_effect=walk):
             snapshot = self.source.snapshot()
-        self.assertNotIn(make_rid("notes/atlas.md"), snapshot.records)
+        self.assertNotIn(make_rid("notes/replaced.md"), snapshot.records)
+        self.assertEqual(snapshot.records, before.records)
+        self.assertEqual(snapshot.warnings, before.warnings)
+        self.assertEqual(snapshot.hidden_private, before.hidden_private)
         self.assertNotIn("KOK-DISI-ISARETI", repr(snapshot))
+        self.assertNotIn("KOK-DISI-ISARETI", repr(self.source._cache))
 
     def test_resolved_outside_directory_is_rejected(self) -> None:
         outside = self.vault.parent / "outside"
@@ -215,6 +330,25 @@ class ScanTests(unittest.TestCase):
         self.assertEqual(walk.call_count, len(resolved_paths))
         self.assertEqual([call.args[0] for call in walk.call_args_list], resolved_paths)
 
+    def test_initial_scan_resolves_only_directories_with_many_files(self) -> None:
+        self.add_many_notes()
+        original = Path.resolve
+        resolved_paths: list[Path] = []
+
+        def resolve(path: Path, *args: object, **kwargs: object) -> Path:
+            resolved_paths.append(path)
+            return original(path, *args, **kwargs)
+
+        with patch.object(Path, "resolve", resolve), \
+                patch("os.path.realpath", wraps=os.path.realpath) as realpath, \
+                patch("beyin_web.vault.scan.os.scandir", wraps=os.scandir) as walk:
+            self.source.snapshot()
+        self.assertGreater(len(resolved_paths), 0)
+        self.assertTrue(all(path.is_dir() for path in resolved_paths))
+        self.assertEqual(len(resolved_paths), len(set(resolved_paths)))
+        self.assertEqual([call.args[0] for call in walk.call_args_list], resolved_paths)
+        self.assertTrue(all(Path(call.args[0]).is_dir() for call in realpath.call_args_list))
+
     def test_changed_file_only_is_read_and_old_snapshot_is_retained(self) -> None:
         first = self.source.snapshot()
         path = self.vault / "notes" / "atlas.md"
@@ -285,6 +419,57 @@ class ScanTests(unittest.TestCase):
                 second = source.snapshot()
                 self.assertEqual(second.generation, first.generation + 1)
                 self.assertEqual(walk.call_count, 2)
+
+    def test_adaptive_interval_is_ten_times_scan_duration_capped_at_thirty(self) -> None:
+        for duration, interval in ((0.5, 5), (10, 30)):
+            with self.subTest(duration=duration):
+                source = MarkdownSource(self.vault, min_interval=2)
+                original = source._walk
+                with patch("beyin_web.vault.scan.time.monotonic", return_value=0) as clock:
+                    first = source.snapshot()
+
+                    def walk() -> tuple[dict[str, tuple[Path, os.stat_result]], tuple[str, ...]]:
+                        result = original()
+                        clock.return_value += duration
+                        return result
+
+                    with patch.object(source, "_walk", side_effect=walk) as checked:
+                        clock.return_value = 2
+                        self.assertIs(source.snapshot(), first)
+                        checked.assert_called_once()
+                        finished = 2 + duration
+                        clock.return_value = finished + interval - 1
+                        self.assertIs(source.snapshot(), first)
+                        self.assertEqual(checked.call_count, 1)
+                        clock.return_value = finished + interval
+                        self.assertIs(source.snapshot(), first)
+                        self.assertEqual(checked.call_count, 2)
+
+    def test_long_initial_scan_keeps_minimum_interval(self) -> None:
+        source = MarkdownSource(self.vault, min_interval=2)
+        with patch("beyin_web.vault.scan.time.monotonic", side_effect=[0, 100]):
+            first = source.snapshot()
+        with patch("beyin_web.vault.scan.time.monotonic", return_value=101) as clock, \
+                patch.object(source, "_walk", wraps=source._walk) as walk:
+            self.assertIs(source.snapshot(), first)
+            walk.assert_not_called()
+            clock.return_value = 102
+            self.assertIs(source.snapshot(), first)
+            walk.assert_called_once()
+
+    def test_zero_interval_disables_adaptation_even_for_long_scans(self) -> None:
+        original = self.source._walk
+        with patch("beyin_web.vault.scan.time.monotonic", return_value=0) as clock:
+            def walk() -> tuple[dict[str, tuple[Path, os.stat_result]], tuple[str, ...]]:
+                result = original()
+                clock.return_value += 10
+                return result
+
+            with patch.object(self.source, "_walk", side_effect=walk) as checked:
+                first = self.source.snapshot()
+                self.assertIs(self.source.snapshot(), first)
+                self.assertIs(self.source.snapshot(), first)
+                self.assertEqual(checked.call_count, 3)
 
     def test_companion_override_and_discovery_changes(self) -> None:
         source = MarkdownSource(self.vault, companion_dir="notes", min_interval=0)

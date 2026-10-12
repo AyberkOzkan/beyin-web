@@ -29,6 +29,9 @@ from beyin_web.vault.records import classify
 from beyin_web.vault.scan import MarkdownSource, VaultSnapshot
 
 
+REQUEST_TIMEOUT = 300
+
+
 @contextmanager
 def running_server(vault: Path, no_beyin: bool) -> Iterator[BeyinHTTPServer]:
     runtime = BeyinRuntime(vault, enabled=not no_beyin)
@@ -53,7 +56,7 @@ def running_server(vault: Path, no_beyin: bool) -> Iterator[BeyinHTTPServer]:
 
 
 def request(server: BeyinHTTPServer, endpoint: str) -> tuple[float, int, dict[str, object]]:
-    connection = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=30)
+    connection = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=REQUEST_TIMEOUT)
     try:
         start = perf_counter()
         connection.request("GET", "/api/v1" + endpoint)
@@ -182,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
     warm_ms = (perf_counter() - start) * 1000
     print(f"cold_ms: {cold_ms:.3f}")
     print(f"warm_ms: {warm_ms:.3f}")
+    print(f"files: {len(source._cache)}")
     for kind, count in sorted(Counter(record.kind for record in snapshot.records.values()).items()):
         print(f"{kind}: {count}")
     print(f"warnings: {len(snapshot.warnings)}")

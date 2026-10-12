@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from beyin_web.http.server import BeyinHTTPServer, create_server
+from beyin_web.vault.scan import MarkdownSource
 from scripts import measure
 from tests.support import FIXTURES, make_vault
 
@@ -63,6 +64,24 @@ class MeasureTests(unittest.TestCase):
         self.assertIn("api /search?mode=beyin: atlandı", result.stdout)
         self.assertRegex(result.stdout, r"rss_mb: (?:unavailable|\d+\.\d+)")
         self.assertEqual(before, self.file_state())
+
+    def test_files_count_includes_hidden_notes_before_kind_counts(self) -> None:
+        source = MarkdownSource(self.vault, min_interval=0)
+        snapshot = source.snapshot()
+        expected = len(snapshot.records) + snapshot.hidden_private
+        result = self.run_measure()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = result.stdout.splitlines()
+        self.assertEqual(lines[2], f"files: {expected}")
+        self.assertRegex(lines[3], r"^[a-z-]+: \d+$")
+
+    def test_request_uses_three_hundred_second_timeout(self) -> None:
+        self.assertEqual(measure.REQUEST_TIMEOUT, 300)
+        with measure.running_server(self.vault, True) as server, \
+                patch.object(measure.http.client, "HTTPConnection", wraps=measure.http.client.HTTPConnection) as connection:
+            _, status, _ = measure.request(server, "/home")
+        self.assertEqual(status, 200)
+        connection.assert_called_once_with("127.0.0.1", server.server_address[1], timeout=300)
 
     def test_empty_vault_skips_parameterized_endpoints(self) -> None:
         empty = self.tmp / "empty"
