@@ -17,14 +17,15 @@ import * as graph from "./pages/graph.js";
 import * as search from "./pages/search.js";
 import * as memory from "./pages/memory.js";
 import * as reports from "./pages/reports.js";
+import * as goals from "./pages/goals.js";
 
 const navigation = [
-  ["home", "#/", "house"], ["projects", "#/projeler", "folder-kanban"],
+  ["home", "#/", "house"], ["projects", "#/projeler", "folder-kanban"], ["goals", "#/hedefler", "target"],
   ["knowledge", "#/bilgi", "book-open"], ["journal", "#/gunlukler", "calendar-days"],
   ["graph", "#/grafik", "waypoints"], ["search", "#/arama", "search"], ["memory", "#/hafiza", "brain"],
   ["reports", "#/raporlar", "scroll-text"],
 ];
-const pages = { showcase, home, projects, knowledge, record, journal, graph, search, memory, reports };
+const pages = { showcase, home, projects, knowledge, record, journal, graph, search, memory, reports, goals };
 let currentPage;
 let stopPulse = () => {};
 let unauthorized = false;

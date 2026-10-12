@@ -39,12 +39,13 @@ def main(argv: list[str] | None = None) -> int:
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temporary:
         if args.vault is None:
             from scripts.update_golden import NOW, TZ
-            from tests.support import make_vault
+            from tests.support import add_goals, make_vault
             vault = make_vault(Path(temporary))
+            add_goals(vault)
         else:
             vault = args.vault
         # Screenshots never need Beyin, and a real vault must not have its CLI run from here.
-        server = create_server(Settings(vault=vault, port=0, token_enabled=False),
+        server = create_server(Settings(vault=vault, port=0, token_enabled=False, read_only=args.vault is not None),
                                MarkdownSource(vault), BeyinRuntime(vault, enabled=False))
         if args.vault is None:
             server.api.clock = lambda: NOW

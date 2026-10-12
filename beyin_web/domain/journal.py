@@ -49,7 +49,7 @@ def day(
     changed = sorted(
         (record for record in snapshot.records.values()
          if classify(record) not in {"receipt", "index", "rejected", "memory"}
-         and _local_date(record.mtime, tz) == date),
+         and record.kind != "habit" and _local_date(record.mtime, tz) == date),
         key=lambda record: (record.mtime.astimezone(timezone.utc), record.rid),
     )
     return {"date": date.isoformat(), "receipts": daily_receipts,

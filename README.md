@@ -1,11 +1,12 @@
 # beyin-web 0.1.0
 
-Beyin vault'unu sade bir web arayüzünde gösteren yerel, salt okunur bir uygulama. Obsidian'ın ayrıntılarıyla uğraşmadan notlarını, projelerini ve asistanının hafızasını okumak isteyenler içindir. Veriler Markdown dosyalarından gelir; Beyin olmadan da kullanılabilir.
+Beyin vault'unu sade bir web arayüzünde gösteren yerel bir uygulama. Obsidian'ın ayrıntılarıyla uğraşmadan notlarını, projelerini ve asistanının hafızasını okumak isteyenler içindir. Yalnızca Hedefler sayfası vault'a yazar; `--read-only` ile o da kapanır. Veriler Markdown dosyalarından gelir; Beyin olmadan da kullanılabilir.
 
 | Sayfa | Ne gösterir? |
 |---|---|
 | Ana Sayfa | Son oturum, açık işler, yakın etkinlik ve yaklaşan tarihler. |
 | Projeler | Proje notu, görevler, bilgiler ve son receipt'ler (işlem kayıtları). |
+| Hedefler | Uzun vadeli hedefler, yıl hedefleri, yılın teması, odak alanları ve alışkanlık takibi. Hedef ve alışkanlık eklenir, adımlar ve günler işaretlenir. |
 | Bilgi | Konulara ve projelere göre bilgi notları, içerik ve bağlantılar. |
 | Günlükler | Receipt'ler, oturum kartları, gün görünümü, seçili günün özeti, etkinlik ısı haritası ve yaklaşanlar. |
 | Grafik | Notlar arasındaki bağlantılar ve seçili notun bağlamı. |
@@ -53,6 +54,7 @@ Ayrıntılar: [Kurulum rehberi](docs/INSTALL.md).
 | `--idle-exit DAKİKA` | Pozitif tam sayı; bu süre boyunca istek gelmezse kapanır. Varsayılan kapalıdır. Açık sekme istek gönderebilir. |
 | `--no-token` | Belirteç ve çerez denetimini kapatır; yalnız tek kullanıcılı makine için. |
 | `--no-beyin` | Yalın kipi zorlar; Beyin CLI'ı çağrılmaz. |
+| `--read-only` | Vault'a hiçbir şey yazılmaz; Hedefler sayfası yalnızca gösterir. |
 | `--version` | `beyin-web 0.1.0` yazdırıp çıkar. |
 
 Vault keşif sırası: `--vault` → `BEYIN_VAULT` → `config.json` içindeki `vault` → bulunulan klasör (içinde `beyin.py` veya `.obsidian` varsa). Göreli yollar bulunulan klasöre göre çözülür; başlatıcı çalışma klasörünü değiştirmez. Öncelikli yol geçersizse sonraki aday denenmez.
@@ -70,6 +72,7 @@ Dosyayı isteğe bağlı olarak kendiniz oluşturun. Desteklenen anahtarlar:
 | `port` | 0–65535 arasında tam sayı; geçersizse 7373. `--port` önceliklidir. |
 | `display_name` | Ana Sayfa selamlamasında kullanılan ad (metin). |
 | `beyin` | `false` ise Beyin çağrıları kapatılır. |
+| `read_only` | `true` ise vault'a yazılmaz (`--read-only` ile aynı). |
 
 ```json
 {
@@ -82,13 +85,39 @@ Dosyayı isteğe bağlı olarak kendiniz oluşturun. Desteklenen anahtarlar:
 
 ## Güvenlik ve yalın kip
 
-Sunucu yalnız `127.0.0.1` üzerinde dinler. İlk adres belirteç taşır; açılışta `HttpOnly; SameSite=Strict` çerez konur ve belirteç adres çubuğundan kaldırılır. Belirteç ayar klasöründeki `token` dosyasında tutulur; vault içinde ayar klasörü kullanılamaz. API yalnız GET ile okunur (HEAD de desteklenir); yazma uçları yoktur. Katı CSP uzak kaynakları ve satır içi betikleri engeller. Gizli (`visibility: private`) notlar veri katmanında elenir. Vault'a ve Beyin'in durum klasörüne yazılmaz; dışarı ağ isteği, telemetri veya CDN kullanılmaz. Belirteçli adresi paylaşmayın.
+Sunucu yalnız `127.0.0.1` üzerinde dinler. İlk adres belirteç taşır; açılışta `HttpOnly; SameSite=Strict` çerez konur ve belirteç adres çubuğundan kaldırılır. Belirteç ayar klasöründeki `token` dosyasında tutulur; vault içinde ayar klasörü kullanılamaz. API GET ile okunur (HEAD de desteklenir). Yazan yalnızca Hedefler'in dört POST ucudur; bunlar isteğin arayüzün kendi sayfasından geldiğini (`Origin`, JSON türü ve özel başlık) denetler, başka sitenin ya da formun isteğini reddeder. Katı CSP uzak kaynakları ve satır içi betikleri engeller. Gizli (`visibility: private`) notlar veri katmanında elenir. Beyin'in durum klasörüne yazılmaz; dışarı ağ isteği, telemetri veya CDN kullanılmaz. Belirteçli adresi paylaşmayın.
 
 Beyin yokken notlar, projeler, görevler, günlükler, grafik ve yerel arama çalışır. Hafıza dosyaları varsa okunabilir; yoksa boş durum gösterilir. Beyin bağlam araması ve Beyin'in sağlık/sürüm bilgileri kullanılamaz; sağlık çekmecesinde arayüzün tarama uyarıları okunabilir. Beyin varsa yalnız `doctor` ve `context --no-sync` çağrılır.
 
+## Hedefler vault'ta nasıl durur?
+
+Hedefler sıradan Markdown notlarıdır; Obsidian'da ya da asistanınızla da yazabilirsiniz; arayüz hepsini gösterir.
+
+```markdown
+---
+{
+  "kind": "goal",
+  "horizon": "year",
+  "period": "2026",
+  "area": "Öğrenme",
+  "visibility": "internal"
+}
+---
+# 12 kitap okumak
+
+- [x] Birinci kitap
+- [ ] İkinci kitap
+```
+
+- `horizon`: `long` (uzun vadeli), `year` (yıl hedefi) ya da `theme` (yılın teması; adımı olmaz, ilk paragrafı gösterilir).
+- İlerleme nottaki görev kutularından sayılır. Arayüzde bir adımı işaretlemek o satırdaki tek karakteri değiştirir.
+- Alışkanlık `"kind": "habit"` notudur; yapılan her gün `- 2026-01-12` biçiminde bir satırdır.
+- Arayüzden eklenen notlar vault'un `goals/` klasörüne yazılır. Var olan bir dosyanın üzerine yazılmaz. Not arayüz açıkken başka bir yerde değiştiyse arayüz kendi değişikliğini bırakır ve güncel hali gösterir.
+- `"visibility": "private"` hedef arayüzde hiç görünmez.
+
 ## Sınırlar
 
-Salt okunurdur; not düzenleme ve oluşturma yoktur. Koyu tema ve mobil düzen yoktur; en düşük genişlik **1.024 px**'dir. Arama `ı`/`i` ayrımı yapmaz. Dekoratif çizimler henüz eklenmemiştir; notların bağlantı grafiği çalışır.
+Not düzenleme ve oluşturma yoktur; yazılabilen yalnızca hedefler ve alışkanlıklardır. Koyu tema ve mobil düzen yoktur; en düşük genişlik **1.024 px**'dir. Arama `ı`/`i` ayrımı yapmaz. Dekoratif çizimler henüz eklenmemiştir; notların bağlantı grafiği çalışır.
 
 ## Geliştirme ve ölçüm
 

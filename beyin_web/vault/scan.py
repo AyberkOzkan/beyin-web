@@ -186,6 +186,11 @@ class MarkdownSource:
         ) if warning is not None)
         return _CachedFile(signature, record, False, warnings)
 
+    def invalidate(self) -> None:
+        """Make the next snapshot look at the files again, e.g. right after this process wrote one."""
+        with self._lock:
+            self._last_check = None
+
     def snapshot(self) -> VaultSnapshot:
         with self._lock:
             now = time.monotonic()

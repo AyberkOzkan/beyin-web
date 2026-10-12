@@ -45,3 +45,31 @@ def make_vault(tmp: Path) -> Path:
 
 def has_outside_link(vault: Path) -> bool:
     return (vault / "notes" / "dışarı.md").is_symlink()
+
+
+GOALS: dict[str, str] = {
+    "kitap.md": '---\n{"kind": "goal", "horizon": "year", "period": 2026, "area": "öğrenme"}\n---\n'
+                "# 12 kitap okumak\n\n- [x] Birinci kitap\n- [ ] İkinci kitap\n- [ ] Üçüncü kitap\n",
+    "is.md": '---\n{"kind": "goal", "horizon": "long", "period": "2025–2030", "area": "Üretim"}\n---\n'
+             "# Anlamlı bir iş üretmek\n\nKalıcı bir şey bırakmak.\n\n- [x] İlk taslak\n- [ ] Yayın\n",
+    "yazi.md": '---\n{"kind": "goal", "horizon": "year", "period": "2026", "area": "Üretim"}\n---\n'
+               "# Aylık bir yazı paylaşmak\n",
+    "etiketsiz.md": '---\n{"kind": "goal", "horizon": "someday"}\n---\n# Etiketsiz hedef\n',
+    "tema.md": '---\n{"kind": "goal", "horizon": "theme", "period": "2026"}\n---\n'
+               "# Derinleş ve inşa et\n\nBildiklerimi pratiğe dönüştür.\n",
+    "gizli.md": '---\n{"kind": "goal", "horizon": "year", "visibility": "private"}\n---\n'
+                "# GIZLI-HEDEF\n\n- [ ] GIZLI-HEDEF\n",
+    "spor.md": '---\n{"kind": "habit"}\n---\n# Spor yapmak\n\n- 2026-01-03\n- 2026-01-09\n- 2026-01-12\n',
+    "okuma.md": '---\n{"kind": "habit"}\n---\n# Kitap okumak\n',
+}
+
+
+def add_goals(vault: Path) -> None:
+    """Give a vault copy goals and habits; the shared fixture has none, so other pages' data stays as it is."""
+    folder = vault / "goals"
+    folder.mkdir()
+    timestamp_ns = int(DEFAULT_MTIME * 1_000_000_000)
+    for name, text in GOALS.items():
+        path = folder / name
+        path.write_text(text, encoding="utf-8", newline="")
+        os.utime(path, ns=(timestamp_ns, timestamp_ns))

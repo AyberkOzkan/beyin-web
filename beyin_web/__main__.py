@@ -32,6 +32,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--idle-exit", type=int, metavar="DAKİKA")
     parser.add_argument("--no-token", action="store_true")
     parser.add_argument("--no-beyin", action="store_true")
+    parser.add_argument("--read-only", action="store_true")
     parser.add_argument(
         "--version", action="version", version=f"beyin-web {__version__}"
     )
@@ -143,6 +144,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             idle_exit=args.idle_exit,
             open_browser=args.open,
             beyin_enabled=not args.no_beyin,
+            read_only=args.read_only,
         )
         runtime = BeyinRuntime(settings.vault, enabled=settings.beyin_enabled)
         if not runtime.available:

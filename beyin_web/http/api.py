@@ -8,11 +8,13 @@ from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, fields, is_dataclass, replace
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
+from functools import partial
 from pathlib import PurePosixPath
 from threading import RLock
 from typing import TYPE_CHECKING, cast
 from urllib.parse import parse_qs, urlsplit
 
+from beyin_web.domain import goals as goal_model
 from beyin_web.domain import graph, journal
 from beyin_web.domain.obsidian import obsidian_uri, obsidian_vault_uri
 from beyin_web.domain.projects import Project, build_projects
@@ -23,8 +25,9 @@ from beyin_web.domain.tasks import OPEN_STATUSES, TASK_STATUSES, Task, build_tas
 from beyin_web.runtime.beyin_cli import RuntimeUnavailable, health_summary
 from beyin_web.vault.companion import Companion, SessionCard, load_companion
 from beyin_web.vault.links import LinkIndex, build_links, without_code
-from beyin_web.vault.records import Record, classify
+from beyin_web.vault.records import Record, classify, make_rid
 from beyin_web.vault.scan import VaultSnapshot
+from beyin_web.vault.writer import VaultWriter, WriteConflict
 
 if TYPE_CHECKING:
     from beyin_web.http.server import BeyinHTTPServer, RequestHandler
@@ -104,6 +107,7 @@ class API:
         self._models: Models | None = None
         self._responses: dict[tuple[object, ...], dict[str, object]] = {}
         self._project_cache: dict[date, tuple[Project, ...]] = {}
+        self.writer = VaultWriter(server.settings.vault)
 
     def _derive(self, snapshot: VaultSnapshot) -> Models:
         if self._models is None:
@@ -191,7 +195,7 @@ class API:
             digest = hashlib.sha256(json.dumps(data, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:20]
             return data, f'"{snapshot.generation}-{digest}"'
         dynamic = (now.date().isoformat(), _period(now)) if path in {"home", "journal/heatmap"} else (
-            (now.date().isoformat(),) if path in {"projects", "reports"} or path.startswith("projects/") else ())
+            (now.date().isoformat(),) if path in {"projects", "reports", "goals"} or path.startswith("projects/") else ())
         key = (path, tuple(sorted(params.items())), *dynamic)
         beyin_search = path == "search" and params.get("mode") == "beyin"
         if beyin_search or key not in self._responses:
@@ -278,6 +282,13 @@ class API:
                 for item in worked
             ]
             return result
+        if path == "goals":
+            goals = goal_model.build_goals(snapshot)
+            themes = [goal for goal in goals if goal.horizon == "theme"]
+            theme = next((goal for goal in themes if goal.period == str(now.year)), themes[-1] if themes else None)
+            return {"today": now.date().isoformat(), "writable": not self.server.settings.read_only,
+                    "goals": [goal for goal in goals if goal.horizon != "theme"], "theme": theme,
+                    "areas": goal_model.areas(goals), "habits": goal_model.build_habits(snapshot)}
         if path == "projects":
             return {"projects": self._projects(snapshot, models, now)}
         if path.startswith("projects/"):
@@ -419,6 +430,94 @@ class API:
             return self._home(snapshot, models, now)
         raise APIError(404, "not_found")
 
+    def write(self, action: str, request: RequestHandler, match: re.Match[str], body: Mapping[str, object]) -> None:
+        snapshot = self.server.source.snapshot()
+        now = self.clock()
+        today = (now.astimezone(self.tz) if self.tz is not None else now.astimezone()).date()
+        try:
+            rid = self._write(action, match, body, snapshot, today)
+        except APIError as error:
+            request.send_json({"generation": snapshot.generation,
+                               "error": {"code": error.code, "message": error.message}}, error.status)
+            return
+        except (goal_model.GoalConflict, WriteConflict):
+            request.send_json({"generation": snapshot.generation,
+                               "error": {"code": "conflict", "message": "conflict"}}, 409)
+            return
+        invalidate = getattr(self.server.source, "invalidate", None)
+        if callable(invalidate):
+            invalidate()
+        request.send_json({"generation": self.server.source.snapshot().generation, "rid": rid})
+
+    def _write(
+        self, action: str, match: re.Match[str], body: Mapping[str, object], snapshot: VaultSnapshot, today: date,
+    ) -> str:
+        def only(*names: str) -> None:
+            unknown = sorted(set(body) - set(names))
+            if unknown:
+                raise APIError(400, "bad_request", unknown[0])
+
+        def line(name: str, limit: int, required: bool = False) -> str | None:
+            value = body.get(name)
+            if value in (None, "") and not required:
+                return None
+            text = goal_model.clean_line(value, limit)
+            if text is None:
+                raise APIError(400, "bad_request", name)
+            return text
+
+        def flag() -> bool:
+            if type(body.get("done")) is not bool:
+                raise APIError(400, "bad_request", "done")
+            return cast(bool, body["done"])
+
+        def existing(kind: str) -> Record:
+            record = snapshot.records.get(match["rid"])
+            if record is None or record.kind != kind:
+                raise APIError(404, "not_found")
+            return record
+
+        if action == "goal":
+            only("title", "horizon", "period", "area", "steps")
+            title = cast(str, line("title", goal_model.MAX_TITLE, True))
+            horizon = body.get("horizon")
+            if horizon not in ("long", "year"):
+                raise APIError(400, "bad_request", "horizon")
+            raw_steps = body.get("steps", [])
+            if not isinstance(raw_steps, list) or len(raw_steps) > goal_model.MAX_STEPS:
+                raise APIError(400, "bad_request", "steps")
+            steps = [goal_model.clean_line(step, 200) for step in raw_steps]
+            if any(step is None for step in steps):
+                raise APIError(400, "bad_request", "steps")
+            period = line("period", goal_model.MAX_LABEL) or (str(today.year) if horizon == "year" else None)
+            document = goal_model.goal_document(title, cast(str, horizon), period,
+                                                line("area", goal_model.MAX_LABEL), cast(list[str], steps))
+            return make_rid(self.writer.create(goal_model.slug(title) or "hedef", document))
+        if action == "habit":
+            only("title")
+            title = cast(str, line("title", goal_model.MAX_TITLE, True))
+            return make_rid(self.writer.create(goal_model.slug(title) or "aliskanlik", goal_model.habit_document(title)))
+        if action == "step":
+            only("done", "text")
+            done = flag()
+            expected = body.get("text")
+            if not isinstance(expected, str):
+                raise APIError(400, "bad_request", "text")
+            record = existing("goal")
+            self.writer.update(record.path, lambda text: goal_model.set_step(text, int(match["index"]), expected, done))
+            return record.rid
+        only("done")
+        done = flag()
+        try:
+            day = date.fromisoformat(match["day"])
+        except ValueError:
+            raise APIError(400, "bad_request", "day") from None
+        if day > today:
+            raise APIError(400, "bad_request", "day")
+        record = existing("habit")
+        self.writer.update(record.path, lambda text: goal_model.set_day(text, day, done))
+        return record.rid
+
     @staticmethod
     def _validate_kinds(kinds: list[str] | tuple[str, ...], snapshot: VaultSnapshot, parameter: str) -> None:
         valid = {"note", "knowledge", "fact", "task", "receipt", "memory", "index", "rejected", "untrusted", "inference", "preference"}
@@ -430,7 +529,9 @@ class API:
         tz = now.tzinfo
         assert tz is not None
         start = now.date() - timedelta(days=6)
-        records = [record for record in snapshot.records.values() if classify(record) not in {"index", "rejected", "memory", "receipt"}]
+        # A habit file changes with every tick; it is the Goals page's data, not a note someone worked on.
+        records = [record for record in snapshot.records.values()
+                   if classify(record) not in {"index", "rejected", "memory", "receipt"} and record.kind != "habit"]
         categories = {name: [record for record in records if classify(record) == kind]
                       for name, kind in (("notes", "note"), ("knowledge", "knowledge"))}
         categories["open_tasks"] = [snapshot.records[task.rid] for task in models.tasks if task.status in OPEN_STATUSES]
@@ -469,8 +570,17 @@ def register_api(
     server: BeyinHTTPServer, *, clock: Callable[[], datetime] | None = None, tz: tzinfo | None = None,
 ) -> API:
     api = API(server, clock=clock, tz=tz)
-    pattern = r"/api/v1/(?P<endpoint>pulse|home|projects(?:/[^/]+)?|tasks|knowledge|records/[^/]+|journal/(?:months/[^/]+|days/[^/]+|heatmap)|graph|search|memory|reports|health)"
+    pattern = r"/api/v1/(?P<endpoint>pulse|home|projects(?:/[^/]+)?|tasks|knowledge|records/[^/]+|journal/(?:months/[^/]+|days/[^/]+|heatmap)|graph|search|memory|reports|goals|health)"
     server.routes = [(route, handler) for route, handler in server.routes if route.pattern != pattern]
     server.register(pattern, api.handle)
+    writes = {
+        "goal": r"/api/v1/goals", "habit": r"/api/v1/habits",
+        "step": r"/api/v1/goals/(?P<rid>[0-9a-f]{12})/steps/(?P<index>[0-9]{1,3})",
+        "day": r"/api/v1/habits/(?P<rid>[0-9a-f]{12})/days/(?P<day>[0-9]{4}-[0-9]{2}-[0-9]{2})",
+    }
+    server.write_routes = [(route, handler) for route, handler in server.write_routes
+                           if route.pattern not in writes.values()]
+    for action, route in writes.items():
+        server.register_write(route, partial(api.write, action))
     server.api = api
     return api

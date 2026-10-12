@@ -1,0 +1,58 @@
+.goals-page { display: grid; gap: 24px; }
+.goals-page > .page-heading { margin-bottom: 4px; }
+.goals-notice { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ink-soft); }
+.goals-notice[hidden] { display: none; }
+.goals-message { margin: 0; }
+.goals-message:empty { display: none; }
+.goals-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.goals-grid > .card { min-width: 0; }
+.goals-grid > .card[hidden] { display: none; }
+.goals-grid .card-title { flex-wrap: wrap; }
+.goals-actions { margin-left: auto; }
+.goals-goal { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.goals-goal:last-child { border-bottom: 0; }
+.goals-goal summary { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: center; gap: 16px; cursor: pointer; list-style: none; }
+.goals-goal summary::-webkit-details-marker { display: none; }
+.goals-goal-title { min-width: 0; }
+.goals-goal-title strong, .goals-goal-title small { display: block; overflow-wrap: anywhere; }
+.goals-goal-title small, .goals-areas small, .goals-table tbody th small { color: var(--ink-soft); }
+.goals-goal > p { margin: 12px 0 0; }
+.goals-steps { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.goals-step { display: flex; align-items: flex-start; gap: 10px; }
+.goals-step input { width: 18px; height: 18px; margin: 3px 0 0; flex-shrink: 0; accent-color: var(--sage-deep); }
+.goals-step span { min-width: 0; overflow-wrap: anywhere; }
+.goals-note { display: inline-block; margin-top: 12px; color: var(--sage-deep); }
+.goals-theme { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 24px; }
+.goals-theme-period { font: 500 44px/1 var(--font-heading); }
+.goals-theme h3 { margin: 0 0 8px; }
+.goals-theme a { color: var(--ink); text-decoration: none; }
+.goals-theme a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.goals-theme p { margin: 0; color: var(--ink-soft); }
+.goals-areas { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.goals-areas li { display: grid; gap: 4px; padding: 14px 16px; background: var(--paper-side); border-radius: var(--radius-control); min-width: 0; }
+.goals-areas strong { overflow-wrap: anywhere; }
+.goals-form { display: grid; gap: 12px; padding: 16px; margin-bottom: 16px; background: var(--paper-side); border-radius: var(--radius-control); }
+.goals-field { display: grid; gap: 4px; }
+.goals-field span { font-size: 14px; color: var(--ink-soft); }
+.goals-field input, .goals-field textarea { width: 100%; padding: 8px 12px; font: inherit; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+.goals-field textarea { resize: vertical; }
+.goals-primary { background: var(--sage-deep); border-color: var(--sage-deep); color: var(--card); }
+.goals-month { justify-content: center; margin-bottom: 16px; }
+.goals-month-label { min-width: 12ch; text-align: center; font: 600 20px/1.2 var(--font-heading); }
+.goals-table-wrap { overflow-x: auto; }
+.goals-table { border-collapse: collapse; width: 100%; }
+.goals-table th, .goals-table td { padding: 3px; text-align: center; }
+.goals-table thead th { font-weight: 400; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.goals-table thead th.goals-today { color: var(--ink); font-weight: 700; }
+.goals-table th:first-child { text-align: left; padding-right: 16px; min-width: 150px; }
+.goals-table tbody th { font-weight: 600; }
+.goals-table tbody th small { display: block; font-weight: 400; }
+.goals-day { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; margin: 0 auto; background: var(--card); border: 1px solid var(--line); border-radius: 5px; cursor: pointer; }
+.goals-day .icon { width: 14px; height: 14px; stroke-width: 2.5; }
+.goals-day[aria-pressed="true"] { background: var(--sage-deep); border-color: var(--sage-deep); color: var(--card); }
+.goals-day:disabled { cursor: default; background: transparent; border-style: dashed; }
+.goals-day[aria-pressed="true"]:disabled { background: var(--sage); border-color: var(--sage); border-style: solid; }
+@media (min-width: 1200px) {
+  .goals-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #goals-habits, #goals-theme[hidden] + #goals-areas { grid-column: 1 / -1; }
+}

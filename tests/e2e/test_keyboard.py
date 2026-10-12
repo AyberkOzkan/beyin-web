@@ -44,11 +44,11 @@ class KeyboardTests(PageTestCase):
         self.wait_for('.home-page[aria-busy="false"]')
         self.keys(Keys.TAB, Keys.TAB, Keys.TAB)
         links = self.all("#navigation a")
-        self.assertEqual(len(links), 8)
+        self.assertEqual(len(links), 9)
         self.assertTrue(links[-1].get_attribute("href").endswith("#/raporlar"))
         self.assertEqual(self.driver.switch_to.active_element, links[0])
-        for key, index in [(Keys.ARROW_DOWN, 1), (Keys.ARROW_UP, 0), (Keys.ARROW_UP, 7),
-                           (Keys.ARROW_DOWN, 0), (Keys.END, 7), (Keys.HOME, 0), (Keys.ARROW_DOWN, 1)]:
+        for key, index in [(Keys.ARROW_DOWN, 1), (Keys.ARROW_UP, 0), (Keys.ARROW_UP, 8),
+                           (Keys.ARROW_DOWN, 0), (Keys.END, 8), (Keys.HOME, 0), (Keys.ARROW_DOWN, 1)]:
             self.keys(key)
             self.assertEqual(self.driver.switch_to.active_element, links[index])
             self.assert_focus_ring()
@@ -145,7 +145,7 @@ class KeyboardTests(PageTestCase):
                  ("#/bilgi", ".record-reader"), ("#/gunlukler", '.journal-page[aria-busy="false"]'),
                  ("#/grafik", ".graph-canvas"), ("#/arama", ".search-results .state"),
                  ("#/hafiza", '.memory-page[aria-busy="false"]'),
-                 ("#/raporlar", '.reports-page[aria-busy="false"]'),
+                 ("#/raporlar", '.reports-page[aria-busy="false"]'), ("#/hedefler", '.goals-page[aria-busy="false"]'),
                  ("#/not/" + make_rid("notes/atlas.md"), ".record-reader")]
         for address, loaded in cases:
             with self.subTest(address=address):

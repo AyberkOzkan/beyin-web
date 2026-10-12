@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hmac
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from http.cookies import CookieError, SimpleCookie
 
 
@@ -21,6 +21,21 @@ def valid_host(hosts: Sequence[str], port: int) -> bool:
     return len(hosts) == 1 and hosts[0] in {
         f"127.0.0.1:{port}", f"localhost:{port}",
     }
+
+
+def valid_write(headers: Mapping[str, Sequence[str]], port: int) -> bool:
+    """A write must come from this page's own script, not from a form or another site.
+
+    Browsers attach Origin to every POST; a form cannot send JSON or a custom header, and
+    another origin's script needs a preflight for both, which this server never grants.
+    """
+    origins = headers.get("Origin", ())
+    types = headers.get("Content-Type", ())
+    return (
+        len(origins) == 1 and origins[0] in {f"http://127.0.0.1:{port}", f"http://localhost:{port}"}
+        and len(types) == 1 and types[0].split(";", 1)[0].strip().lower() == "application/json"
+        and list(headers.get("X-Beyin-Web", ())) == ["1"]
+    )
 
 
 def valid_token(candidate: str, token: str) -> bool:

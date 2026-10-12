@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from beyin_web.config import Settings
 from beyin_web.http.security import (
-    SECURITY_HEADERS, authenticated, session_cookie, valid_host, valid_token,
+    SECURITY_HEADERS, authenticated, session_cookie, valid_host, valid_token, valid_write,
 )
 from beyin_web.runtime.beyin_cli import BeyinRuntime
 from beyin_web.vault.scan import VaultSource
@@ -31,6 +31,8 @@ CONTENT_TYPES: dict[str, str] = {
     ".woff2": "font/woff2",
 }
 APIHandler = Callable[["RequestHandler", re.Match[str]], Mapping[str, object] | None]
+WriteHandler = Callable[["RequestHandler", re.Match[str], Mapping[str, object]], None]
+MAX_WRITE_BODY = 16 * 1024
 
 
 class BeyinHTTPServer(ThreadingHTTPServer):
@@ -57,6 +59,7 @@ class BeyinHTTPServer(ThreadingHTTPServer):
         except OSError:
             pass
         self.routes: list[tuple[re.Pattern[str], APIHandler]] = []
+        self.write_routes: list[tuple[re.Pattern[str], WriteHandler]] = []
         self.activity = threading.Condition()
         self.last_request = time.monotonic()
         super().__init__(("127.0.0.1", settings.port), RequestHandler)
@@ -72,6 +75,10 @@ class BeyinHTTPServer(ThreadingHTTPServer):
     def register(self, pattern: str, handler: APIHandler) -> None:
         """Register a full-path regex and a handler returning a JSON mapping."""
         self.routes.append((re.compile(pattern), handler))
+
+    def register_write(self, pattern: str, handler: WriteHandler) -> None:
+        """Register a full-path regex for POST; every other path keeps refusing the method."""
+        self.write_routes.append((re.compile(pattern), handler))
 
     def note_request(self) -> None:
         with self.activity:
@@ -176,20 +183,24 @@ class RequestHandler(BaseHTTPRequestHandler):
         if not valid_host(self.headers.get_all("Host", []), port):
             self.send_error(403)
             return
-        if self.command not in {"GET", "HEAD"}:
-            self.send_error(405)
-            return
         try:
             target = urlsplit(self.path)
             path = unquote(target.path, encoding="utf-8", errors="strict")
         except (ValueError, UnicodeError):
-            self.send_error(400)
+            self.send_error(405 if self.command not in {"GET", "HEAD"} else 400)
+            return
+        write = None
+        if self.command == "POST":
+            write = next(((handler, match) for pattern, handler in application.write_routes
+                          if (match := pattern.fullmatch(path)) is not None), None)
+        if self.command not in {"GET", "HEAD"} and write is None:
+            self.send_error(405)
             return
         settings = application.settings
         if settings.token_enabled:
             query = parse_qs(target.query, keep_blank_values=True)
             tokens = query.get("t", [])
-            if path == "/" and len(tokens) == 1 and valid_token(tokens[0], settings.token):
+            if write is None and path == "/" and len(tokens) == 1 and valid_token(tokens[0], settings.token):
                 self.send_body(302, b"", headers={
                     "Location": "/", "Set-Cookie": session_cookie(settings.token),
                 })
@@ -200,6 +211,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 else:
                     self._serve_file("login.html", 401)
                 return
+        if write is not None:
+            self._write(*write, port)
+            return
         if path.startswith("/api/") or path == "/api":
             for pattern, handler in application.routes:
                 match = pattern.fullmatch(path)
@@ -213,6 +227,35 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._serve_file(path[len("/static/"):])
         else:
             self._serve_file("index.html")
+
+    def _refuse(self, status: int, code: str) -> None:
+        self.send_json({"error": {"code": code, "message": code}}, status)
+
+    def _write(self, handler: WriteHandler, match: re.Match[str], port: int) -> None:
+        length = self.headers.get("Content-Length", "")
+        if self.headers.get("Transfer-Encoding") or not re.fullmatch(r"[0-9]{1,9}", length):
+            self._refuse(400, "bad_request")
+            return
+        # Read the body before any refusal, so the client receives the answer instead of a reset.
+        raw = self.rfile.read(min(int(length), MAX_WRITE_BODY + 1))
+        if int(length) > MAX_WRITE_BODY:
+            self._refuse(413, "payload_too_large")
+            return
+        if self.application.settings.read_only:
+            self._refuse(403, "read_only")
+            return
+        if not valid_write({name: self.headers.get_all(name, [])
+                            for name in ("Origin", "Content-Type", "X-Beyin-Web")}, port):
+            self._refuse(403, "forbidden_origin")
+            return
+        try:
+            body = json.loads(raw.decode("utf-8"))
+        except (ValueError, UnicodeError):
+            body = None
+        if not isinstance(body, dict):
+            self._refuse(400, "bad_request")
+            return
+        handler(self, match, body)
 
     def _serve_file(self, relative: str, status: int = 200) -> None:
         root = self.application.settings.static_dir.resolve()

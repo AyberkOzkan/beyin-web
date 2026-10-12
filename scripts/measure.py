@@ -38,7 +38,7 @@ def running_server(vault: Path, no_beyin: bool) -> Iterator[BeyinHTTPServer]:
     companion = health_summary(runtime.doctor() if runtime.available else None)["companion_dir"]
     source = MarkdownSource(vault, companion_dir=companion if isinstance(companion, str) else None)
     server = cast(BeyinHTTPServer, create_server(
-        Settings(vault, port=0, token_enabled=False, beyin_enabled=not no_beyin), source, runtime,
+        Settings(vault, port=0, token_enabled=False, beyin_enabled=not no_beyin, read_only=True), source, runtime,
     ))
     thread = threading.Thread(target=server.serve_forever)
     started = False

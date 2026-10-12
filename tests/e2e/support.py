@@ -124,6 +124,7 @@ class PageTestCase(BrowserTestCase):
 
     beyin: bool = True
     display_name: str = ""
+    read_only: bool = False
     vault: Path
     messages: dict[str, Any]
 
@@ -142,7 +143,8 @@ class PageTestCase(BrowserTestCase):
     def restart_server(self) -> None:
         from scripts.update_golden import NOW, TZ
         self.stop_page_server()
-        self.settings = Settings(vault=self.vault, port=0, token_enabled=False, display_name=self.display_name)
+        self.settings = Settings(vault=self.vault, port=0, token_enabled=False, display_name=self.display_name,
+                                 read_only=self.read_only)
         self.source = MarkdownSource(self.vault, min_interval=0)
         self.runtime = BeyinRuntime(self.vault, script=FIXTURES / "fake_beyin.py", enabled=self.beyin)
         server = create_server(self.settings, self.source, self.runtime)

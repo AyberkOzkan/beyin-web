@@ -11,6 +11,7 @@ const routes = [
   [/^\/arama$/, "search", []],
   [/^\/hafiza$/, "memory", []],
   [/^\/raporlar$/, "reports", []],
+  [/^\/hedefler$/, "goals", []],
   [/^\/_vitrin$/, "showcase", []],
 ];
 
