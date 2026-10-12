@@ -67,6 +67,16 @@ class GoalTextTests(unittest.TestCase):
         windows = text.replace("\n", "\r\n") + "\r\n"
         self.assertEqual(goals.set_day(windows, date(2026, 1, 9), True), windows + "- 2026-01-09\r\n")
 
+    def test_check_title_reads_the_note_as_the_scanner_does(self) -> None:
+        goals.check_title(GOAL, "Kitap", "dosya")
+        goals.check_title("\ufeff" + GOAL.replace("\n", "\r\n"), " Kitap ", "dosya")
+        goals.check_title('---\n{"title": "Başlık alanı"}\n---\n# Gövde başlığı\n', "Başlık alanı", "dosya")
+        goals.check_title("```\n# kod\n```\nbaşlıksız\n", "dosya", "dosya")
+        for text, expected in ((GOAL, "kitap"), (GOAL, "Kitap okumak"), (GOAL, ""),
+                               ("# Yeni ad\n", "Kitap"), ("başlıksız\n", "Kitap")):
+            with self.subTest(expected=expected), self.assertRaises(goals.GoalConflict):
+                goals.check_title(text, expected, "dosya")
+
     def test_clean_line_and_slug(self) -> None:
         self.assertEqual(goals.clean_line("  Sağlıklı yaşam  ", 20), "Sağlıklı yaşam")
         for value in ("", "   ", "iki\nsatır", "sekme\tli", "x" * 21, None, 5, ["a"], "gizli​boşluk"):
@@ -175,6 +185,48 @@ class VaultWriterTests(unittest.TestCase):
             with self.assertRaises(WriteConflict):
                 self.writer.update("bağ.md", lambda text: text + "!")
         self.assertEqual(outside.read_text(encoding="utf-8"), "dışarıda")
+
+    def test_discard_moves_to_the_trash_and_replaces_nothing(self) -> None:
+        for name in ("not.md", "ikiz.md"):
+            (self.root / name).write_bytes("\ufeffbir\r\n".encode("utf-8"))
+        seen: list[str] = []
+        self.assertEqual(self.writer.discard("not.md", seen.append), ".trash/not.md")
+        self.assertEqual(seen, ["\ufeffbir\r\n"])
+        self.assertFalse((self.root / "not.md").exists())
+        self.assertEqual((self.root / ".trash" / "not.md").read_bytes(), "\ufeffbir\r\n".encode("utf-8"))
+        (self.root / "not.md").write_text("iki", encoding="utf-8")
+        self.assertEqual(self.writer.discard("not.md", lambda text: None), ".trash/not-2.md")
+        self.assertEqual((self.root / ".trash" / "not.md").read_bytes(), "\ufeffbir\r\n".encode("utf-8"))
+        self.assertEqual((self.root / ".trash" / "not-2.md").read_text(encoding="utf-8"), "iki")
+
+        def refuse(text: str) -> None:
+            raise goals.GoalConflict("title_changed")
+
+        with self.assertRaises(goals.GoalConflict):
+            self.writer.discard("ikiz.md", refuse)
+        self.assertTrue((self.root / "ikiz.md").is_file())
+        (self.root / "veri.txt").write_text("x", encoding="utf-8")
+        for relative in ("veri.txt", "yok.md", "../outside.md", ".trash"):
+            with self.subTest(relative=relative), self.assertRaises(WriteConflict):
+                self.writer.discard(relative, lambda text: None)
+        self.assertEqual(sorted(item.name for item in self.root.iterdir()), [".trash", "ikiz.md", "veri.txt"])
+
+    def test_discard_refuses_a_trash_that_is_not_a_plain_folder(self) -> None:
+        (self.root / "not.md").write_text("bir", encoding="utf-8")
+        (self.root / ".trash").write_text("dosya", encoding="utf-8")
+        with self.assertRaises(WriteConflict):
+            self.writer.discard("not.md", lambda text: None)
+        (self.root / ".trash").unlink()
+        outside = self.root.parent / "outside"
+        outside.mkdir()
+        try:
+            (self.root / ".trash").symlink_to(outside, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("symbolic links unavailable")
+        with self.assertRaises(WriteConflict):
+            self.writer.discard("not.md", lambda text: None)
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertEqual((self.root / "not.md").read_text(encoding="utf-8"), "bir")
 
     def test_update_gives_way_to_a_concurrent_save(self) -> None:
         path = self.root / "not.md"
@@ -340,6 +392,38 @@ class GoalAPITests(GoalServerCase):
         self.assert_refused(400, "bad_request", f"/habits/{self.habit}/days/2026-01-10", {"done": "true"})
         self.assert_refused(404, "not_found", f"/habits/{self.rid}/days/2026-01-10", {"done": True})
 
+    def test_delete_moves_the_note_to_the_trash(self) -> None:
+        before = self.files()
+        records = self.call("/pulse", method="GET")[1]["records"]
+        self.assertEqual(self.call(f"/goals/{self.rid}/delete", {"title": "12 kitap okumak"})[0], 200)
+        self.assertEqual(self.call(f"/habits/{self.habit}/delete", {"title": "Spor yapmak"})[0], 200)
+        after = self.files()
+        self.assertEqual(after.pop(".trash/kitap.md"), before.pop("goals/kitap.md"))
+        self.assertEqual(after.pop(".trash/spor.md"), before.pop("goals/spor.md"))
+        self.assertEqual(after, before)
+        payload = self.goals()
+        self.assertNotIn(self.rid, [goal["rid"] for goal in cast(list[dict[str, object]], payload["goals"])])
+        self.assertEqual([habit["title"] for habit in cast(list[dict[str, object]], payload["habits"])], ["Kitap okumak"])
+        # The trash is a hidden folder: its notes are no longer records of any page.
+        self.assertEqual(self.call("/pulse", method="GET")[1]["records"], cast(int, records) - 2)
+        self.assert_refused(404, "not_found", f"/goals/{self.rid}/delete", {"title": "12 kitap okumak"})
+
+    def test_delete_is_refused_when_it_would_hit_the_wrong_note(self) -> None:
+        other = make_rid("goals/is.md")
+        self.assert_refused(409, "conflict", f"/goals/{self.rid}/delete", {"title": "Anlamlı bir iş üretmek"})
+        self.assert_refused(409, "conflict", f"/goals/{self.rid}/delete", {"title": ""})
+        self.assert_refused(404, "not_found", f"/habits/{self.rid}/delete", {"title": "12 kitap okumak"})
+        self.assert_refused(404, "not_found", f"/goals/{self.habit}/delete", {"title": "Spor yapmak"})
+        self.assert_refused(404, "not_found", f"/goals/{make_rid('tasks/atlas-a1.md')}/delete", {"title": "x"})
+        self.assert_refused(404, "not_found", f"/goals/{make_rid('goals/gizli.md')}/delete", {"title": "GIZLI-HEDEF"})
+        for body in ({}, {"title": 5}, {"title": "12 kitap okumak", "force": True}):
+            self.assert_refused(400, "bad_request", f"/goals/{self.rid}/delete", body)
+        self.assert_refused(403, "forbidden_origin", f"/goals/{other}/delete", {"title": "Anlamlı bir iş üretmek"},
+                            headers={"X-Beyin-Web": ""})
+        for method in ("DELETE", "PUT"):
+            self.assert_refused(405, "method_not_allowed", f"/goals/{other}", {"title": "Anlamlı bir iş üretmek"},
+                                method=method)
+
     def test_forged_requests_are_refused(self) -> None:
         body = {"title": "Sahte", "horizon": "year"}
         for headers in (
@@ -388,7 +472,9 @@ class ReadOnlyGoalTests(GoalServerCase):
     def test_every_write_is_refused(self) -> None:
         for path, body in (("/goals", {"title": "Hedef", "horizon": "year"}), ("/habits", {"title": "Spor"}),
                            (f"/goals/{self.rid}/steps/1", {"done": True, "text": "İkinci kitap"}),
-                           (f"/habits/{self.habit}/days/2026-01-10", {"done": True})):
+                           (f"/habits/{self.habit}/days/2026-01-10", {"done": True}),
+                           (f"/goals/{self.rid}/delete", {"title": "12 kitap okumak"}),
+                           (f"/habits/{self.habit}/delete", {"title": "Spor yapmak"})):
             with self.subTest(path=path):
                 self.assert_refused(403, "read_only", path, body)
 

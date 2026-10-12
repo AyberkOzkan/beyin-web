@@ -21,7 +21,16 @@
 .goals-step { display: flex; align-items: flex-start; gap: 10px; }
 .goals-step input { width: 18px; height: 18px; margin: 3px 0 0; flex-shrink: 0; accent-color: var(--sage-deep); }
 .goals-step span { min-width: 0; overflow-wrap: anywhere; }
-.goals-note { display: inline-block; margin-top: 12px; color: var(--sage-deep); }
+.goals-row-actions { justify-content: space-between; margin-top: 12px; }
+.goals-note { color: var(--sage-deep); }
+.goals-delete { display: inline-flex; align-items: center; padding: 2px 6px; background: transparent; border: 0; border-radius: 6px; color: var(--ink-soft); cursor: pointer; }
+.goals-delete:hover { color: var(--ink); background: var(--paper-side); }
+.goals-delete .icon { width: 14px; height: 14px; }
+.goals-confirm { margin: 12px 0; padding: 16px; background: var(--paper-side); border-radius: var(--radius-control); }
+.goals-confirm p { margin: 0 0 12px; }
+.goals-danger { background: var(--ink); border-color: var(--ink); color: var(--card); }
+.goals-habit-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.goals-field small { color: var(--ink-soft); }
 .goals-theme { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 24px; }
 .goals-theme-period { font: 500 44px/1 var(--font-heading); }
 .goals-theme h3 { margin: 0 0 8px; }

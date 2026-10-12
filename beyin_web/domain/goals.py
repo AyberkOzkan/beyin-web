@@ -179,6 +179,17 @@ def set_day(text: str, day: date, done: bool) -> str:
     return text[:offset] + "".join(raw)
 
 
+def check_title(text: str, expected: str, fallback: str) -> None:
+    """Refuse to act on a note whose title is no longer the one the reader was shown."""
+    meta, body, _ = parse_frontmatter(text)
+    title = meta.get("title")
+    if not isinstance(title, str) or not title.strip():
+        match = re.search(r"^# +(.+?)\s*$", without_code(body), re.MULTILINE)
+        title = match[1] if match else fallback
+    if title.strip() != expected.strip():
+        raise GoalConflict("title_changed")
+
+
 def clean_line(value: object, limit: int) -> str | None:
     """One trimmed line of plain text, or None when the value cannot be stored as one."""
     if not isinstance(value, str):

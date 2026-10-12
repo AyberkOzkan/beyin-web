@@ -12,7 +12,8 @@ class WriteConflict(Exception):
 
 
 class VaultWriter:
-    """The only code that writes to the vault: new notes in one folder, edits to given notes.
+    """The only code that writes to the vault: new notes in one folder, edits to given notes,
+    and moving a given note to the vault's trash folder. Nothing is ever deleted for good.
 
     Callers pass paths taken from a scan, never from a request. Every edit is a read, a pure
     transformation and an atomic replace, and is dropped when the file changed in between.
@@ -50,6 +51,39 @@ class VaultWriter:
                 with os.fdopen(descriptor, "wb") as stream:
                     stream.write(text.encode("utf-8"))
                 return path.relative_to(self._root).as_posix()
+        raise WriteConflict("name")
+
+    def discard(self, relative: str, check: Callable[[str], None]) -> str:
+        """Move a note into the vault's ``.trash`` folder (Obsidian's own); return its new path.
+
+        ``check`` sees the note as it is on disk now and raises to keep it where it is.
+        """
+        path = self._root / relative
+        trash = self._root / ".trash"
+        with self._lock:
+            if path.suffix.lower() != ".md" or not self._inside(path) or not path.is_file():
+                raise WriteConflict("path")
+            try:
+                text = path.read_bytes().decode("utf-8")
+            except (OSError, UnicodeError):
+                raise WriteConflict("read") from None
+            check(text)
+            try:
+                trash.mkdir(exist_ok=True)
+            except OSError:
+                raise WriteConflict("folder") from None
+            if not trash.is_dir() or not self._inside(trash):
+                raise WriteConflict("folder")
+            for attempt in range(1, 100):
+                target = trash / (path.name if attempt == 1 else f"{path.stem}-{attempt}{path.suffix}")
+                # A note already in the trash under this name is somebody's way back; never replace it.
+                if target.exists() or target.is_symlink():
+                    continue
+                try:
+                    os.rename(path, target)
+                except OSError:
+                    raise WriteConflict("move") from None
+                return target.relative_to(self._root).as_posix()
         raise WriteConflict("name")
 
     def update(self, relative: str, transform: Callable[[str], str]) -> bool:

@@ -6,7 +6,7 @@ Beyin vault'unu sade bir web arayüzünde gösteren yerel bir uygulama. Obsidian
 |---|---|
 | Ana Sayfa | Son oturum, açık işler, yakın etkinlik ve yaklaşan tarihler. |
 | Projeler | Proje notu, görevler, bilgiler ve son receipt'ler (işlem kayıtları). |
-| Hedefler | Uzun vadeli hedefler, yıl hedefleri, yılın teması, odak alanları ve alışkanlık takibi. Hedef ve alışkanlık eklenir, adımlar ve günler işaretlenir. |
+| Hedefler | Uzun vadeli hedefler, yıl hedefleri, yılın teması, odak alanları ve alışkanlık takibi. Hedef ve alışkanlık eklenir, silinir; adımlar ve günler işaretlenir. |
 | Bilgi | Konulara ve projelere göre bilgi notları, içerik ve bağlantılar. |
 | Günlükler | Receipt'ler, oturum kartları, gün görünümü, seçili günün özeti, etkinlik ısı haritası ve yaklaşanlar. |
 | Grafik | Notlar arasındaki bağlantılar ve seçili notun bağlamı. |
@@ -85,7 +85,7 @@ Dosyayı isteğe bağlı olarak kendiniz oluşturun. Desteklenen anahtarlar:
 
 ## Güvenlik ve yalın kip
 
-Sunucu yalnız `127.0.0.1` üzerinde dinler. İlk adres belirteç taşır; açılışta `HttpOnly; SameSite=Strict` çerez konur ve belirteç adres çubuğundan kaldırılır. Belirteç ayar klasöründeki `token` dosyasında tutulur; vault içinde ayar klasörü kullanılamaz. API GET ile okunur (HEAD de desteklenir). Yazan yalnızca Hedefler'in dört POST ucudur; bunlar isteğin arayüzün kendi sayfasından geldiğini (`Origin`, JSON türü ve özel başlık) denetler, başka sitenin ya da formun isteğini reddeder. Katı CSP uzak kaynakları ve satır içi betikleri engeller. Gizli (`visibility: private`) notlar veri katmanında elenir. Beyin'in durum klasörüne yazılmaz; dışarı ağ isteği, telemetri veya CDN kullanılmaz. Belirteçli adresi paylaşmayın.
+Sunucu yalnız `127.0.0.1` üzerinde dinler. İlk adres belirteç taşır; açılışta `HttpOnly; SameSite=Strict` çerez konur ve belirteç adres çubuğundan kaldırılır. Belirteç ayar klasöründeki `token` dosyasında tutulur; vault içinde ayar klasörü kullanılamaz. API GET ile okunur (HEAD de desteklenir). Yazan yalnızca Hedefler'in altı POST ucudur; bunlar isteğin arayüzün kendi sayfasından geldiğini (`Origin`, JSON türü ve özel başlık) denetler, başka sitenin ya da formun isteğini reddeder. Katı CSP uzak kaynakları ve satır içi betikleri engeller. Gizli (`visibility: private`) notlar veri katmanında elenir. Beyin'in durum klasörüne yazılmaz; dışarı ağ isteği, telemetri veya CDN kullanılmaz. Belirteçli adresi paylaşmayın.
 
 Beyin yokken notlar, projeler, görevler, günlükler, grafik ve yerel arama çalışır. Hafıza dosyaları varsa okunabilir; yoksa boş durum gösterilir. Beyin bağlam araması ve Beyin'in sağlık/sürüm bilgileri kullanılamaz; sağlık çekmecesinde arayüzün tarama uyarıları okunabilir. Beyin varsa yalnız `doctor` ve `context --no-sync` çağrılır.
 
@@ -113,6 +113,8 @@ Hedefler sıradan Markdown notlarıdır; Obsidian'da ya da asistanınızla da ya
 - İlerleme nottaki görev kutularından sayılır. Arayüzde bir adımı işaretlemek o satırdaki tek karakteri değiştirir.
 - Alışkanlık `"kind": "habit"` notudur; yapılan her gün `- 2026-01-12` biçiminde bir satırdır.
 - Arayüzden eklenen notlar vault'un `goals/` klasörüne yazılır. Var olan bir dosyanın üzerine yazılmaz. Not arayüz açıkken başka bir yerde değiştiyse arayüz kendi değişikliğini bırakır ve güncel hali gösterir.
+- Arayüzde silinen hedef ya da alışkanlık yok edilmez; vault'un `.trash` klasörüne (Obsidian'ın çöp kutusu) taşınır. Geri almak için dosyayı oradan `goals/` klasörüne taşıyın.
+- Bir hedefin başlığını ya da adımlarının metnini düzeltmek için notu Obsidian'da açın; arayüz metin düzenlemez.
 - `"visibility": "private"` hedef arayüzde hiç görünmez.
 
 ## Sınırlar

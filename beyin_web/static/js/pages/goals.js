@@ -43,8 +43,27 @@ function save(state, path, body, saved = () => {}) {
   return state.queue;
 }
 
-function field(name, label, attributes = {}, tag = "input") {
-  return el("label", { class: "goals-field" }, el("span", {}, label), el(tag, { name, autocomplete: "off", ...attributes }));
+function field(name, label, attributes = {}, tag = "input", hint = null) {
+  return el("label", { class: "goals-field" }, el("span", {}, label), el(tag, { name, autocomplete: "off", ...attributes }),
+    hint && el("small", {}, hint));
+}
+
+// Deleting asks once more, in place: a slip of the hand must not cost a goal.
+function confirmDelete(state, kind, item) {
+  return el("div", { class: "goals-confirm", role: "group", "data-confirm": item.rid },
+    el("p", {}, t("goals.confirmDelete", { title: item.title })),
+    el("div", { class: "row" },
+      el("button", { type: "button", class: "button goals-danger", onclick: () => {
+        state.confirm = null;
+        void save(state, `/api/v1/${kind}/${item.rid}/delete`, { title: item.title }, () => state.open.delete(item.rid));
+      } }, t("goals.confirmYes")),
+      el("button", { type: "button", class: "button", onclick: () => { state.confirm = null; draw(state); } }, t("goals.cancel"))));
+}
+
+function deleteButton(state, item, content) {
+  return el("button", { type: "button", class: "goals-delete", "data-delete": item.rid,
+    "aria-label": t("goals.deleteLabel", { title: item.title }),
+    onclick: () => { state.confirm = item.rid; draw(state); } }, content);
 }
 
 function closeForm(state) {
@@ -75,7 +94,7 @@ function goalForm(state, horizon) {
   return form(horizon, [
     field("title", t("goals.field.title"), { maxlength: 120, required: true }),
     field("period", t("goals.field.period"), { maxlength: 40, placeholder: t(`goals.field.period.${horizon}`) }),
-    field("area", t("goals.field.area"), { maxlength: 40, list: areas.id }), areas,
+    field("area", t("goals.field.area"), { maxlength: 40, list: areas.id }, "input", t("goals.field.areaHint")), areas,
     field("steps", t("goals.field.steps"), { rows: 4 }, "textarea"),
   ], "/api/v1/goals", values => goalPayload(horizon, values));
 }
@@ -107,7 +126,9 @@ function goalRow(state, goal) {
         el("small", { class: "muted" }, t("goals.noSteps"))),
     goal.summary && el("p", {}, goal.summary),
     steps.length ? el("ul", { class: "goals-steps" }, steps) : null,
-    el("a", { class: "goals-note", href: `#/not/${goal.rid}` }, t("goals.openNote")));
+    state.confirm === goal.rid ? confirmDelete(state, "goals", goal) : el("div", { class: "row goals-row-actions" },
+      el("a", { class: "goals-note", href: `#/not/${goal.rid}` }, t("goals.openNote")),
+      state.data.writable && deleteButton(state, goal, t("goals.delete"))));
   details.addEventListener("toggle", () => {
     if (details.open) state.open.add(goal.rid);
     else state.open.delete(goal.rid);
@@ -146,14 +167,17 @@ function habits(state) {
   const rows = data.habits.map(habit => {
     const done = new Set(habit.days);
     return el("tr", { "data-rid": habit.rid },
-      el("th", { scope: "row" }, habit.title, el("small", {}, t("goals.habits.count", { count: habitCount(habit, month) }))),
+      el("th", { scope: "row" }, el("span", { class: "goals-habit-title" }, habit.title,
+        data.writable && deleteButton(state, habit, icon("x"))),
+      el("small", {}, t("goals.habits.count", { count: habitCount(habit, month) }))),
       days.map(day => el("td", {}, el("button", { type: "button", class: "goals-day", "data-day": day,
         "aria-pressed": String(done.has(day)), disabled: day > data.today || !data.writable,
         "aria-label": t("goals.habits.day", { title: habit.title, date: formatDate(`${day}T12:00:00`) }),
         onclick: () => void save(state, `/api/v1/habits/${habit.rid}/days/${day}`, { done: !done.has(day) }) },
       done.has(day) ? icon("check") : null))));
   });
-  return [header, state.form === "habits" ? state.formNode : null,
+  const doomed = data.habits.find(habit => habit.rid === state.confirm);
+  return [header, state.form === "habits" ? state.formNode : null, doomed ? confirmDelete(state, "habits", doomed) : null,
     el("div", { class: "goals-table-wrap" }, el("table", { class: "goals-table" },
       el("thead", {}, el("tr", {}, el("th", { scope: "col" }, t("goals.habits.name")),
         days.map(day => el("th", { scope: "col", class: day === data.today ? "goals-today" : null }, Number(day.slice(8)))))),
@@ -195,7 +219,7 @@ async function load(state, showSkeleton = true) {
 export function render(root, params = {}) {
   destroy();
   const state = { params, request: 0, pending: 0, queue: Promise.resolve(), form: kept?.form ?? null,
-    formNode: kept?.formNode ?? null, open: kept?.open ?? new Set(),
+    formNode: kept?.formNode ?? null, open: kept?.open ?? new Set(), confirm: kept?.confirm ?? null,
     sections: new Map(), root: el("div", { class: "goals-page", "aria-busy": "true" }) };
   kept = null;
   active = state;
@@ -219,7 +243,7 @@ export function render(root, params = {}) {
 export function destroy() {
   if (active) {
     document.removeEventListener("beyin:changed", active.changed);
-    kept = { form: active.form, formNode: active.formNode, open: active.open };
+    kept = { form: active.form, formNode: active.formNode, open: active.open, confirm: active.confirm };
   }
   active = null;
 }

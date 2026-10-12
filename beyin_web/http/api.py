@@ -506,6 +506,15 @@ class API:
             record = existing("goal")
             self.writer.update(record.path, lambda text: goal_model.set_step(text, int(match["index"]), expected, done))
             return record.rid
+        if action in ("goal_delete", "habit_delete"):
+            only("title")
+            shown = body.get("title")
+            if not isinstance(shown, str):
+                raise APIError(400, "bad_request", "title")
+            record = existing("goal" if action == "goal_delete" else "habit")
+            stem = PurePosixPath(record.path).stem
+            self.writer.discard(record.path, lambda text: goal_model.check_title(text, shown, stem))
+            return record.rid
         only("done")
         done = flag()
         try:
@@ -577,6 +586,8 @@ def register_api(
         "goal": r"/api/v1/goals", "habit": r"/api/v1/habits",
         "step": r"/api/v1/goals/(?P<rid>[0-9a-f]{12})/steps/(?P<index>[0-9]{1,3})",
         "day": r"/api/v1/habits/(?P<rid>[0-9a-f]{12})/days/(?P<day>[0-9]{4}-[0-9]{2}-[0-9]{2})",
+        "goal_delete": r"/api/v1/goals/(?P<rid>[0-9a-f]{12})/delete",
+        "habit_delete": r"/api/v1/habits/(?P<rid>[0-9a-f]{12})/delete",
     }
     server.write_routes = [(route, handler) for route, handler in server.write_routes
                            if route.pattern not in writes.values()]
