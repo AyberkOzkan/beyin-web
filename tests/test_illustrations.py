@@ -19,12 +19,12 @@ class IllustrationTests(unittest.TestCase):
                 self.assertEqual((IMAGES / name).read_text(encoding="utf-8"), text)
         self.assertEqual(render(), files)
 
-    def test_thirty_drawings_fill_the_four_slots(self) -> None:
+    def test_every_drawing_is_its_own_and_every_slot_has_a_choice(self) -> None:
         self.assertEqual({slot: len(recipes) for slot, recipes in DRAWINGS.items()},
-                         {"hero-palace": 8, "sidebar-tree": 7, "heading-mountains": 8, "card-window": 7})
-        self.assertEqual(len({recipe for recipes in DRAWINGS.values() for recipe in recipes}), 30)
+                         {"hero-palace": 8, "sidebar-tree": 7, "heading-mountains": 8, "card-window": 8})
+        self.assertEqual(len({recipe for recipes in DRAWINGS.values() for recipe in recipes}), 31)
         files = render()
-        self.assertEqual(len(set(files.values())), 30)
+        self.assertEqual(len(set(files.values())), 31)
         for name in files:
             match = DRAWING.fullmatch(name)
             self.assertIsNotNone(match, name)

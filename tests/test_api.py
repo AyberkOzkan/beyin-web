@@ -125,7 +125,7 @@ class APITests(unittest.TestCase):
         self.assertEqual(payload["vault_name"], self.vault.name)
         self.assertEqual(payload["language"], "tr")
         self.assertEqual({slot: len(paths) for slot, paths in payload["drawings"].items()},
-                         {"hero-palace": 8, "sidebar-tree": 7, "heading-mountains": 8, "card-window": 7})
+                         {"hero-palace": 8, "sidebar-tree": 7, "heading-mountains": 8, "card-window": 8})
         self.assertEqual(payload["drawings"]["card-window"][0], "/static/img/card-window-01.svg")
         self.server.drawings = {"hero-palace": ["/static/img/hero-palace.png"]}
         self.assertEqual(self.payload("/pulse")["drawings"], self.server.drawings)

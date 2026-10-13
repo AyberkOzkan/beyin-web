@@ -16,7 +16,7 @@ Kurulum ve kullanım:
 
 Çizimler:
 
-- **30 karakalem çizim.** Ana Sayfa karşılamasında, yan menünün altında, sayfa başlıklarında, "Bilgi Kasam" kartında ve boş kutularda; her yer kendi çizimlerinden birini rastgele gösterir. Kendi çiziminizi `static/img/` altına yuvanın adıyla koyabilirsiniz.
+- **31 karakalem çizim.** Ana Sayfa karşılamasında, yan menünün altında, sayfa başlıklarında, "Bilgi Kasam" kartında ve boş kutularda; her yer kendi çizimlerinden birini rastgele gösterir. Kendi çiziminizi `static/img/` altına yuvanın adıyla koyabilirsiniz.
 
 Var olan sayfalar:
 

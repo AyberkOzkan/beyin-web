@@ -2,7 +2,7 @@
 
     py -3 scripts/draw_illustrations.py [--out beyin_web/static/img]
 
-Thirty drawings for four slots; a page shows one of its slot's drawings at random. They are meant to read as
+The drawings of the four slots; a page shows one of its slot's drawings at random. They are meant to read as
 pencil on paper: every line is drawn more than once with a changing pressure, a long line has a faint first
 attempt under it, quick strokes run past their ends, shaded sides are hatched and rubbed, and a grain filter
 breaks the strokes the way paper breaks graphite. The numbers are seeded: a run always writes the same files,
@@ -535,6 +535,42 @@ class Sketch:
             self.line([(x - reach, y), (x - reach, y + 6)], weight=0.7, shake=0.2, passes=1)
             self.line([(x + reach, y), (x + reach, y + 6)], weight=0.7, shake=0.2, passes=1)
 
+    def anchor(self, x: float, top: float, height: float) -> None:
+        """A ship's anchor: ring, stock, shank, and two arms ending in flukes."""
+        s = height / 106
+        ring, bottom = top + 8 * s, top + height
+        radius = 34 * s
+        centre = bottom - radius
+        self.circle(x, ring, 7 * s, weight=1.2, shake=0.4)
+        self.circle(x, ring, 4.2 * s, weight=0.8, opacity=0.6, shake=0.3)
+        for side in (-1, 1):
+            self.line([(x + side * 2.6 * s, ring + 7 * s), (x + side * 3.4 * s, bottom - 5 * s)], weight=1.2, shake=0.4)
+        stock = top + 28 * s
+        self.box(x - 26 * s, stock - 2.6 * s, x + 26 * s, stock + 2.6 * s, weight=1.1, shake=0.4)
+        for side in (-1, 1):
+            self.circle(x + side * 28.5 * s, stock, 2.8 * s, weight=1.0, shake=0.2)
+        for size, weight in ((radius, 1.3), (radius - 6 * s, 1.1)):
+            self.arc(x, centre, size, size, math.pi * 1.08, math.pi * 1.92, weight=weight, shake=0.5)
+        for side in (-1, 1):
+            tip = (x + side * (radius + 2 * s), centre - 15 * s)
+            self.line([tip, (x + side * (radius + 9 * s), centre + 5 * s), (x + side * (radius - 2 * s), centre + 8 * s),
+                       (x + side * (radius - 10 * s), centre + 2 * s), tip], weight=1.2, shake=0.4)
+            self.hatch(x + side * radius - 3 * s, centre - 6 * s, 9 * s, 11 * s, count=4, lean=0.3 * side, opacity=0.34)
+        self.line([(x - 4 * s, bottom - 3 * s), (x, bottom + 4 * s), (x + 4 * s, bottom - 3 * s)], weight=1.1, shake=0.3)
+        # The lit side is the left one: the right of the shank and the inside of the right arm are worked over.
+        self.rub([(x + 1.6 * s, ring + 12 * s), (x + 2.2 * s, bottom - 10 * s)], 3.2 * s, 0.16)
+        self.hatch(x + 4 * s, stock - 2 * s, 20 * s, 4.5 * s, count=7, lean=0.5, opacity=0.34)
+        self.arc(x, centre, radius - 3 * s, radius - 3 * s, math.pi * 1.55, math.pi * 1.9, weight=2.0, opacity=0.14, shake=0.5, passes=1)
+
+    def rope(self, points: list[Point]) -> None:
+        self.line(points, weight=1.1, shake=0.5)
+        self.line([(px + 2.4, py + 1.6) for px, py in points], weight=0.9, opacity=0.7, shake=0.5)
+        for (x1, y1), (x2, y2) in zip(points, points[1:]):
+            for step in range(1, max(2, int(math.hypot(x2 - x1, y2 - y1) / 5))):
+                t = step / max(2, int(math.hypot(x2 - x1, y2 - y1) / 5))
+                px, py = x1 + (x2 - x1) * t, y1 + (y2 - y1) * t
+                self.line([(px - 0.6, py - 0.8), (px + 2.8, py + 2.4)], weight=0.6, opacity=0.45, shake=0.2, passes=1)
+
     # --- output ----------------------------------------------------------------------------------------------
 
     def svg(self) -> str:
@@ -927,6 +963,15 @@ def card_stargazer(s: Sketch) -> None:
     s.pine(30, 126, 24, opacity=0.7)
 
 
+def card_anchor(s: Sketch) -> None:
+    s.rope([(108, 15), (126, 7), (148, 10), (164, 24), (170, 44), (162, 62), (172, 82), (186, 92)])
+    s.anchor(100, 8, 108)
+    s.waves(14, 70, 122, 134, rows=3, opacity=0.45)
+    s.waves(132, 188, 122, 134, rows=3, opacity=0.45)
+    s.birds([(30, 30), (46, 22), (38, 46)], 4)
+    s.shadow(104, 121, 46)
+
+
 DRAWINGS: dict[str, list[Callable[[Sketch], None]]] = {
     "hero-palace": [hero_palace_on_the_hill, hero_lighthouse, hero_observatory, hero_bridge, hero_island_in_the_clouds,
                     hero_palace_by_the_lake, hero_windmill_village, hero_tower_of_birds],
@@ -934,7 +979,7 @@ DRAWINGS: dict[str, list[Callable[[Sketch], None]]] = {
                      sidebar_reading_table],
     "heading-mountains": [heading_range, heading_windmills, heading_sea, heading_forest, heading_balloons, heading_village,
                           heading_river, heading_night_watch],
-    "card-window": [card_pines, card_window, card_door, card_balloon, card_sailboat, card_shelf, card_stargazer],
+    "card-window": [card_pines, card_window, card_door, card_balloon, card_sailboat, card_shelf, card_stargazer, card_anchor],
 }
 
 
