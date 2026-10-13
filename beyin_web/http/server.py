@@ -30,7 +30,7 @@ CONTENT_TYPES: dict[str, str] = {
     ".webp": "image/webp",
     ".woff2": "font/woff2",
 }
-DRAWING = re.compile(r"(hero-palace|sidebar-tree|heading-mountains|card-window)(?:-[a-z0-9]+)*\.(?:png|svg|webp)")
+DRAWING = re.compile(r"(hero-palace|sidebar-tree|heading-mountains|card-window|margin-doodle)(?:-[a-z0-9]+)*\.(?:png|svg|webp)")
 APIHandler = Callable[["RequestHandler", re.Match[str]], Mapping[str, object] | None]
 WriteHandler = Callable[["RequestHandler", re.Match[str], Mapping[str, object]], None]
 MAX_WRITE_BODY = 16 * 1024

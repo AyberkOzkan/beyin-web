@@ -6,6 +6,7 @@ import { navigationIndex, shouldFocusMain, preserveFocus } from "./accessibility
 import { errorState, statusDot, skeleton, illustrationSlot, setDrawings, obsidianTarget } from "./components/index.js";
 import { healthDrawer } from "./components/health-drawer.js";
 import { settingsDrawer } from "./components/settings-drawer.js";
+import { doodleLayer } from "./components/doodles.js";
 import { storedCursor } from "./preferences.js";
 import { indicatorState } from "./pages/memory-model.js";
 import * as placeholder from "./pages/placeholder.js";
@@ -33,6 +34,7 @@ let stopPulse = () => {};
 let unauthorized = false;
 let drawer;
 let settings;
+let doodles;
 let translationsReady = false;
 let currentRoute;
 let cancelFocus = () => {};
@@ -72,6 +74,7 @@ function route() {
   currentPage?.destroy();
   currentPage = pages[page] || placeholder;
   currentPage.render(main, { ...params, page });
+  doodles?.update(page);
   document.title = t("shell.documentTitle", { page: t(`page.${page}.title`) });
   document.querySelectorAll(".nav-link").forEach(link => {
     if (link.dataset.page === page || (page === "record" && link.dataset.page === "knowledge")) link.setAttribute("aria-current", "page");
@@ -130,6 +133,7 @@ function buildShell(pulse) {
   document.getElementById("topbar").setAttribute("aria-label", t("shell.topbar"));
   document.getElementById("main").setAttribute("aria-label", t("shell.main"));
   setDrawings(pulse.drawings);
+  doodles = doodleLayer(document.querySelector(".workspace"), document.getElementById("main"));
   const sidebarArt = illustrationSlot("sidebar-tree");
   document.getElementById("sidebar-art").replaceChildren(...(sidebarArt ? [sidebarArt] : []));
   const brand = document.getElementById("brand");

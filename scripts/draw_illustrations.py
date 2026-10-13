@@ -19,13 +19,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GRAPHITE = "#333331"
 GLOW = "#EFE6D0"
-SIZES = {"hero-palace": (520, 170), "sidebar-tree": (216, 180), "heading-mountains": (720, 96), "card-window": (200, 140)}
+SIZES = {"hero-palace": (520, 170), "sidebar-tree": (216, 180), "heading-mountains": (720, 96), "card-window": (200, 140),
+         "margin-doodle": (120, 120)}
 Point = tuple[float, float]
 
 
 class Sketch:
     def __init__(self, slot: str, seed: int) -> None:
         self.width, self.height = SIZES[slot]
+        # A doodle is drawn lightly: it must stay behind the page, not compete with it.
+        self.pressure = 0.72 if slot == "margin-doodle" else 1.0
         self.random = random.Random(seed)
         self.grain = seed
         self.strokes: dict[tuple[float, float], list[str]] = {}
@@ -84,6 +87,25 @@ class Sketch:
         steps = max(6, int(math.hypot(x2 - x1, y2 - y1) / 9))
         self.line([(x1 + (x2 - x1) * step / steps, y1 + (y2 - y1) * step / steps - math.sin(step / steps * math.pi) * bend)
                    for step in range(steps + 1)], **style)
+
+    def sample(self, points: list[Point], steps: int = 6) -> list[Point]:
+        """Points along a smooth curve through the given ones (Catmull-Rom)."""
+        padded = [points[0], *points, points[-1]]
+        curve: list[Point] = []
+        for index in range(1, len(padded) - 2):
+            p0, p1, p2, p3 = padded[index - 1], padded[index], padded[index + 1], padded[index + 2]
+            for step in range(steps):
+                t = step / steps
+                curve.append(tuple(0.5 * ((2 * p1[axis]) + (-p0[axis] + p2[axis]) * t + (2 * p0[axis] - 5 * p1[axis] + 4 * p2[axis] - p3[axis]) * t * t
+                                          + (-p0[axis] + 3 * p1[axis] - 3 * p2[axis] + p3[axis]) * t ** 3) for axis in (0, 1)))  # type: ignore[arg-type]
+        return [*curve, points[-1]]
+
+    def flow(self, points: list[Point], **style: float) -> None:
+        self.line(self.sample(points), **style)
+
+    def dots(self, spots: list[Point], size: float = 1.8) -> None:
+        for x, y in spots:
+            self._stroke([(x, y), (x + 0.4, y + 0.3)], size * 1.6, 0.7, 0.2)
 
     def arc(self, cx: float, cy: float, rx: float, ry: float, start: float, end: float, **style: float) -> None:
         steps = max(5, int(abs(end - start) * max(rx, ry) / 5))
@@ -577,6 +599,7 @@ class Sketch:
         paths = "\n".join(f'<path d="{"".join(parts)}" stroke-width="{weight}" opacity="{opacity}"/>'
                           for (weight, opacity), parts in sorted(self.strokes.items()))
         fills = "".join(fill + "\n" for fill in self.fills)
+        light = f' opacity="{self.pressure}"' if self.pressure != 1 else ""
         # Paper is rough: the first step shakes the edge of every stroke, the second lets the grain show through it.
         grain = ('<defs><filter id="pencil" x="-2%" y="-2%" width="104%" height="104%">'
                  f'<feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="{self.grain}" result="tooth"/>'
@@ -586,7 +609,8 @@ class Sketch:
                  '<feComposite in="line" in2="gaps" operator="in"/></filter></defs>\n')
         return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {self.width} {self.height}" '
                 f'width="{self.width}" height="{self.height}">\n{grain}{fills}'
-                f'<g fill="none" stroke="{GRAPHITE}" stroke-linecap="round" stroke-linejoin="round" filter="url(#pencil)">\n{paths}\n</g>\n</svg>\n')
+                f'<g fill="none" stroke="{GRAPHITE}" stroke-linecap="round" stroke-linejoin="round" filter="url(#pencil)"{light}>'
+                f'\n{paths}\n</g>\n</svg>\n')
 
 
 # --- hero-palace: beside the greeting on the home page (520 x 170) -------------------------------------------
@@ -934,6 +958,143 @@ def heading_night_watch(s: Sketch) -> None:
     s.ground(6, 714, 89, tufts=12)
 
 
+# --- margin-doodle: what a hand draws in the margin while the mind is elsewhere (120 x 120) --------------------
+
+def doodle_spiral(s: Sketch) -> None:
+    s.flow([(60 + math.cos(turn / 9 * math.tau) * (2 + turn * 0.95), 60 + math.sin(turn / 9 * math.tau) * (2 + turn * 0.95))
+            for turn in range(44)], weight=1.0, shake=0.5)
+
+
+def doodle_stars(s: Sketch) -> None:
+    for cx, cy, radius, start in ((42, 46, 28, -1.57), (88, 86, 15, -1.2), (92, 28, 9, -1.8)):
+        s.line([(cx + math.cos(start + step * math.tau * 2 / 5) * radius, cy + math.sin(start + step * math.tau * 2 / 5) * radius)
+                for step in range(6)], weight=1.0, shake=0.7)
+    s.dots([(20, 92), (30, 104), (64, 100)])
+
+
+def doodle_arrow(s: Sketch) -> None:
+    s.flow([(14, 94), (34, 74), (54, 58), (60, 40), (48, 30), (38, 42), (50, 56), (74, 56), (92, 44), (104, 26)], weight=1.1, shake=0.5)
+    s.line([(90, 26), (105, 25), (104, 41)], weight=1.1, shake=0.4)
+
+
+def doodle_cube(s: Sketch) -> None:
+    s.box(26, 48, 74, 96, weight=1.1, shake=0.6)
+    s.box(48, 26, 96, 74, weight=1.0, shake=0.6)
+    for x, y in ((26, 48), (74, 48), (26, 96), (74, 96)):
+        s.line([(x, y), (x + 22, y - 22)], weight=1.0, shake=0.5)
+    s.hatch(78, 52, 16, 40, count=6, lean=0.5, opacity=0.4)
+
+
+def doodle_flower(s: Sketch) -> None:
+    for petal in range(7):
+        angle = petal / 7 * math.tau
+        s.arc(60 + math.cos(angle) * 17, 44 - math.sin(angle) * 17, 10, 7, angle, angle + math.tau * 1.05, weight=0.9, shake=0.5)
+    s.circle(60, 44, 6, weight=1.0, shake=0.4)
+    s.flow([(60, 62), (56, 80), (60, 96), (58, 112)], weight=1.1, shake=0.5)
+    s.flow([(58, 90), (42, 80), (34, 86), (46, 94), (58, 92)], weight=0.9, shake=0.5)
+
+
+def doodle_face(s: Sketch) -> None:
+    s.circle(60, 62, 36, weight=1.1, shake=0.8)
+    s.arc(47, 54, 4, 5, 0, math.tau, weight=1.0, shake=0.3)
+    s.arc(73, 54, 4, 5, 0, math.tau, weight=1.0, shake=0.3)
+    s.arc(60, 68, 18, 13, math.pi * 1.12, math.pi * 1.88, weight=1.1, shake=0.5)
+    for lock in range(5):
+        s.flow([(44 + lock * 8, 28), (42 + lock * 8, 18), (48 + lock * 8, 12)], weight=0.8, opacity=0.7, shake=0.6)
+
+
+def doodle_noughts_and_crosses(s: Sketch) -> None:
+    for position in (46, 76):
+        s.line([(position, 16), (position, 106)], weight=1.1, shake=0.8)
+        s.line([(16, position), (106, position)], weight=1.1, shake=0.8)
+    for cx, cy in ((30, 30), (61, 61), (92, 92)):
+        s.line([(cx - 8, cy - 8), (cx + 8, cy + 8)], weight=1.0, shake=0.6)
+        s.line([(cx + 8, cy - 8), (cx - 8, cy + 8)], weight=1.0, shake=0.6)
+    for cx, cy in ((92, 30), (30, 61), (61, 92)):
+        s.circle(cx, cy, 8.5, weight=1.0, shake=0.6)
+    s.line([(18, 18), (104, 104)], weight=0.8, opacity=0.6, shake=1.2)
+
+
+def doodle_paper_plane(s: Sketch) -> None:
+    s.line([(22, 66), (104, 26), (66, 98), (56, 74), (22, 66)], weight=1.1, shake=0.6)
+    s.line([(104, 26), (56, 74)], weight=0.9, shake=0.5)
+    s.line([(56, 74), (60, 90), (66, 98)], weight=0.8, opacity=0.7, shake=0.4)
+    trail = s.sample([(48, 92), (34, 104), (20, 100), (16, 88), (26, 84)])
+    for index in range(0, len(trail) - 2, 4):
+        s.line([trail[index], trail[index + 2]], weight=0.8, opacity=0.6, shake=0.3, passes=1)
+
+
+def doodle_lightbulb(s: Sketch) -> None:
+    s.arc(60, 48, 26, 26, -math.pi * 0.28, math.pi * 1.28, weight=1.1, shake=0.6)
+    s.line([(42, 67), (48, 82), (72, 82), (78, 67)], weight=1.0, shake=0.5)
+    for y in (88, 94):
+        s.line([(49, y), (71, y)], weight=1.0, shake=0.5)
+    s.line([(54, 100), (66, 100)], weight=1.0, shake=0.4)
+    s.line([(50, 82), (54, 58), (58, 68), (62, 58), (66, 68), (70, 82)], weight=0.8, opacity=0.7, shake=0.5)
+    for index in range(7):
+        angle = math.pi * (index - 0.5) / 5.5
+        s.line([(60 + math.cos(angle) * 34, 48 - math.sin(angle) * 34), (60 + math.cos(angle) * 43, 48 - math.sin(angle) * 43)],
+               weight=0.8, opacity=0.6, shake=0.4, passes=1)
+
+
+def doodle_scribble(s: Sketch) -> None:
+    s.line([(20 + step * 4.2, 34 if step % 2 else 82) for step in range(20)], weight=0.9, shake=1.4)
+    s.line([(24, 96 + (step % 2) * 9) if step % 2 else (24 + step * 4.0, 96) for step in range(1, 20)], weight=0.8, opacity=0.7, shake=1.0)
+    s.flow([(16, 22), (40, 14), (70, 20), (100, 14)], weight=0.9, opacity=0.7, shake=0.8)
+
+
+def doodle_cup(s: Sketch) -> None:
+    s.line([(32, 56), (38, 94), (76, 94), (82, 56), (32, 56)], weight=1.1, shake=0.6)
+    s.arc(84, 72, 12, 12, math.pi * 0.5, -math.pi * 0.5, weight=1.0, shake=0.5)
+    s.arc(57, 100, 36, 6, 0, math.tau, weight=0.9, opacity=0.7, shake=0.6)
+    for x in (46, 58, 70):
+        s.flow([(x, 48), (x - 4, 38), (x + 4, 28), (x - 2, 16)], weight=0.8, opacity=0.6, shake=0.6)
+    s.hatch(62, 60, 14, 30, count=5, lean=0.1, opacity=0.35)
+
+
+def doodle_marks(s: Sketch) -> None:
+    s.flow([(22, 42), (26, 24), (44, 18), (56, 32), (46, 48), (38, 58), (38, 72)], weight=1.2, shake=0.5)
+    s.dots([(38, 86)], 2.4)
+    s.line([(84, 20), (82, 72)], weight=1.3, shake=0.6)
+    s.dots([(82, 86)], 2.4)
+    s.dots([(40, 106), (52, 106), (64, 106)], 1.6)
+    s.flow([(74, 104), (86, 100), (98, 106), (108, 100)], weight=0.9, opacity=0.7, shake=0.5)
+
+
+def doodle_eye(s: Sketch) -> None:
+    s.arc(60, 76, 46, 30, math.pi * 0.16, math.pi * 0.84, weight=1.1, shake=0.6)
+    s.arc(60, 44, 46, 30, math.pi * 1.16, math.pi * 1.84, weight=1.1, shake=0.6)
+    s.circle(60, 60, 13, weight=1.0, shake=0.5)
+    s.circle(60, 60, 5, weight=1.6, shake=0.3)
+    s.hatch(52, 50, 16, 9, count=6, lean=0.3, opacity=0.4)
+    for index in range(6):
+        x = 30 + index * 12
+        lift = 46 - math.sin(index / 5 * math.pi) * 14
+        s.line([(x, lift), (x - 3 + index, lift - 9)], weight=0.8, opacity=0.7, shake=0.4, passes=1)
+
+
+def doodle_house(s: Sketch) -> None:
+    s.cottage(54, 100, 54, 34, smoke=True)
+    s.sun(98, 24, 9, rays=True)
+    s.line([(12, 101), (110, 100)], weight=0.9, opacity=0.7, shake=0.9)
+    s.flow([(88, 100), (90, 86), (96, 80), (102, 86), (100, 100)], weight=0.9, shake=0.5)
+    s.birds([(26, 28), (40, 20)], 4)
+
+
+def doodle_loops(s: Sketch) -> None:
+    for scale in (1.0, 0.82, 1.12):
+        s.flow([(60 + math.sin(step / 18 * math.tau) * 40 * scale, 54 + math.sin(step / 9 * math.tau) * 18 * scale) for step in range(20)],
+               weight=0.9, shake=0.8, passes=1)
+    s.flow([(18, 96), (32, 88), (44, 100), (58, 88), (72, 100), (86, 88), (102, 98)], weight=1.0, shake=0.6)
+
+
+def doodle_squares(s: Sketch) -> None:
+    for step in range(5):
+        half, turn = 42 - step * 8, step * 0.2
+        s.line([(60 + math.cos(turn + corner * math.pi / 2 + math.pi / 4) * half * 1.3, 60 + math.sin(turn + corner * math.pi / 2 + math.pi / 4) * half * 1.3)
+                for corner in range(5)], weight=1.0 - step * 0.05, shake=0.6)
+
+
 # --- card-window: at the edge of a card and in an empty box (200 x 140) ----------------------------------------
 
 def card_pines(s: Sketch) -> None:
@@ -1015,6 +1176,9 @@ DRAWINGS: dict[str, list[Callable[[Sketch], None]]] = {
     "heading-mountains": [heading_range, heading_windmills, heading_sea, heading_forest, heading_balloons, heading_village,
                           heading_river, heading_night_watch],
     "card-window": [card_pines, card_window, card_door, card_balloon, card_sailboat, card_shelf, card_stargazer, card_anchor],
+    "margin-doodle": [doodle_spiral, doodle_stars, doodle_arrow, doodle_cube, doodle_flower, doodle_face, doodle_noughts_and_crosses,
+                      doodle_paper_plane, doodle_lightbulb, doodle_scribble, doodle_cup, doodle_marks, doodle_eye, doodle_house,
+                      doodle_loops, doodle_squares],
 }
 
 

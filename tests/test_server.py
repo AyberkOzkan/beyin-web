@@ -125,7 +125,7 @@ class ServerTests(ServerCase):
 
     def test_drawings_are_discovered_once_at_startup(self) -> None:
         shipped = dict(self.server.drawings)
-        self.assertEqual(sorted(shipped), ["card-window", "heading-mountains", "hero-palace", "sidebar-tree"])
+        self.assertEqual(sorted(shipped), ["card-window", "heading-mountains", "hero-palace", "margin-doodle", "sidebar-tree"])
         images = self.static_dir / "img"
         shutil.rmtree(images)
         images.mkdir()

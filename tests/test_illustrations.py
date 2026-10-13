@@ -21,10 +21,10 @@ class IllustrationTests(unittest.TestCase):
 
     def test_every_drawing_is_its_own_and_every_slot_has_a_choice(self) -> None:
         self.assertEqual({slot: len(recipes) for slot, recipes in DRAWINGS.items()},
-                         {"hero-palace": 8, "sidebar-tree": 7, "heading-mountains": 8, "card-window": 8})
-        self.assertEqual(len({recipe for recipes in DRAWINGS.values() for recipe in recipes}), 31)
+                         {"hero-palace": 8, "sidebar-tree": 7, "heading-mountains": 8, "card-window": 8, "margin-doodle": 16})
+        self.assertEqual(len({recipe for recipes in DRAWINGS.values() for recipe in recipes}), 47)
         files = render()
-        self.assertEqual(len(set(files.values())), 31)
+        self.assertEqual(len(set(files.values())), 47)
         for name in files:
             match = DRAWING.fullmatch(name)
             self.assertIsNotNone(match, name)
@@ -37,7 +37,7 @@ class IllustrationTests(unittest.TestCase):
                 width, height = SIZES[name.rsplit("-", 1)[0]]
                 self.assertIn(f'viewBox="0 0 {width} {height}" width="{width}" height="{height}"', text)
                 points = [(float(x), float(y)) for x, y in re.findall(r"[ML](-?[0-9.]+) (-?[0-9.]+)", text)]
-                self.assertGreater(len(points), 100)
+                self.assertGreater(len(points), 30 if name.startswith("margin-doodle") else 100)
                 # A shaky line may wander a few pixels; a recipe with a wrong coordinate goes much further.
                 self.assertGreaterEqual(min(x for x, _ in points), -8)
                 self.assertLessEqual(max(x for x, _ in points), width + 8)

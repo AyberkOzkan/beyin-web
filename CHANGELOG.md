@@ -17,6 +17,7 @@ Kurulum ve kullanım:
 
 Çizimler:
 
+- **Kenar karalamaları.** Kâğıdın kenarına çiziktirilmiş gibi 16 küçük karalama, sayfanın boş kalan yerlerinde belirir; içeriğin üstüne gelmez, tıklamayı engellemez.
 - **31 karakalem çizim.** Ana Sayfa karşılamasında, yan menünün altında, sayfa başlıklarında, "Bilgi Kasam" kartında ve boş kutularda; her yer kendi çizimlerinden birini rastgele gösterir. Çizimler kutu içinde küçük resimler değil, sayfanın parçasıdır: karşılamadaki çizim satırından taşar, karttaki çizim sayaçların altına uzanır, yan menüdeki çizim kenardan kenara yayılır. Kendi çiziminizi `static/img/` altına yuvanın adıyla koyabilirsiniz.
 
 Var olan sayfalar:

@@ -12,7 +12,10 @@
 .vault-status { position: relative; padding: 16px; margin-top: 24px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--card); font-size: 13px; }
 .vault-status p { margin-bottom: 4px; }
 .vault-name { display: flex; align-items: center; gap: 8px; font-weight: 600; }
-.workspace { min-width: 0; }
+.workspace { position: relative; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
+.workspace > .content { flex: 1 0 auto; }
+/* Doodles in the margins: drawn over the bare paper only, never in the way of a click. */
+.doodle-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; mix-blend-mode: multiply; }
 .topbar { height: var(--topbar-height); display: flex; align-items: center; gap: 20px; padding: 0 24px; border-bottom: 1px solid var(--line); }
 .global-search { height: 44px; flex: 1; max-width: 930px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-control); }
 .global-search input { flex: 1; width: 0; background: transparent; border: 0; outline-offset: 0; }

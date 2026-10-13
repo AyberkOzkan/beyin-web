@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+<defs><filter id="pencil" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="1023" result="tooth"/><feDisplacementMap in="SourceGraphic" in2="tooth" scale="1.7" xChannelSelector="R" yChannelSelector="G" result="line"/><feTurbulence type="fractalNoise" baseFrequency="1.15" numOctaves="2" seed="1030" result="paper"/><feColorMatrix in="paper" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.2 0 0 0 2.15" result="gaps"/><feComposite in="line" in2="gaps" operator="in"/></filter></defs>
+<g fill="none" stroke="#333331" stroke-linecap="round" stroke-linejoin="round" filter="url(#pencil)" opacity="0.72">
+<path d="M22.5 106.0L31.9 95.0L23.2 105.8L39.5 95.1L23.6 104.7L48.3 96.2L24.8 104.7L55.2 95.9L23.9 105.6L64.2 95.9L24.9 104.3L71.8 95.3L23.9 104.5L79.3 95.4L23.8 104.6L88.1 95.2L23.2 105.8L95.9 97.0L23.2 105.9" stroke-width="0.9" opacity="0.58"/>
+<path d="M23.0 106.6L32.5 95.7L23.3 105.9L39.3 96.5L23.2 105.7L48.1 96.5L24.5 104.7L56.5 96.9L24.9 104.5L63.2 96.6L23.5 105.1L71.9 95.3L24.2 104.2L79.1 96.7L23.9 104.4L88.4 96.2L23.5 105.0L96.5 95.2L23.6 105.8" stroke-width="1.0" opacity="0.6"/>
+<path d="M19.7 82.1L25.4 33.8L29.2 81.6L32.4 32.8L38.2 81.3L42.3 34.4L46.4 81.1L49.9 32.9L52.9 83.0L58.6 34.7L61.9 82.0L66.0 32.9L71.4 83.3L74.8 34.0L78.4 82.2L82.8 33.5L87.6 82.9L92.5 35.0L97.0 82.5L98.6 33.9" stroke-width="1.01" opacity="0.66"/>
+<path d="M15.5 22.4L19.1 21.3L22.4 20.0L26.0 17.0L31.0 16.7L34.7 14.7L39.6 14.8L44.3 13.7L48.8 15.9L54.9 16.7L59.6 18.6L65.3 19.8L69.8 19.4L74.6 19.5L81.2 19.3L87.0 18.2L92.9 15.9L97.4 15.2L102.1 14.0" stroke-width="1.24" opacity="0.6"/>
+<path d="M14.5 23.0L18.3 20.9L21.8 18.9L25.6 17.9L30.1 15.4L35.6 15.2L40.5 13.4L44.5 14.5L49.7 15.9L54.2 17.3L59.9 17.7L65.1 18.9L69.3 19.4L75.5 20.0L80.4 18.1L86.9 16.8L91.5 16.5L97.2 15.1L101.2 12.8" stroke-width="1.41" opacity="0.6"/>
+<path d="M19.8 82.5L23.2 33.8L27.9 83.1L33.2 33.8L35.9 82.1L39.9 33.5L44.8 81.1L50.0 34.8L53.1 83.4L57.9 35.2L61.6 81.7L66.0 34.3L69.4 81.4L75.2 35.1L78.8 81.6L81.7 32.7L87.4 82.4L90.1 33.2L94.8 82.1L99.7 32.6" stroke-width="1.41" opacity="0.68"/>
+</g>
+</svg>

@@ -102,15 +102,20 @@ export function setDrawings(value) {
   drawings = { ...value };
 }
 
-const SLOTS = ["hero-palace", "sidebar-tree", "heading-mountains", "card-window"];
+const SLOTS = ["hero-palace", "sidebar-tree", "heading-mountains", "card-window", "margin-doodle"];
 const chosen = new Map();
+
+// Only files of the slot, from this server's own picture folder.
+export function drawingSources(name, available = drawings) {
+  if (!SLOTS.includes(name)) return [];
+  const local = new RegExp(`^/static/img/${name}(-[a-z0-9]+)*\\.(png|svg|webp)$`);
+  return [available[name]].flat().filter(source => typeof source === "string" && local.test(source));
+}
 
 // A slot may hold several drawings. One is picked at random for each place and kept until the page is loaded again,
 // so a redraw does not swap the picture under the reader's eyes.
 export function illustrationSlot(name, available = drawings, place = "") {
-  if (!SLOTS.includes(name)) return null;
-  const local = new RegExp(`^/static/img/${name}(-[a-z0-9]+)*\\.(png|svg|webp)$`);
-  const sources = [available[name]].flat().filter(source => typeof source === "string" && local.test(source));
+  const sources = drawingSources(name, available);
   if (!sources.length) return null;
   const key = `${name}:${place}`;
   if (!sources.includes(chosen.get(key))) chosen.set(key, sources[Math.floor(Math.random() * sources.length)]);
