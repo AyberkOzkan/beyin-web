@@ -1,3 +1,5 @@
+import { searchFold } from "../fold.js";
+
 export const sections = ["kimlik", "kurallar", "oturum", "konular"];
 
 export function sectionFromHash(hash = "") {
@@ -10,15 +12,11 @@ export function scopeList(items = []) {
   return [...new Set(items.map(item => item.scope).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
 }
 
-function fold(value) {
-  return String(value ?? "").normalize("NFC").toLocaleLowerCase("tr-TR");
-}
-
-// Every word of the query must appear somewhere in the rule; Turkish case rules apply (I/ı, İ/i).
+// Every word of the query must appear somewhere in the rule.
 export function filterRules(items = [], scope = "", query = "") {
-  const words = fold(query).split(/\s+/).filter(Boolean);
+  const words = searchFold(query).split(/\s+/).filter(Boolean);
   return items.filter(item => (!scope || item.scope === scope) && words.every(word =>
-    [item.title, item.text, item.reason, item.scope, item.source].some(value => fold(value).includes(word))));
+    [item.title, item.text, item.reason, item.scope, item.source].some(value => searchFold(value).includes(word))));
 }
 
 // Shown beside a tab's name, so the reader knows what a section holds before opening it.

@@ -1,4 +1,5 @@
 import markdownit from "../../vendor/markdown-it.esm.min.js";
+import { searchFold } from "../fold.js";
 
 const markdown = markdownit({ html: false, linkify: false });
 const taskIcons = Object.freeze({
@@ -30,14 +31,10 @@ export function splitNote(body) {
   };
 }
 
-function normalized(value) {
-  return String(value || "").normalize("NFC").toLocaleLowerCase("tr-TR");
-}
-
 export function filterProjects(projects, query = "", tab = "all") {
-  const search = normalized(query).trim();
+  const search = searchFold(query).trim();
   return projects.filter(project => (tab !== "active" || !project.quiet) &&
-    [project.name, project.title, project.summary].some(value => normalized(value).includes(search)));
+    [project.name, project.title, project.summary].some(value => searchFold(value).includes(search)));
 }
 
 export function projectCounts(projects) {

@@ -1,3 +1,5 @@
+import { searchFold } from "../fold.js";
+
 export function groupNotes(records) {
   const groups = new Map();
   for (const record of records) {
@@ -9,10 +11,10 @@ export function groupNotes(records) {
 }
 
 export function filterGroups(groups, query = "") {
-  const needle = query.normalize("NFC").trim().toLocaleLowerCase("tr-TR");
+  const needle = searchFold(query.trim());
   return groups.map(group => ({ ...group, records: group.records.filter(record =>
     [record.title, record.summary, record.excerpt, group.project].some(value =>
-      typeof value === "string" && value.normalize("NFC").toLocaleLowerCase("tr-TR").includes(needle)))
+      typeof value === "string" && searchFold(value).includes(needle)))
   })).filter(group => group.records.length);
 }
 

@@ -1,4 +1,5 @@
 export { screenToWorld, worldToScreen, truncateTitle } from "../components/graph-core.js";
+import { searchFold } from "../fold.js";
 
 export function readState(params = {}) {
   if (typeof params === "string") params = Object.fromEntries(new URLSearchParams(params.split("?")[1] || ""));
@@ -63,6 +64,6 @@ export function focusGraph(data, focus, depth = 2) {
 }
 
 export function searchMatches(nodes, query) {
-  const needle = query.trim().normalize("NFC").toLocaleLowerCase("tr-TR");
-  return needle ? nodes.filter(node => String(node.title).normalize("NFC").toLocaleLowerCase("tr-TR").includes(needle)) : [];
+  const needle = searchFold(query.trim());
+  return needle ? nodes.filter(node => searchFold(node.title).includes(needle)) : [];
 }

@@ -21,10 +21,10 @@ test("scope list omits empty scopes, sorts unique values and filters exact match
   assert.deepEqual(filterRules(), []);
 });
 
-test("rules are searched by every word, in any field, with Turkish case", () => {
+test("rules are searched by every word, in any field, with the folding of the server's search", () => {
   const items = memory.rules.items;
   assert.deepEqual(filterRules(items, "", "KISA"), [items[1]]);
-  assert.deepEqual(filterRules(items, "", "kisa"), []);
+  assert.deepEqual(filterRules(items, "", "kisa"), [items[1]]);
   assert.deepEqual(filterRules(items, "", "  adımı   kaynağı "), [items[0]]);
   assert.deepEqual(filterRules(items, "", "notes/"), [items[0], items[1]]);
   assert.deepEqual(filterRules(items, "", "serbest"), [items[1], items[2]]);
