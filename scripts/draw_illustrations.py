@@ -2,9 +2,11 @@
 
     py -3 scripts/draw_illustrations.py [--out beyin_web/static/img]
 
-Thirty drawings for four slots; a page shows one of its slot's drawings at random. Every stroke is a slightly
-unsteady line drawn twice, so the result reads as a sketch rather than a diagram. The numbers are seeded: a run
-always writes the same files, and a drawing changes only when its recipe below does.
+Thirty drawings for four slots; a page shows one of its slot's drawings at random. They are meant to read as
+pencil on paper: every line is drawn more than once with a changing pressure, a long line has a faint first
+attempt under it, quick strokes run past their ends, shaded sides are hatched and rubbed, and a grain filter
+breaks the strokes the way paper breaks graphite. The numbers are seeded: a run always writes the same files,
+and a drawing changes only when its recipe below does.
 """
 from __future__ import annotations
 
@@ -15,7 +17,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-INK = "#2F3531"
+GRAPHITE = "#333331"
 GLOW = "#EFE6D0"
 SIZES = {"hero-palace": (520, 170), "sidebar-tree": (216, 180), "heading-mountains": (420, 96), "card-window": (200, 140)}
 Point = tuple[float, float]
@@ -25,20 +27,57 @@ class Sketch:
     def __init__(self, slot: str, seed: int) -> None:
         self.width, self.height = SIZES[slot]
         self.random = random.Random(seed)
+        self.grain = seed
         self.strokes: dict[tuple[float, float], list[str]] = {}
         self.fills: list[str] = []
 
     # --- strokes ---------------------------------------------------------------------------------------------
 
+    def _stroke(self, points: list[Point], weight: float, opacity: float, shake: float) -> None:
+        path = []
+        for index, (x, y) in enumerate(points):
+            x += self.random.uniform(-shake, shake)
+            y += self.random.uniform(-shake, shake)
+            path.append(f"{'M' if index == 0 else 'L'}{x:.1f} {y:.1f}")
+        # The drawings are shown at about half their size; a firm line needs some body to survive that.
+        self.strokes.setdefault((round(weight * (1.25 if weight < 1.9 else 1.0), 2), round(opacity, 2)), []).append("".join(path))
+
     def line(self, points: list[Point], *, weight: float = 1.1, opacity: float = 0.85, shake: float = 0.9,
              passes: int = 2) -> None:
+        length = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(points, points[1:]))
+        if passes > 1 and length > 14:
+            # A quick stroke starts before its mark and runs a little past it.
+            (x1, y1), (x2, y2) = points[0], points[1]
+            (x3, y3), (x4, y4) = points[-2], points[-1]
+            head, tail = self.random.uniform(0.6, 2.4), self.random.uniform(0.6, 2.4)
+            first, last = math.hypot(x2 - x1, y2 - y1) or 1, math.hypot(x4 - x3, y4 - y3) or 1
+            points = [(x1 - (x2 - x1) / first * head, y1 - (y2 - y1) / first * head), *points[1:-1],
+                      (x4 + (x4 - x3) / last * tail, y4 + (y4 - y3) / last * tail)]
+        if passes > 1 and weight >= 1.0 and length > 34:
+            # The first, light attempt at a long line stays visible under the firm one.
+            self._stroke(points, 0.5, 0.3, shake * 2.4)
         for _ in range(passes):
-            path = []
-            for index, (x, y) in enumerate(points):
-                x += self.random.uniform(-shake, shake)
-                y += self.random.uniform(-shake, shake)
-                path.append(f"{'M' if index == 0 else 'L'}{x:.1f} {y:.1f}")
-            self.strokes.setdefault((weight, round(opacity / passes + 0.25, 2)), []).append("".join(path))
+            pressure = self.random.choice((0.75, 0.9, 1.0, 1.1, 1.25))
+            self._stroke(points, weight * pressure, (opacity / passes + 0.25) * min(1.0, 0.75 + pressure * 0.25), shake)
+
+    def rub(self, points: list[Point], width: float, opacity: float = 0.09) -> None:
+        """Graphite laid with the side of the pencil: many close, pale strokes with ragged ends, not one band."""
+        (x1, y1), (x2, y2) = points[0], points[-1]
+        length = math.hypot(x2 - x1, y2 - y1) or 1
+        across = (-(y2 - y1) / length, (x2 - x1) / length)
+        count = max(3, int(width / 1.5))
+        for index in range(count):
+            shift = (index / (count - 1) - 0.5) * width
+            start, end = self.random.uniform(0, 0.22), self.random.uniform(0.78, 1)
+            self._stroke([(x1 + (x2 - x1) * start + across[0] * shift, y1 + (y2 - y1) * start + across[1] * shift),
+                          (x1 + (x2 - x1) * end + across[0] * shift, y1 + (y2 - y1) * end + across[1] * shift)],
+                         2.0, opacity * 1.5, 0.7)
+
+    def shadow(self, x: float, y: float, width: float) -> None:
+        for _ in range(max(3, int(width / 5))):
+            start = x - width / 2 + self.random.uniform(0, width * 0.5)
+            self._stroke([(start, y + self.random.uniform(0, 3)), (start + self.random.uniform(width * 0.25, width * 0.6), y + self.random.uniform(0, 3))],
+                         0.6, 0.3, 0.4)
 
     def curve(self, start: Point, end: Point, bend: float, **style: float) -> None:
         (x1, y1), (x2, y2) = start, end
@@ -99,6 +138,7 @@ class Sketch:
                 points.append((cx + offset * width + math.cos(angle) * radius, cy - math.sin(angle) * radius * 0.8))
         points += [(cx + width / 2, cy), (cx - width / 2, cy)]
         self.line(points, weight=0.9, opacity=0.5, shake=0.6)
+        self.hatch(cx + width * 0.05, cy - width * 0.12, width * 0.34, width * 0.1, count=5, lean=0.7, opacity=0.22)
 
     def birds(self, spots: list[Point], size: float = 5) -> None:
         for x, y in spots:
@@ -108,6 +148,8 @@ class Sketch:
 
     def balloon(self, cx: float, cy: float, radius: float) -> None:
         self.arc(cx, cy, radius, radius * 1.08, -math.pi * 0.22, math.pi * 1.22, weight=1.0)
+        self.hatch(cx + radius * 0.3, cy - radius * 0.55, radius * 0.5, radius * 1.1, count=6, lean=0.18, opacity=0.28)
+        self.rub([(cx + radius * 0.55, cy - radius * 0.5), (cx + radius * 0.5, cy + radius * 0.55)], radius * 0.45, 0.08)
         bottom = cy + radius * 1.35
         self.line([(cx - radius * 0.78, cy + radius * 0.7), (cx - radius * 0.22, bottom)], weight=1.0, shake=0.4)
         self.line([(cx + radius * 0.78, cy + radius * 0.7), (cx + radius * 0.22, bottom)], weight=1.0, shake=0.4)
@@ -127,6 +169,8 @@ class Sketch:
 
     def ground(self, left: float, right: float, y: float, *, tufts: int = 8) -> None:
         self.line([(left, y), ((left + right) / 2, y - 2), (right, y)], weight=0.9, opacity=0.6, shake=1.2)
+        for _ in range(max(2, tufts // 3)):
+            self.hatch(self.random.uniform(left + 10, right - 24), y + 1.5, 16, 4.5, count=6, lean=1.6, opacity=0.26)
         for _ in range(tufts):
             px = self.random.uniform(left + 6, right - 6)
             self.line([(px, y + 1), (px + 2, y - 5)], weight=0.6, opacity=0.45, shake=0.5, passes=1)
@@ -152,9 +196,12 @@ class Sketch:
         ridge.append(foot(peaks[-1], 1))
         self.line(ridge, weight=0.9, opacity=opacity, shake=1.1)
         for x, y in peaks:
-            # A few strokes down the shaded side give each peak its weight.
-            for stroke in range(4):
-                offset = 5 + stroke * 6
+            height = base - y
+            if x + height * 0.5 < self.width - 6:
+                self.rub([(x + 4, y + 7), (x + height * 0.42, y + height * 0.62)], max(5.0, height * 0.16), opacity * 0.16)
+            # Strokes down the shaded side give each peak its weight.
+            for stroke in range(8):
+                offset = 4 + stroke * 3.6
                 start, end = y + offset, min(y + offset * 1.9 + 8, base - 8)
                 if end - start < 6 or x + offset * 0.5 + (end - start) * 0.62 > self.width - 4:
                     continue
@@ -191,6 +238,8 @@ class Sketch:
     # --- plants ----------------------------------------------------------------------------------------------
 
     def pine(self, x: float, base: float, height: float, *, opacity: float = 0.85) -> None:
+        self.rub([(x + height * 0.05, base - height * 0.72), (x + height * 0.13, base - height * 0.1)], height * 0.16, opacity * 0.12)
+        self.shadow(x + height * 0.1, base + 0.5, height * 0.42)
         self.line([(x, base), (x, base - height)], weight=1.0, opacity=opacity)
         tiers = max(5, int(height / 9))
         for tier in range(tiers):
@@ -206,6 +255,11 @@ class Sketch:
 
     def tree(self, x: float, base: float, height: float, *, leaves: bool = True, droop: bool = False) -> None:
         trunk_top = base - height * 0.42
+        if leaves and not droop:
+            for lift, reach in ((0.3, 0.3), (0.42, 0.18), (0.2, 0.12)):
+                self.rub([(x + height * (reach - 0.12), trunk_top - height * lift), (x + height * reach, trunk_top - height * (lift - 0.14))],
+                         height * 0.13, 0.07)
+        self.shadow(x + 10, base + 1.5, height * 0.4)
         self.line([(x - 9, base), (x - 5, base - height * 0.2), (x - 4, trunk_top)], weight=1.3)
         self.line([(x + 9, base), (x + 5, base - height * 0.2), (x + 4, trunk_top)], weight=1.3)
         self.hatch(x - 2, base - height * 0.38, 7, height * 0.36, count=4, lean=0.05, opacity=0.45)
@@ -256,7 +310,9 @@ class Sketch:
         for window in range(windows):
             y = top + height * (0.2 + 0.6 * window / max(windows, 1))
             self.line([(x, y), (x, y + 5)], weight=1.0, shake=0.3)
-        self.hatch(right - width * 0.35, top + 3, width * 0.3, height * 0.8, count=3, lean=0.05, opacity=0.4)
+        self.hatch(right - width * 0.42, top + 3, width * 0.38, height * 0.85, count=5, lean=0.06, opacity=0.38)
+        self.rub([(right - width * 0.2, top + 2), (right - width * 0.2, base - 1)], width * 0.36, 0.1)
+        self.hatch(x + width * 0.05, top - roof * 0.7, width * 0.4, roof * 0.6, count=3, lean=-0.5, opacity=0.3)
         if flag:
             self.line([(x, top - roof), (x, top - roof - 9)], weight=0.9, shake=0.3)
             self.line([(x, top - roof - 9), (x + 8, top - roof - 6.5), (x, top - roof - 4)], weight=0.9, shake=0.3)
@@ -276,6 +332,8 @@ class Sketch:
                       weight=0.8, shake=0.3, passes=1)
         self.line([(x - 5 * s, base), (x - 5 * s, base - 9 * s), (x, base - 13 * s), (x + 5 * s, base - 9 * s), (x + 5 * s, base)],
                   weight=1.0, shake=0.3)
+        self.hatch(x + 10 * s, wall + 2 * s, 42 * s, 13 * s, count=9, lean=0.25, opacity=0.3)
+        self.shadow(x + 14 * s, base + 2, 80 * s)
 
     def cottage(self, x: float, base: float, width: float, height: float, *, smoke: bool = False) -> None:
         left, right, eaves = x - width / 2, x + width / 2, base - height
@@ -283,6 +341,8 @@ class Sketch:
         self.line([(left - 3, eaves), (x, eaves - height * 0.75), (right + 3, eaves)], weight=1.1, shake=0.5)
         self.box(x - width * 0.08, base - height * 0.55, x + width * 0.12, base, weight=0.8, shake=0.3, passes=1)
         self.box(left + width * 0.12, eaves + height * 0.25, left + width * 0.3, eaves + height * 0.55, weight=0.7, shake=0.3, passes=1)
+        self.hatch(right - width * 0.36, eaves + 1.5, width * 0.32, height * 0.85, count=4, lean=0.12, opacity=0.34)
+        self.hatch(x + width * 0.12, eaves - height * 0.5, width * 0.32, height * 0.42, count=4, lean=-0.9, opacity=0.3)
         chimney = x + width * 0.25
         self.line([(chimney, eaves - height * 0.3), (chimney, eaves - height * 0.8), (chimney + 4, eaves - height * 0.8), (chimney + 4, eaves - height * 0.18)],
                   weight=0.8, shake=0.3, passes=1)
@@ -297,6 +357,8 @@ class Sketch:
             half = foot - (foot - neck) * band
             self.line([(x - half, base - height * band), (x + half, base - height * band)], weight=0.8, shake=0.4, passes=1)
         self.hatch(x - foot * 0.5, base - height * 0.28, foot * 1.1, height * 0.26, count=5, lean=0.1)
+        self.rub([(x + neck * 0.5, top + 3), (x + foot * 0.55, base - 2)], foot * 0.7, 0.1)
+        self.hatch(x + neck * 0.1, top + height * 0.42, neck * 0.9, height * 0.16, count=4, lean=0.08, opacity=0.34)
         self.line([(x - neck - 4, top), (x + neck + 4, top)], weight=1.1, shake=0.4)
         self.box(x - neck, top - height * 0.14, x + neck, top, weight=1.0, shake=0.4)
         self.line([(x - neck - 2, top - height * 0.14), (x, top - height * 0.27), (x + neck + 2, top - height * 0.14)], weight=1.1, shake=0.4)
@@ -312,6 +374,8 @@ class Sketch:
         self.line([(x + foot, base), (x + neck, top)], weight=1.1)
         self.line([(x - neck - 2, top), (x, top - height * 0.2), (x + neck + 2, top)], weight=1.1, shake=0.4)
         self.box(x - 2.5, base - height * 0.2, x + 2.5, base, weight=0.8, shake=0.3, passes=1)
+        self.rub([(x + neck * 0.5, top + 3), (x + foot * 0.55, base - 2)], foot * 0.7, 0.1)
+        self.hatch(x + neck * 0.2, top + height * 0.1, foot * 0.7, height * 0.8, count=5, lean=-0.08, opacity=0.32)
         hub = (x, top + height * 0.05)
         turn = self.random.uniform(0.2, 1.2)
         for blade in range(4):
@@ -342,6 +406,8 @@ class Sketch:
         self.arc(x, base - radius * 0.7, radius, radius, 0, math.pi, weight=1.1, shake=0.5)
         self.arc(x, base - radius * 0.7, radius * 0.25, radius, math.pi * 0.5, math.pi * 0.02, weight=0.8, opacity=0.6, shake=0.3, passes=1)
         self.arc(x, base - radius * 0.7, radius * 0.25, radius, math.pi * 0.5, math.pi * 0.98, weight=0.8, opacity=0.6, shake=0.3, passes=1)
+        self.hatch(x + radius * 0.35, base - radius * 1.45, radius * 0.6, radius * 1.35, count=6, lean=0.1, opacity=0.32)
+        self.rub([(x + radius * 0.68, base - radius * 1.2), (x + radius * 0.7, base - 2)], radius * 0.5, 0.09)
         tip = (x + radius * 1.25, base - radius * 2.0)
         self.line([(x + radius * 0.3, base - radius * 1.45), tip], weight=1.6, opacity=0.7, shake=0.3)
         self.box(x - radius * 0.2, base - radius * 0.5, x + radius * 0.2, base, weight=0.8, shake=0.3, passes=1)
@@ -475,9 +541,16 @@ class Sketch:
         paths = "\n".join(f'<path d="{"".join(parts)}" stroke-width="{weight}" opacity="{opacity}"/>'
                           for (weight, opacity), parts in sorted(self.strokes.items()))
         fills = "".join(fill + "\n" for fill in self.fills)
+        # Paper is rough: the first step shakes the edge of every stroke, the second lets the grain show through it.
+        grain = ('<defs><filter id="pencil" x="-2%" y="-2%" width="104%" height="104%">'
+                 f'<feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="{self.grain}" result="tooth"/>'
+                 '<feDisplacementMap in="SourceGraphic" in2="tooth" scale="1.7" xChannelSelector="R" yChannelSelector="G" result="line"/>'
+                 f'<feTurbulence type="fractalNoise" baseFrequency="1.15" numOctaves="2" seed="{self.grain + 7}" result="paper"/>'
+                 '<feColorMatrix in="paper" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.2 0 0 0 2.15" result="gaps"/>'
+                 '<feComposite in="line" in2="gaps" operator="in"/></filter></defs>\n')
         return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {self.width} {self.height}" '
-                f'width="{self.width}" height="{self.height}">\n{fills}'
-                f'<g fill="none" stroke="{INK}" stroke-linecap="round" stroke-linejoin="round">\n{paths}\n</g>\n</svg>\n')
+                f'width="{self.width}" height="{self.height}">\n{grain}{fills}'
+                f'<g fill="none" stroke="{GRAPHITE}" stroke-linecap="round" stroke-linejoin="round" filter="url(#pencil)">\n{paths}\n</g>\n</svg>\n')
 
 
 # --- hero-palace: beside the greeting on the home page (520 x 170) -------------------------------------------

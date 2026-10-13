@@ -43,14 +43,17 @@ class IllustrationTests(unittest.TestCase):
                 self.assertLessEqual(max(x for x, _ in points), width + 8)
                 self.assertGreaterEqual(min(y for _, y in points), -8)
                 self.assertLessEqual(max(y for _, y in points), height + 8)
-                self.assertLess(len(text.encode("utf-8")), 20_000)
+                self.assertLess(len(text.encode("utf-8")), 40_000)
 
-    def test_drawings_hold_only_paths_and_circles(self) -> None:
+    def test_drawings_hold_only_strokes_circles_and_their_own_grain_filter(self) -> None:
+        allowed = {"svg", "g", "path", "circle", "defs", "filter", "feTurbulence", "feDisplacementMap", "feColorMatrix", "feComposite"}
         for name, text in render().items():
             with self.subTest(name=name):
-                self.assertEqual(set(re.findall(r"<([a-zA-Z]+)", text)), {"svg", "g", "path", "circle"} & set(re.findall(r"<([a-zA-Z]+)", text)))
-                self.assertLessEqual(set(re.findall(r"<([a-zA-Z]+)", text)), {"svg", "g", "path", "circle"})
-                for forbidden in ("<script", "href", "url(", "style=", "<image", "<foreignObject", "onload"):
+                self.assertLessEqual(set(re.findall(r"<([a-zA-Z]+)", text)), allowed)
+                # The only reference is to the filter inside the same file; nothing is loaded from anywhere.
+                self.assertEqual(re.findall(r"url\([^)]*\)", text), ["url(#pencil)"])
+                self.assertEqual(text.count('<filter id="pencil"'), 1)
+                for forbidden in ("<script", "href", "style=", "<image", "<foreignObject", "onload", "feImage"):
                     self.assertNotIn(forbidden, text)
 
 
