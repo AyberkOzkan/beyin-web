@@ -4,7 +4,7 @@ Bu belge, beyin-web'in [avenoxbeyin](https://github.com/avenoxai/avenoxbeyin) de
 
 ## Bugünkü durum
 
-beyin-web ayrı bir depodur ve Beyin'e bağımlıdır, tersi değil: Beyin'in dosyalarını okur, kodunu değiştirmez. Kullanıcı depoyu indirir ve `scripts/beyin-web --vault …` ile başlatır. Beyin'in `update` komutu bu arayüzü bilmez.
+beyin-web ayrı bir depodur ve Beyin'e bağımlıdır, tersi değil: Beyin'in dosyalarını okur, kodunu değiştirmez. Kullanıcı depoyu indirir, `scripts/beyin-web --install --vault …` ile bir kez kurar ve masaüstündeki ya da uygulama menüsündeki kısayoldan açar. Beyin'in `update` komutu bu arayüzü bilmez.
 
 ## Ölçümler (2026-10-13)
 
@@ -67,7 +67,7 @@ Bu depodaki bir betik, Python paketini ve bütün ön uç dosyalarını gömerek
 
 İnce başlatıcı için bu depoda yapılacaklar (bakımcı olumlu bakarsa):
 
-1. Depoyu herkese açık yayınlamak ve sürüm etiketi atmak (`v0.2.0`).
+1. Depoyu herkese açık yayınlamak ve sürüm etiketi atmak (`v0.2.0`). Kurulumun kendisi hazır: `beyin.py web kur`, bugünkü `--install` ile aynı işi yapar (kopya, kısayol); fark, paketi kendisinin indirip doğrulaması ve vault'u sormamasıdır.
 2. Sürüm ZIP'ini ve yanında `.sha256` dosyasını üreten bir betik (`scripts/build_release.py`); ZIP yalnızca `beyin_web/` ve lisansları içerir.
 3. `beyin.py`'nin verdiği vault ve durum klasörüyle başlatmayı sınayan bir test.
 
@@ -87,4 +87,4 @@ Başlık: `feat(web): isteğe bağlı web arayüzü (beyin-web) için öneri`
 >
 > Benim önerim önce 1, uygun görürseniz 2. Hangisini isterseniz PR'ını hazırlarım; hiçbirini istemezseniz arayüz ayrı depoda yaşamaya devam eder.
 
-Konuyu açmadan önce yapılacaklar: depoyu yayınlamak, taslaktaki bağlantıyı doldurmak, ekran görüntülerini eklemek. Yayın ve konu Ayberk'in onayıyla yapılır.
+Konuyu açmadan önce yapılacaklar: depoyu yayınlamak, taslaktaki bağlantıyı doldurmak, ekran görüntülerini eklemek. Yayın ve konu depo sahibinin onayıyla yapılır.

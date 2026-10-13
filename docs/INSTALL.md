@@ -2,6 +2,8 @@
 
 beyin-web, [avenoxbeyin](https://github.com/avenoxai/avenoxbeyin) (Beyin) kurulu Obsidian vault'unuzdaki kayıtları tarayıcıda okumanızı sağlar. Vault, notlarınızın bulunduğu klasördür. **Önce Beyin'i kurmuş olmalısınız:** arayüzün gösterdiği görevleri, işlem kayıtlarını ve hafıza dosyalarını Beyin yazar; Beyin'siz bir klasörde sayfaların çoğu boş kalır. Bu adımlar notlarınızı değiştirmez; Obsidian açık kalabilir.
 
+> **Kısa yol:** Python kuruluysa depo klasöründe `scripts/beyin-web --install --vault "VAULT YOLU"` (Windows'ta `scripts\beyin-web.cmd --install --vault "VAULT YOLU"`) komutunu bir kez çalıştırın; masaüstünüze ya da uygulama menünüze bir **Beyin Web** kısayolu gelir ve sonrası çift tıktır. Ayrıntısı [README](../README.md#kurulum)'de. Aşağıdaki adımlar kurmadan, terminalden çalıştırmayı anlatır.
+
 ## 1. Python'u denetleyin
 
 Linux ve macOS'ta Terminal'i, Windows'ta Başlat menüsünden PowerShell'i açın. WSL kullanıyorsanız WSL terminalini açın.

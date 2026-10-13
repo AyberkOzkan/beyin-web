@@ -8,6 +8,12 @@ Yeni sayfalar ve dil:
 - **Raporlar sayfası.** Haftalık özet, son 30 gün, proje ilerlemeleri, bilgi birikimi ve haftanın öğrenilenleri; yalnızca vault'taki kayıtlardan hesaplanır.
 - **İngilizce arayüz.** Üst çubukta dil düğmesi; `--lang en` ya da `config.json`'da `"language": "en"` varsayılanı değiştirir. Tarih, sayı ve çoğul biçimleri dile uyar.
 
+Kurulum ve kullanım:
+
+- **Tek komutla kurulum.** `--install` arayüzün bir kopyasını kullanıcı klasörüne alır, vault yolunu ayarlara yazar ve bir kısayol bırakır (Windows'ta Başlat menüsü ve masaüstü, Linux'ta uygulama menüsü, macOS'ta masaüstü; WSL'de Windows kısayolu). Sonrası çift tık; vault'a dosya konmaz. `--uninstall` geri alır.
+- **Ayarlar çekmecesi.** Dişli düğmesi artık çalışıyor: dil seçimi, Beyin'in Yakala, tercihler ve güncelleme rehberlerine bağlantılar ve **Arayüzü kapat**.
+- İkinci kez başlatılan arayüz yeni sunucu açmaz, çalışanı gösterir (`--reuse`).
+
 Var olan sayfalar:
 
 - Günlükler'e "Seçili Gün Özeti" ve "Yaklaşanlar" kutuları eklendi.

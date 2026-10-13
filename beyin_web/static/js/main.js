@@ -5,6 +5,7 @@ import { parseRoute } from "./router.js";
 import { navigationIndex, shouldFocusMain, preserveFocus } from "./accessibility.js";
 import { errorState, statusDot, skeleton, illustrationSlot, setDrawings, obsidianTarget } from "./components/index.js";
 import { healthDrawer } from "./components/health-drawer.js";
+import { settingsDrawer } from "./components/settings-drawer.js";
 import { indicatorState } from "./pages/memory-model.js";
 import * as placeholder from "./pages/placeholder.js";
 import * as showcase from "./pages/showcase.js";
@@ -30,6 +31,7 @@ let currentPage;
 let stopPulse = () => {};
 let unauthorized = false;
 let drawer;
+let settings;
 let translationsReady = false;
 let currentRoute;
 let cancelFocus = () => {};
@@ -91,9 +93,22 @@ function showLogin() {
   currentPage?.destroy();
   cancelFocus();
   drawer?.close();
+  settings?.close();
   document.getElementById("shell").hidden = true;
   document.getElementById("startup").replaceChildren(el("section", { class: "login-screen card", id: "login-screen" },
     el("h1", {}, t("login.title")), el("p", {}, t("login.message"))));
+}
+
+function showStopped() {
+  // The same halt as a lost session: no routing, no polling, nothing left to click.
+  unauthorized = true;
+  stopPulse();
+  currentPage?.destroy();
+  cancelFocus();
+  drawer?.close();
+  document.getElementById("shell").hidden = true;
+  document.getElementById("startup").replaceChildren(el("section", { class: "login-screen card", id: "stopped-screen" },
+    el("h1", {}, t("settings.stopped.title")), el("p", {}, t("settings.stopped.message"))));
 }
 
 function updatePulse(data) {
@@ -143,20 +158,22 @@ function buildShell(pulse) {
     if (event.key === "Enter") { event.preventDefault(); location.hash = `/arama?q=${encodeURIComponent(search.value)}`; }
   });
   drawer = healthDrawer();
-  document.body.append(drawer.root);
+  settings = settingsDrawer({ language, onStopped: showStopped });
+  document.body.append(drawer.root, settings.root);
   document.getElementById("topbar").replaceChildren(
     el("label", { class: "global-search" }, icon("search"), search, el("kbd", {}, t("shell.searchShortcut"))),
     el("div", { class: "topbar-actions" }, languageSwitch(),
       el("button", { type: "button", class: "local-status", "aria-haspopup": "dialog", onclick: drawer.open },
         statusDot("active", t("shell.local")), t("shell.local")),
-    el("button", { type: "button", class: "icon-button", disabled: true, "aria-label": t("shell.settings"), title: t("shell.settingsSoon") }, icon("settings"))));
+    el("button", { type: "button", class: "icon-button settings-button", "aria-haspopup": "dialog", "aria-label": t("shell.settings"),
+      title: t("shell.settings"), onclick: settings.open }, icon("settings"))));
   document.getElementById("vault-status").replaceChildren(skeleton(2));
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape") { drawer.close(); return; }
+    if (event.key === "Escape") { drawer.close(); settings.close(); return; }
     const target = event.target;
     const typing = target instanceof Element && (target.closest("input, textarea, select") || target.isContentEditable);
     if ((event.ctrlKey && event.key.toLowerCase() === "k") || (event.key === "/" && !typing && !event.ctrlKey && !event.altKey && !event.metaKey)) {
-      if (drawer.root.open || unauthorized) return;
+      if (drawer.root.open || settings.root.open || unauthorized) return;
       event.preventDefault();
       search.focus();
     }

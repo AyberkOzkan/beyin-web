@@ -45,9 +45,42 @@ Görüntüler, testlerde kullanılan sentetik örnek vault'la alınmıştır; i�
 - Python **3.11 ya da üstü**. Başka kurulum, pip paketi ya da derleme gerekmez.
 - Güncel Edge, Chrome ya da Firefox.
 
-## Beş dakikada çalıştırma
+## Kurulum
 
-Bu depoyu indirin, ZIP indirdiyseniz açın ve terminalde depo klasörüne girin. Örneklerde vault yolunu Beyin'i kurduğunuz Obsidian klasörüyle değiştirin.
+Bu depoyu indirin (ZIP indirdiyseniz açın) ve terminalde depo klasörüne girin. Aşağıdaki komutu **bir kez** çalıştırın; vault yolunu Beyin'i kurduğunuz Obsidian klasörüyle değiştirin.
+
+Windows (PowerShell veya Komut İstemi):
+
+```text
+scripts\beyin-web.cmd --install --vault "C:\Users\KULLANICI\Documents\Beyin"
+```
+
+Linux, macOS ve WSL:
+
+```sh
+scripts/beyin-web --install --vault "$HOME/Documents/Beyin"
+```
+
+Kurulum bir kısayol bırakır; bundan sonra terminale gerek kalmaz:
+
+| Ortam | Kısayol |
+|---|---|
+| Windows | Başlat menüsünde ve masaüstünde **Beyin Web** |
+| Linux | Uygulama menüsünde **Beyin Web** |
+| macOS | Masaüstünde `Beyin Web.command` |
+| WSL | Windows'un Başlat menüsünde ve masaüstünde **Beyin Web**; tıklayınca WSL'i başlatır |
+
+- **Açmak:** kısayola tıklayın; tarayıcı açılır. Arayüz zaten açıksa ikinci tıklama yenisini başlatmaz, açık olanı gösterir.
+- **Kapatmak:** sağ üstteki dişli (Ayarlar) → **Arayüzü kapat**. Kapatmayı unutursanız 30 dakika kullanılmayınca kendiliğinden kapanır.
+- **Nereye kurulur:** arayüzün bir kopyası kullanıcı klasörünüze alınır (Windows'ta `%LOCALAPPDATA%\beyin-web`, Linux'ta `~/.local/share/beyin-web`, macOS'ta `~/Library/Application Support/beyin-web`); indirdiğiniz klasörü sonra silebilirsiniz. Vault yolu ayar dosyasına yazılır. **Vault'un içine hiçbir dosya konmaz.**
+- **Güncellemek:** yeni sürümü indirip aynı komutu yeniden çalıştırın.
+- **Kaldırmak:** `scripts/beyin-web --uninstall` (Windows'ta `scripts\beyin-web.cmd --uninstall`). Kısayolları ve kopyayı siler; ayarlarınıza ve vault'unuza dokunmaz.
+
+Kurulum Windows 11'de ve WSL'de (Ubuntu) denendi. Linux masaüstü ve macOS kısayolları otomatik testlerle sınandı, ama gerçek bir masaüstünde tıklanarak denenmedi; sorun görürseniz bildirin.
+
+## Kurmadan çalıştırma
+
+Denemek ya da kendi seçeneklerinizle başlatmak için kurulum şart değildir. Örneklerde vault yolunu Beyin'i kurduğunuz Obsidian klasörüyle değiştirin.
 
 Linux ve macOS:
 
@@ -83,6 +116,9 @@ Ayrıntılar: [Kurulum rehberi](docs/INSTALL.md).
 | `--no-beyin` | Yalın kipi zorlar; Beyin CLI'ı çağrılmaz. |
 | `--read-only` | Vault'a hiçbir şey yazılmaz; Hedefler sayfası yalnızca gösterir. |
 | `--lang tr\|en` | Arayüzün ve terminal mesajlarının varsayılan dili; verilmezse Türkçe. |
+| `--install` | Bu kullanıcı için kurar: kopya, vault ayarı ve kısayol ("Kurulum" bölümü). `--vault` ve `--lang` ile birlikte verilir. |
+| `--uninstall` | Kısayolları ve kurulu kopyayı siler. |
+| `--reuse` | Aynı vault için çalışan bir arayüz varsa yenisini başlatmaz, onun adresini açar. Kısayol bunu kullanır. |
 | `--version` | `beyin-web 0.2.0` yazdırıp çıkar. |
 
 Vault keşif sırası: `--vault` → `BEYIN_VAULT` → `config.json` içindeki `vault` → bulunulan klasör (içinde `beyin.py` veya `.obsidian` varsa). Göreli yollar bulunulan klasöre göre çözülür; başlatıcı çalışma klasörünü değiştirmez. Öncelikli yol geçersizse sonraki aday denenmez.
@@ -116,7 +152,7 @@ Arayüz Türkçe ve İngilizcedir (*the interface is available in Turkish and En
 
 ## Güvenlik ve yalın kip
 
-Sunucu yalnız `127.0.0.1` üzerinde dinler. İlk adres belirteç taşır; açılışta `HttpOnly; SameSite=Strict` çerez konur ve belirteç adres çubuğundan kaldırılır. Belirteç ayar klasöründeki `token` dosyasında tutulur; vault içinde ayar klasörü kullanılamaz. API GET ile okunur (HEAD de desteklenir). Yazan yalnızca Hedefler'in sekiz POST ucudur; bunlar isteğin arayüzün kendi sayfasından geldiğini (`Origin`, JSON türü ve özel başlık) denetler, başka sitenin ya da formun isteğini reddeder. Katı CSP uzak kaynakları ve satır içi betikleri engeller. Gizli (`visibility: private`) notlar veri katmanında elenir. Beyin'in durum klasörüne yazılmaz; dışarı ağ isteği, telemetri veya CDN kullanılmaz. Belirteçli adresi paylaşmayın.
+Sunucu yalnız `127.0.0.1` üzerinde dinler. İlk adres belirteç taşır; açılışta `HttpOnly; SameSite=Strict` çerez konur ve belirteç adres çubuğundan kaldırılır. Belirteç ayar klasöründeki `token` dosyasında tutulur; vault içinde ayar klasörü kullanılamaz. API GET ile okunur (HEAD de desteklenir). Vault'a yazan yalnızca Hedefler'in sekiz POST ucudur; dokuzuncu POST ucu Ayarlar'daki "Arayüzü kapat" düğmesinindir ve hiçbir dosyaya yazmaz. Bunlar isteğin arayüzün kendi sayfasından geldiğini (`Origin`, JSON türü ve özel başlık) denetler, başka sitenin ya da formun isteğini reddeder. Katı CSP uzak kaynakları ve satır içi betikleri engeller. Gizli (`visibility: private`) notlar veri katmanında elenir. Beyin'in durum klasörüne yazılmaz; dışarı ağ isteği, telemetri veya CDN kullanılmaz. Belirteçli adresi paylaşmayın.
 
 **Yalın kip**, arayüzün Beyin'in çalışma zamanına ulaşamadığı durumdur (`beyin.py` vault'ta yok, `--no-beyin` verilmiş ya da Beyin başka ortamda kurulu). Vault'taki notlar, projeler, görevler, günlükler, grafik, hafıza dosyaları ve yerel arama yine gösterilir; Beyin'in bağlam araması ile sağlık ve sürüm bilgileri gösterilemez. Bu kip Beyin'in yerini tutmaz: gösterilen kayıtları yine Beyin üretmiş olmalıdır.
 

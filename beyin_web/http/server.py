@@ -60,11 +60,15 @@ class BeyinHTTPServer(ThreadingHTTPServer):
             pass
         self.routes: list[tuple[re.Pattern[str], APIHandler]] = []
         self.write_routes: list[tuple[re.Pattern[str], WriteHandler]] = []
+        # Commands to the server itself; they write nothing to the vault, so read-only mode keeps them.
+        self.control_patterns: set[str] = set()
         self.activity = threading.Condition()
         self.last_request = time.monotonic()
         super().__init__(("127.0.0.1", settings.port), RequestHandler)
         from beyin_web.http.api import register_api
         self.api = register_api(self)
+        self.control_patterns.add(r"/api/v1/shutdown")
+        self.register_write(r"/api/v1/shutdown", _stop)
 
     def server_bind(self) -> None:
         # HTTPServer's default bind performs an unnecessary reverse DNS lookup.
@@ -269,7 +273,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if len(raw) != int(length):
             self._refuse(400, "bad_request")
             return
-        if self.application.settings.read_only:
+        if self.application.settings.read_only and match.re.pattern not in self.application.control_patterns:
             self._refuse(403, "read_only")
             return
         if not valid_write({name: self.headers.get_all(name, [])
@@ -302,6 +306,15 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         self.send_body(status, body, content_type)
+
+
+def _stop(request: RequestHandler, match: re.Match[str], body: dict[str, object]) -> None:
+    if body:
+        request._refuse(400, "bad_request")
+        return
+    request.send_json({"stopping": True})
+    # shutdown() waits for the serving loop, which is waiting for this very request to return.
+    threading.Thread(target=request.application.shutdown, daemon=True).start()
 
 
 def create_server(
