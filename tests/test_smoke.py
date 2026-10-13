@@ -43,7 +43,7 @@ class SmokeTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stdout, "beyin-web 0.1.0\n")
+        self.assertEqual(result.stdout, "beyin-web 0.2.0\n")
         self.assertEqual(result.stderr, "")
 
     def test_missing_vault(self) -> None:

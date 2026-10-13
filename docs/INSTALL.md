@@ -1,6 +1,6 @@
 # İlk çalıştırma rehberi
 
-beyin-web, Obsidian vault'unuzdaki Markdown dosyalarını tarayıcıda okumanızı sağlar. Vault, notlarınızın bulunduğu klasördür. Bu adımlar notlarınızı değiştirmez; Obsidian açık kalabilir.
+beyin-web, [avenoxbeyin](https://github.com/avenoxai/avenoxbeyin) (Beyin) kurulu Obsidian vault'unuzdaki kayıtları tarayıcıda okumanızı sağlar. Vault, notlarınızın bulunduğu klasördür. **Önce Beyin'i kurmuş olmalısınız:** arayüzün gösterdiği görevleri, işlem kayıtlarını ve hafıza dosyalarını Beyin yazar; Beyin'siz bir klasörde sayfaların çoğu boş kalır. Bu adımlar notlarınızı değiştirmez; Obsidian açık kalabilir.
 
 ## 1. Python'u denetleyin
 

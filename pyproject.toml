@@ -1,6 +1,8 @@
 [project]
 name = "beyin-web"
-version = "0.1.0"
+version = "0.2.0"
+description = "Local web interface for an avenoxbeyin (Beyin) vault"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
 license = {text = "MIT"}

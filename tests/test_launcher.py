@@ -41,7 +41,7 @@ class LauncherTests(unittest.TestCase):
     def assert_version(self, launcher: Path) -> None:
         result = self.run_launcher(launcher, ["--version"])
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "beyin-web 0.1.0\n")
+        self.assertEqual(result.stdout, "beyin-web 0.2.0\n")
         self.assertEqual(result.stderr, "")
 
     def test_posix_version_outside_repository(self) -> None:
