@@ -1,5 +1,5 @@
 import { get, startPulse } from "./api.js";
-import { setMessages, t, formatDate, formatTime } from "./i18n.js";
+import { LANGUAGES, chooseLanguage, storedLanguage, storeLanguage, setMessages, t, formatDate, formatTime } from "./i18n.js";
 import { el, icon, prepareIcons } from "./dom.js";
 import { parseRoute } from "./router.js";
 import { navigationIndex, shouldFocusMain, preserveFocus } from "./accessibility.js";
@@ -35,6 +35,7 @@ let currentRoute;
 let cancelFocus = () => {};
 let vaultObsidianUri;
 let recordObsidianUri = null;
+let language = LANGUAGES[0];
 
 function updateObsidianLink() {
   const actions = document.querySelector(".topbar-actions");
@@ -48,6 +49,14 @@ function updateObsidianLink() {
   }
   link.setAttribute("href", target.href);
   link.setAttribute("aria-label", t(target.labelKey));
+}
+
+// The button names the other language in that language, so it can be found by someone who cannot read this one.
+function languageSwitch() {
+  const other = LANGUAGES.find(code => code !== language);
+  return el("button", { type: "button", class: "button language-switch", lang: other,
+    "aria-label": t("shell.otherLanguageLabel"), onclick: () => { if (storeLanguage(other)) location.reload(); } },
+  t("shell.otherLanguage"));
 }
 
 function route() {
@@ -137,8 +146,9 @@ function buildShell(pulse) {
   document.body.append(drawer.root);
   document.getElementById("topbar").replaceChildren(
     el("label", { class: "global-search" }, icon("search"), search, el("kbd", {}, t("shell.searchShortcut"))),
-    el("div", { class: "topbar-actions" }, el("button", { type: "button", class: "local-status", "aria-haspopup": "dialog", onclick: drawer.open },
-      statusDot("active", t("shell.local")), t("shell.local")),
+    el("div", { class: "topbar-actions" }, languageSwitch(),
+      el("button", { type: "button", class: "local-status", "aria-haspopup": "dialog", onclick: drawer.open },
+        statusDot("active", t("shell.local")), t("shell.local")),
     el("button", { type: "button", class: "icon-button", disabled: true, "aria-label": t("shell.settings"), title: t("shell.settingsSoon") }, icon("settings"))));
   document.getElementById("vault-status").replaceChildren(skeleton(2));
   document.addEventListener("keydown", event => {
@@ -170,10 +180,13 @@ function buildShell(pulse) {
 
 document.addEventListener("beyin:unauthorized", showLogin);
 try {
-  setMessages(await get("/static/i18n/tr.json"));
+  // The server names the default language, so the pulse is read before any text is.
+  const pulse = await get("/api/v1/pulse");
+  language = chooseLanguage(storedLanguage(), pulse.language);
+  setMessages(await get(`/static/i18n/${language}.json`));
+  document.documentElement.lang = language;
   translationsReady = true;
   await prepareIcons();
-  const pulse = await get("/api/v1/pulse");
   if (!unauthorized) buildShell(pulse);
 } catch (error) {
   if (!unauthorized) {

@@ -89,7 +89,7 @@ class ServerTests(ServerCase):
         self.assertEqual(status, 200)
         payload = json.loads(body)
         snapshot = self.source.snapshot()
-        self.assertEqual(set(payload), {"generation", "scanned_at", "records", "hidden_private", "beyin", "vault_name", "drawings", "obsidian_uri"})
+        self.assertEqual(set(payload), {"generation", "scanned_at", "records", "hidden_private", "beyin", "vault_name", "drawings", "obsidian_uri", "language"})
         self.assertEqual(payload["vault_name"], self.vault.name)
         self.assertEqual(payload["drawings"], {})
         self.assertEqual(payload["generation"], snapshot.generation)

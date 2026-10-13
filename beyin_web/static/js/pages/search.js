@@ -1,6 +1,6 @@
 import { get } from "../api.js";
 import { el, icon } from "../dom.js";
-import { t, formatDate } from "../i18n.js";
+import { t, formatDate, currentLocale } from "../i18n.js";
 import { badge, tabs, emptyState, errorState, skeleton } from "../components/index.js";
 import { preserveFocus } from "../accessibility.js";
 import { searchKinds, readSearchState, searchHash, searchApiParams, highlightParts,
@@ -99,7 +99,7 @@ async function loadResults(state) {
   try {
     const data = await get("/api/v1/search", searchApiParams(state.query));
     if (active !== state || !current()) return;
-    const seconds = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const seconds = new Intl.NumberFormat(currentLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       .format((performance.now() - started) / 1000);
     state.summary.textContent = t("search.summary", { count: data.results.length, seconds });
     if (state.query.kip === "beyin") {

@@ -55,6 +55,7 @@ Ayrıntılar: [Kurulum rehberi](docs/INSTALL.md).
 | `--no-token` | Belirteç ve çerez denetimini kapatır; yalnız tek kullanıcılı makine için. |
 | `--no-beyin` | Yalın kipi zorlar; Beyin CLI'ı çağrılmaz. |
 | `--read-only` | Vault'a hiçbir şey yazılmaz; Hedefler sayfası yalnızca gösterir. |
+| `--lang tr\|en` | Arayüzün ve terminal mesajlarının varsayılan dili; verilmezse Türkçe. |
 | `--version` | `beyin-web 0.1.0` yazdırıp çıkar. |
 
 Vault keşif sırası: `--vault` → `BEYIN_VAULT` → `config.json` içindeki `vault` → bulunulan klasör (içinde `beyin.py` veya `.obsidian` varsa). Göreli yollar bulunulan klasöre göre çözülür; başlatıcı çalışma klasörünü değiştirmez. Öncelikli yol geçersizse sonraki aday denenmez.
@@ -73,6 +74,7 @@ Dosyayı isteğe bağlı olarak kendiniz oluşturun. Desteklenen anahtarlar:
 | `display_name` | Ana Sayfa selamlamasında kullanılan ad (metin). |
 | `beyin` | `false` ise Beyin çağrıları kapatılır. |
 | `read_only` | `true` ise vault'a yazılmaz (`--read-only` ile aynı). |
+| `language` | `"tr"` ya da `"en"`; arayüzün varsayılan dili. `--lang` önceliklidir. |
 
 ```json
 {
@@ -82,6 +84,8 @@ Dosyayı isteğe bağlı olarak kendiniz oluşturun. Desteklenen anahtarlar:
   "beyin": false
 }
 ```
+
+Arayüz Türkçe ve İngilizcedir (*the interface is available in Turkish and English*). Üst çubuktaki **English** / **Türkçe** düğmesi dili değiştirir; seçim tarayıcıda saklanır ve `--lang` ile `language` ayarının önüne geçer. Adresler (`#/projeler`) ve notların içeriği dile göre değişmez.
 
 ## Güvenlik ve yalın kip
 

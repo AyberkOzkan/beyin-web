@@ -18,10 +18,31 @@ from typing import cast
 from urllib.parse import urlencode
 
 from beyin_web import __version__
-from beyin_web.config import Settings, config_directory, load_settings
+from beyin_web.config import LANGUAGES, Settings, config_directory, load_settings, read_config, resolve_language
 from beyin_web.http.server import BeyinHTTPServer, create_server
 from beyin_web.runtime.beyin_cli import BeyinRuntime, health_summary
 from beyin_web.vault.scan import MarkdownSource, VaultSource
+
+MESSAGES = {
+    "tr": {
+        "port_range": "port 0 ile 65535 arasında olmalıdır",
+        "idle_positive": "boşta kapanma süresi pozitif olmalıdır",
+        "vault_missing": "Vault bulunamadı. --vault ile var olan bir vault klasörü belirtin.",
+        "plain_mode": "Beyin bulunamadı; yalın kipte çalışıyor.",
+        "server_failed": "Sunucu başlatılamadı. Ayarları ve kullanılabilir portları kontrol edin.",
+        "address": "beyin-web adresi: {address}",
+        "browser_failed": "Tarayıcı açılamadı. Terminaldeki adresi tarayıcıda açın.",
+    },
+    "en": {
+        "port_range": "the port must be between 0 and 65535",
+        "idle_positive": "the idle exit time must be positive",
+        "vault_missing": "Vault not found. Point --vault at an existing vault folder.",
+        "plain_mode": "Beyin not found; running in plain mode.",
+        "server_failed": "The server could not start. Check the settings and the available ports.",
+        "address": "beyin-web address: {address}",
+        "browser_failed": "The browser could not be opened. Open the address shown here in a browser.",
+    },
+}
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -33,17 +54,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--no-token", action="store_true")
     parser.add_argument("--no-beyin", action="store_true")
     parser.add_argument("--read-only", action="store_true")
+    parser.add_argument("--lang", choices=LANGUAGES)
     parser.add_argument(
         "--version", action="version", version=f"beyin-web {__version__}"
     )
     args = parser.parse_args(argv)
+    text = MESSAGES[args.lang or LANGUAGES[0]]
     args.port_explicit = args.port is not None
     if args.port is None:
         args.port = 7373
     if not 0 <= args.port <= 65535:
-        parser.error("port 0 ile 65535 arasında olmalıdır")
+        parser.error(text["port_range"])
     if args.idle_exit is not None and args.idle_exit <= 0:
-        parser.error("boşta kapanma süresi pozitif olmalıdır")
+        parser.error(text["idle_positive"])
     return args
 
 
@@ -132,9 +155,10 @@ def serve(server: ThreadingHTTPServer, idle_exit: int | None) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     directory = config_directory()
+    text = MESSAGES[resolve_language(args.lang, read_config(directory / "config.json"))]
     vault = resolve_vault(args.vault, os.environ, Path.cwd(), directory / "config.json")
     if vault is None or not vault.is_dir():
-        print("Vault bulunamadı. --vault ile var olan bir vault klasörü belirtin.", file=sys.stderr)
+        print(text["vault_missing"], file=sys.stderr)
         return 2
     try:
         settings = load_settings(
@@ -145,27 +169,28 @@ def main(argv: Sequence[str] | None = None) -> int:
             open_browser=args.open,
             beyin_enabled=not args.no_beyin,
             read_only=args.read_only,
+            language=args.lang,
         )
         runtime = BeyinRuntime(settings.vault, enabled=settings.beyin_enabled)
         if not runtime.available:
-            print("Beyin bulunamadı; yalın kipte çalışıyor.", file=sys.stderr)
+            print(text["plain_mode"], file=sys.stderr)
         companion_dir = health_summary(runtime.doctor() if runtime.available else None)["companion_dir"]
         source = MarkdownSource(
             settings.vault, companion_dir=companion_dir if isinstance(companion_dir, str) else None,
         )
         server = bind_server(settings, source, runtime)
     except (OSError, ValueError):
-        print("Sunucu başlatılamadı. Ayarları ve kullanılabilir portları kontrol edin.", file=sys.stderr)
+        print(text["server_failed"], file=sys.stderr)
         return 2
     address = f"http://127.0.0.1:{server.server_address[1]}/"
     if settings.token_enabled:
         address += "?" + urlencode({"t": settings.token})
-    print(f"beyin-web adresi: {address}", flush=True)
+    print(text["address"].format(address=address), flush=True)
     if settings.open_browser:
         try:
             open_address(address)
         except OSError:
-            print("Tarayıcı açılamadı. Terminaldeki adresi tarayıcıda açın.", file=sys.stderr)
+            print(text["browser_failed"], file=sys.stderr)
     serve(server, settings.idle_exit)
     return 0
 

@@ -118,13 +118,14 @@ class PageTestCase(BrowserTestCase):
     """A fresh vault copy and server per test, with the clock of the golden files.
 
     Page tests subclass this: the pages then show exactly what tests/fixtures/golden/*.json
-    contains. Set ``beyin = False`` for plain mode and ``display_name`` as needed, or change
-    ``self.vault`` and call ``restart_server()``.
+    contains. Set ``beyin = False`` for plain mode, ``display_name`` and ``language`` as needed,
+    or change ``self.vault`` and call ``restart_server()``.
     """
 
     beyin: bool = True
     display_name: str = ""
     read_only: bool = False
+    language: str = "tr"
     vault: Path
     messages: dict[str, Any]
 
@@ -134,7 +135,7 @@ class PageTestCase(BrowserTestCase):
         self.addCleanup(temporary.cleanup)
         self.vault = make_vault(Path(temporary.name))
         static = Path(__file__).resolve().parents[2] / "beyin_web" / "static"
-        self.messages = json.loads((static / "i18n" / "tr.json").read_text(encoding="utf-8"))
+        self.messages = json.loads((static / "i18n" / f"{self.language}.json").read_text(encoding="utf-8"))
         self.driver.set_window_size(1672, 941)
         self._stop_page_server: Any = None
         self.restart_server()
@@ -144,7 +145,7 @@ class PageTestCase(BrowserTestCase):
         from scripts.update_golden import NOW, TZ
         self.stop_page_server()
         self.settings = Settings(vault=self.vault, port=0, token_enabled=False, display_name=self.display_name,
-                                 read_only=self.read_only)
+                                 read_only=self.read_only, language=self.language)
         self.source = MarkdownSource(self.vault, min_interval=0)
         self.runtime = BeyinRuntime(self.vault, script=FIXTURES / "fake_beyin.py", enabled=self.beyin)
         server = create_server(self.settings, self.source, self.runtime)

@@ -5,6 +5,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -122,9 +123,12 @@ class APITests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "^invalid obsidian_uri$"):
             normalize({**payload, "obsidian_uri": obsidian_vault_uri("/elsewhere")}, self.vault)
         self.assertEqual(payload["vault_name"], self.vault.name)
+        self.assertEqual(payload["language"], "tr")
         self.assertEqual(payload["drawings"], {})
         self.server.drawings = {"hero-palace": "/static/img/hero-palace.png"}
         self.assertEqual(self.payload("/pulse")["drawings"], self.server.drawings)
+        self.server.settings = replace(self.server.settings, language="en")
+        self.assertEqual(self.payload("/pulse")["language"], "en")
 
     def test_etags_and_generation_changes(self) -> None:
         for name, endpoint in ENDPOINTS.items():

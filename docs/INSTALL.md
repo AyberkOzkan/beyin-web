@@ -122,7 +122,7 @@ Windows örneği (JSON içinde ters eğik çizgiler iki kez yazılır):
 }
 ```
 
-Linux/macOS için `vault` değerini `/home/KULLANICI/Documents/Beyin` veya `/Users/KULLANICI/Documents/Beyin`, WSL için `/mnt/c/Users/KULLANICI/Documents/Beyin` yapın. Tam yolu yazın; JSON içindeki `~` ve `$HOME` genişletilmez. Yalnız `vault`, `port`, `display_name` ve `beyin` anahtarları desteklenir. `beyin: false` yalın kipi seçer; Beyin'i kullanmak için bu anahtarı kaldırın veya `true` yapın. Ayar klasörünü vault'un içinde oluşturmayın.
+Linux/macOS için `vault` değerini `/home/KULLANICI/Documents/Beyin` veya `/Users/KULLANICI/Documents/Beyin`, WSL için `/mnt/c/Users/KULLANICI/Documents/Beyin` yapın. Tam yolu yazın; JSON içindeki `~` ve `$HOME` genişletilmez. Yalnız `vault`, `port`, `display_name`, `beyin`, `read_only` ve `language` anahtarları desteklenir. `language` `"tr"` ya da `"en"` olur ve arayüzün varsayılan dilini seçer; dili tarayıcıda üst çubuktaki **English** / **Türkçe** düğmesiyle de değiştirebilirsiniz. `beyin: false` yalın kipi seçer; Beyin'i kullanmak için bu anahtarı kaldırın veya `true` yapın. Ayar klasörünü vault'un içinde oluşturmayın.
 
 Vault keşfi `--vault`, ardından `BEYIN_VAULT`, ardından `config.json` sırasındadır. Hiçbiri yoksa bulunulan klasörde `beyin.py` veya `.obsidian` aranır. Göreli yollar terminalin çalışma klasörüne göre çözülür; seçilmiş yol geçersizse diğer adaylara geçilmez.
 

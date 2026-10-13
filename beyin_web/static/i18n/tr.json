@@ -1,4 +1,5 @@
 {
+  "meta.locale": "tr-TR",
   "shell.brand": "Beyin",
   "shell.documentTitle": "{page} · Beyin",
   "shell.version": "v{version}",
@@ -17,6 +18,8 @@
   "shell.openRecordObsidian": "Bu notu Obsidian'da aç",
   "shell.settings": "Ayarlar",
   "shell.settingsSoon": "Ayarlar yakında",
+  "shell.otherLanguage": "English",
+  "shell.otherLanguageLabel": "Switch to English",
   "shell.recordCount": "{count} kayıt",
   "shell.lastScan": "Son tarama: {time}",
   "shell.pulseError": "Vault durumuna ulaşılamadı. Yeniden bağlantı kurulması bekleniyor.",

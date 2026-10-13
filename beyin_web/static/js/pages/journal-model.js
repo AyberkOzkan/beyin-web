@@ -1,3 +1,5 @@
+import { currentLocale } from "../i18n.js";
+
 function utcDate(value) {
   return new Date(`${value}T00:00:00Z`);
 }
@@ -66,13 +68,13 @@ export function clockText(value) {
 
 export function dayLabel(date) {
   if (!isDate(date)) return date || "";
-  return new Intl.DateTimeFormat("tr-TR", {
+  return new Intl.DateTimeFormat(currentLocale(), {
     day: "numeric", month: "long", year: "numeric", weekday: "long", timeZone: "UTC",
   }).format(utcDate(date));
 }
 
 export function monthLabel(month) {
-  return new Intl.DateTimeFormat("tr-TR", {
+  return new Intl.DateTimeFormat(currentLocale(), {
     month: "long", year: "numeric", timeZone: "UTC",
   }).format(utcDate(`${month}-01`));
 }

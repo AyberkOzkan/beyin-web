@@ -1,6 +1,6 @@
 """Open pages of the app in headless Edge and save screenshots for design review.
 
-    py -3 scripts/screenshot.py [--out design/screenshots] [--vault PATH] [--full] [--wait 2.5] [HASH ...]
+    py -3 scripts/screenshot.py [--out design/screenshots] [--vault PATH] [--lang en] [--full] [--wait 2.5] [HASH ...]
 
 Without --vault the synthetic vault is served with the clock of the golden files. With --vault a
 real vault is read (never written); Beyin is not called. The default output folder is not tracked
@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from beyin_web.config import Settings  # noqa: E402
+from beyin_web.config import LANGUAGES, Settings  # noqa: E402
 from beyin_web.http.server import create_server  # noqa: E402
 from beyin_web.runtime.beyin_cli import BeyinRuntime  # noqa: E402
 from beyin_web.vault.scan import MarkdownSource  # noqa: E402
@@ -29,6 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("hashes", nargs="*", default=["#/"])
     parser.add_argument("--out", type=Path, default=ROOT / "design" / "screenshots")
     parser.add_argument("--vault", type=Path)
+    parser.add_argument("--lang", choices=LANGUAGES, default=LANGUAGES[0])
     parser.add_argument("--full", action="store_true", help="grow the window to the page's height")
     parser.add_argument("--wait", type=float, default=2.5, help="seconds to let a page settle")
     args = parser.parse_args(argv)
@@ -45,7 +46,8 @@ def main(argv: list[str] | None = None) -> int:
         else:
             vault = args.vault
         # Screenshots never need Beyin, and a real vault must not have its CLI run from here.
-        server = create_server(Settings(vault=vault, port=0, token_enabled=False, read_only=args.vault is not None),
+        server = create_server(Settings(vault=vault, port=0, token_enabled=False, read_only=args.vault is not None,
+                                        language=args.lang),
                                MarkdownSource(vault), BeyinRuntime(vault, enabled=False))
         if args.vault is None:
             server.api.clock = lambda: NOW

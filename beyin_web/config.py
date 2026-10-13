@@ -8,6 +8,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# The first language is the default; each one has a static/i18n/<code>.json file.
+LANGUAGES = ("tr", "en")
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -21,6 +24,7 @@ class Settings:
     static_dir: Path = field(default_factory=lambda: Path(__file__).parent / "static")
     beyin_enabled: bool = True
     read_only: bool = False
+    language: str = LANGUAGES[0]
 
 
 def config_directory(
@@ -41,6 +45,13 @@ def read_config(path: Path) -> dict[str, object]:
     except (OSError, UnicodeError, ValueError):
         return {}
     return value if isinstance(value, dict) else {}
+
+
+def resolve_language(cli_value: str | None, config: Mapping[str, object]) -> str:
+    for value in (cli_value, config.get("language")):
+        if isinstance(value, str) and value in LANGUAGES:
+            return value
+    return LANGUAGES[0]
 
 
 def load_token(directory: Path) -> str:
@@ -75,6 +86,7 @@ def load_settings(
     open_browser: bool = False,
     beyin_enabled: bool = True,
     read_only: bool = False,
+    language: str | None = None,
 ) -> Settings:
     if token_enabled and directory.resolve().is_relative_to(vault.resolve()):
         raise ValueError("config_inside_vault")
@@ -96,4 +108,5 @@ def load_settings(
         display_name=display_name if isinstance(display_name, str) else "",
         beyin_enabled=beyin_enabled and config.get("beyin") is not False,
         read_only=read_only or config.get("read_only") is True,
+        language=resolve_language(language, config),
     )

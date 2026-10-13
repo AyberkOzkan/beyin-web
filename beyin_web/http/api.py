@@ -184,6 +184,7 @@ class API:
                         "vault_name": snapshot.root.name, "drawings": dict(self.server.drawings),
                         "obsidian_uri": obsidian_vault_uri(str(self.server.settings.vault)),
                         "hidden_private": snapshot.hidden_private,
+                        "language": self.server.settings.language,
                         "beyin": {"available": available, "version": health["installed_version"],
                                   "up_to_date": health["up_to_date"]}}
             else:

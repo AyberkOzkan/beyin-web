@@ -1,4 +1,4 @@
-import { t } from "../i18n.js";
+import { t, currentLocale } from "../i18n.js";
 
 function calendarDate(value) {
   return new Date(`${value}T12:00:00Z`);
@@ -20,7 +20,7 @@ export function weekNavigation(start, today) {
 export function rangeLabel(start, end) {
   const first = calendarDate(start), last = calendarDate(end);
   const options = { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" };
-  const format = date => new Intl.DateTimeFormat("tr-TR", options).format(date);
+  const format = date => new Intl.DateTimeFormat(currentLocale(), options).format(date);
   if (start.slice(0, 7) === end.slice(0, 7)) {
     return t("reports.rangeSameMonth", { day: first.getUTCDate(), end: format(last) });
   }

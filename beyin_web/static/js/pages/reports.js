@@ -1,6 +1,6 @@
 import { get } from "../api.js";
 import { el, icon } from "../dom.js";
-import { t, messageList, formatDate } from "../i18n.js";
+import { t, messageList, formatDate, currentLocale } from "../i18n.js";
 import { card, emptyState, errorState, skeleton, progressBar } from "../components/index.js";
 import { weeklyBars } from "./home-model.js";
 import { activeDaysLabel, dailyPoints, percentage, rangeLabel, weekNavigation } from "./reports-model.js";
@@ -52,7 +52,7 @@ function chart(period, key) {
     [0, Math.floor((dates.length - 1) / 2), dates.length - 1].forEach((index, position) => {
       root.append(svg("text", { x: [5, 180, 355][position], y: 133,
         "text-anchor": ["start", "middle", "end"][position] },
-      new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short" }).format(new Date(`${dates[index]}T12:00:00`))));
+      new Intl.DateTimeFormat(currentLocale(), { day: "numeric", month: "short" }).format(new Date(`${dates[index]}T12:00:00`))));
     });
   }
   return root;

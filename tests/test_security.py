@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from beyin_web.config import config_directory, load_settings, load_token, read_config
+from beyin_web.config import LANGUAGES, config_directory, load_settings, load_token, read_config
 from beyin_web.http.security import SECURITY_HEADERS
 from tests.support import make_vault
 from tests.test_server import ServerCase
@@ -209,6 +209,28 @@ class ConfigTests(unittest.TestCase):
                 self.assertEqual(settings.port, 7373)
                 self.assertEqual(settings.display_name, "")
         self.assertEqual(read_config(directory / "missing.json"), {})
+
+    def test_language_comes_from_cli_then_config_then_default(self) -> None:
+        directory = self.root / "config"
+        directory.mkdir()
+        path = directory / "config.json"
+        self.assertEqual(load_settings(self.vault, directory, token_enabled=False).language, "tr")
+        path.write_text('{"language": "en"}', encoding="utf-8")
+        self.assertEqual(load_settings(self.vault, directory, token_enabled=False).language, "en")
+        self.assertEqual(load_settings(self.vault, directory, token_enabled=False, language="tr").language, "tr")
+        for content in ('{"language": "de"}', '{"language": "../en"}', '{"language": 3}', '{"language": ["en"]}'):
+            with self.subTest(content=content):
+                path.write_text(content, encoding="utf-8")
+                self.assertEqual(load_settings(self.vault, directory, token_enabled=False).language, "tr")
+                self.assertEqual(load_settings(self.vault, directory, token_enabled=False, language="en").language, "en")
+
+    def test_every_language_has_messages_and_the_page_knows_it(self) -> None:
+        static = Path(__file__).resolve().parents[1] / "beyin_web" / "static"
+        for language in LANGUAGES:
+            with self.subTest(language=language):
+                self.assertTrue((static / "i18n" / f"{language}.json").is_file())
+        script = (static / "js" / "i18n.js").read_text(encoding="utf-8")
+        self.assertIn("export const LANGUAGES = [" + ", ".join(f'"{language}"' for language in LANGUAGES) + "];", script)
 
     def test_config_cannot_write_inside_vault(self) -> None:
         with self.assertRaises(ValueError):

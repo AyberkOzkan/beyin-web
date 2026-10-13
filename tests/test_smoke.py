@@ -64,6 +64,35 @@ class SmokeTests(unittest.TestCase):
                         "Vault bulunamadı. --vault ile var olan bir vault klasörü belirtin.\n",
                     )
 
+    def test_missing_vault_in_english(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for argv, config in ((["--lang", "en"], None), ([], '{"language": "en"}'), (["--lang", "en"], '{"language": "tr"}')):
+                with self.subTest(argv=argv, config=config):
+                    if config is not None:
+                        (root / "config.json").write_text(config, encoding="utf-8")
+                    output = io.StringIO()
+                    with (
+                        patch("beyin_web.__main__.config_directory", return_value=root),
+                        patch("beyin_web.__main__.Path.cwd", return_value=root),
+                        patch.dict("os.environ", {}, clear=True),
+                        contextlib.redirect_stderr(output),
+                    ):
+                        self.assertEqual(main(argv), 2)
+                    self.assertEqual(output.getvalue(), "Vault not found. Point --vault at an existing vault folder.\n")
+
+    def test_language_argument(self) -> None:
+        self.assertIsNone(parse_args([]).lang)
+        self.assertEqual(parse_args(["--lang", "en"]).lang, "en")
+        for argv, expected in ((["--port", "65536"], "port 0 ile 65535"), (["--lang", "en", "--port", "65536"], "between 0 and 65535"),
+                               (["--lang", "de"], "--lang")):
+            with self.subTest(argv=argv):
+                output = io.StringIO()
+                with contextlib.redirect_stderr(output), self.assertRaises(SystemExit) as caught:
+                    parse_args(argv)
+                self.assertEqual(caught.exception.code, 2)
+                self.assertIn(expected, output.getvalue())
+
     def test_argument_defaults(self) -> None:
         args = parse_args([])
         self.assertIsNone(args.vault)

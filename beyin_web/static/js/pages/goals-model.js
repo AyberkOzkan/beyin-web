@@ -1,3 +1,5 @@
+import { currentLocale } from "../i18n.js";
+
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 export function shiftMonth(month, delta) {
@@ -23,7 +25,7 @@ export function monthDays(month) {
 }
 
 export function monthLabel(month) {
-  return new Intl.DateTimeFormat("tr-TR", { timeZone: "UTC", month: "long", year: "numeric" })
+  return new Intl.DateTimeFormat(currentLocale(), { timeZone: "UTC", month: "long", year: "numeric" })
     .format(new Date(`${month}-01T12:00:00Z`));
 }
 
