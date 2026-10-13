@@ -43,7 +43,7 @@ class IllustrationTests(unittest.TestCase):
                 self.assertLessEqual(max(x for x, _ in points), width + 8)
                 self.assertGreaterEqual(min(y for _, y in points), -8)
                 self.assertLessEqual(max(y for _, y in points), height + 8)
-                self.assertLess(len(text.encode("utf-8")), 40_000)
+                self.assertLess(len(text.encode("utf-8")), 48_000)
 
     def test_drawings_hold_only_strokes_circles_and_their_own_grain_filter(self) -> None:
         allowed = {"svg", "g", "path", "circle", "defs", "filter", "feTurbulence", "feDisplacementMap", "feColorMatrix", "feComposite"}

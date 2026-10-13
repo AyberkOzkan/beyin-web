@@ -21,7 +21,10 @@
 .content { padding: 20px 28px; }
 .page-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; margin-bottom: 18px; }
 .page-heading > * { grid-column: 1; }
-.page-heading > .illustration { grid-column: 2; grid-row: 1 / span 4; align-self: end; height: clamp(80px, 6.4vw, 124px); width: auto; margin: -18px -6px -12px 0; }
+/* A long strip of horizon beside the title. The text keeps the room it needs to stay on one line; when the
+   window cannot give the drawing its whole length, its left end is let go. */
+.page-heading > .illustration { grid-column: 2; grid-row: 1 / span 4; align-self: end; height: clamp(80px, 6.4vw, 124px); width: auto;
+  max-width: max(240px, calc(100vw - 960px)); object-fit: cover; object-position: right center; margin: -18px -6px -12px 0; }
 .page-heading p { margin: 0; color: var(--ink-soft); }
 .three-columns { display: grid; grid-template-columns: var(--list-width) minmax(0, 1fr) var(--context-width); gap: var(--gap); }
 .three-columns > * { min-width: 0; }

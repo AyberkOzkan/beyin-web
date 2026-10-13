@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GRAPHITE = "#333331"
 GLOW = "#EFE6D0"
-SIZES = {"hero-palace": (520, 170), "sidebar-tree": (216, 180), "heading-mountains": (420, 96), "card-window": (200, 140)}
+SIZES = {"hero-palace": (520, 170), "sidebar-tree": (216, 180), "heading-mountains": (720, 96), "card-window": (200, 140)}
 Point = tuple[float, float]
 
 
@@ -799,64 +799,86 @@ def sidebar_reading_table(s: Sketch) -> None:
     s.stars([(94, 34), (100, 56)])
 
 
-# --- heading-mountains: at the end of a page heading (420 x 96) ------------------------------------------------
+# --- heading-mountains: along the end of a page heading, a long strip of horizon (720 x 96) -------------------
 
 def heading_range(s: Sketch) -> None:
-    s.mountains([(60, 46), (118, 30), (176, 50), (238, 24), (300, 44), (356, 36)], 84, opacity=0.5)
-    for x, height in ((34, 20), (148, 16), (212, 22), (330, 18), (392, 24)):
+    s.mountains([(60, 46), (118, 30), (176, 50), (238, 24), (300, 44), (356, 36), (420, 50), (486, 28), (548, 46), (612, 34), (668, 50)],
+                84, opacity=0.5)
+    for x, height in ((34, 20), (148, 16), (212, 22), (330, 18), (392, 24), (458, 18), (520, 22), (590, 16), (694, 22)):
         s.pine(x, 88, height, opacity=0.7)
-    s.ground(6, 414, 89, tufts=10)
+    s.birds([(270, 14), (288, 8), (560, 16)], 4)
+    s.ground(6, 714, 89, tufts=16)
 
 
 def heading_windmills(s: Sketch) -> None:
-    s.curve((0, 89), (230, 89), 22, weight=1.0, opacity=0.7)
-    s.curve((180, 89), (420, 89), 26, weight=1.0, opacity=0.7)
-    s.windmill(96, 70, 36)
-    s.windmill(262, 66, 42)
-    s.windmill(356, 72, 30)
+    s.curve((0, 89), (260, 89), 22, weight=1.0, opacity=0.7)
+    s.curve((200, 89), (480, 89), 26, weight=1.0, opacity=0.7)
+    s.curve((430, 89), (720, 89), 22, weight=1.0, opacity=0.7)
+    s.windmill(96, 72, 36)
+    s.windmill(262, 68, 42)
+    s.windmill(356, 70, 30)
+    s.windmill(528, 72, 38)
+    s.windmill(644, 76, 32)
     s.cottage(170, 80, 18, 10)
-    s.birds([(40, 26), (58, 18), (206, 22), (316, 20)], 4)
+    s.cottage(446, 80, 18, 10, smoke=True)
+    s.cottage(590, 78, 16, 9)
+    s.birds([(40, 26), (58, 18), (206, 22), (316, 20), (480, 24), (690, 30)], 4)
     s.cloud(150, 24, 40)
-    s.ground(6, 414, 90, tufts=8)
+    s.cloud(420, 20, 44)
+    s.cloud(606, 26, 36)
+    s.ground(6, 714, 90, tufts=12)
 
 
 def heading_sea(s: Sketch) -> None:
-    s.line([(6, 60), (210, 59), (414, 60)], weight=0.9, opacity=0.6, shake=0.6)
-    s.glow(214, 58, 15)
-    s.arc(214, 59, 16, 16, 0, math.pi, weight=0.9, opacity=0.6, shake=0.4)
+    s.line([(6, 60), (360, 59), (714, 60)], weight=0.9, opacity=0.6, shake=0.6)
+    s.glow(362, 58, 15)
+    s.arc(362, 59, 16, 16, 0, math.pi, weight=0.9, opacity=0.6, shake=0.4)
     for index in range(7):
         angle = math.pi * (index + 0.5) / 7
-        s.line([(214 + math.cos(angle) * 21, 59 - math.sin(angle) * 21), (214 + math.cos(angle) * 28, 59 - math.sin(angle) * 28)],
+        s.line([(362 + math.cos(angle) * 21, 59 - math.sin(angle) * 21), (362 + math.cos(angle) * 28, 59 - math.sin(angle) * 28)],
                weight=0.7, opacity=0.4, shake=0.3, passes=1)
-    s.waves(10, 410, 66, 90, rows=4)
+    s.waves(10, 710, 66, 90, rows=4)
     s.boat(92, 62, 1.1)
-    s.boat(322, 70, 1.5)
-    s.boat(156, 76, 0.7)
-    s.birds([(60, 28), (78, 20), (270, 26), (366, 18)], 4)
+    s.boat(250, 72, 1.5)
+    s.boat(156, 78, 0.7)
+    s.boat(476, 64, 1.0)
+    s.boat(566, 74, 1.6)
+    s.boat(660, 62, 0.9)
+    s.birds([(60, 28), (78, 20), (300, 26), (430, 18), (520, 30), (690, 22)], 4)
+    s.cloud(180, 26, 40)
+    s.cloud(600, 24, 44)
 
 
 def heading_forest(s: Sketch) -> None:
-    s.moon(352, 24, 11)
-    s.stars([(30, 16), (96, 26), (160, 12), (228, 22), (290, 14), (396, 40)])
+    s.moon(640, 24, 11)
+    s.stars([(30, 16), (96, 26), (160, 12), (228, 22), (290, 14), (360, 26), (430, 12), (500, 22), (566, 14), (700, 40)])
     x = 16.0
-    while x < 410:
+    while x < 708:
         s.pine(x, 88, s.random.uniform(18, 54), opacity=s.random.uniform(0.6, 0.85))
         x += s.random.uniform(15, 27)
-    s.ground(6, 414, 89, tufts=6)
+    s.ground(6, 714, 89, tufts=9)
 
 
 def heading_balloons(s: Sketch) -> None:
-    s.curve((0, 90), (220, 90), 14, weight=1.0, opacity=0.6)
-    s.curve((190, 90), (420, 90), 18, weight=1.0, opacity=0.6)
+    s.curve((0, 90), (250, 90), 14, weight=1.0, opacity=0.6)
+    s.curve((200, 90), (490, 90), 18, weight=1.0, opacity=0.6)
+    s.curve((440, 90), (720, 90), 15, weight=1.0, opacity=0.6)
     s.balloon(88, 34, 14)
     s.balloon(214, 26, 17)
     s.balloon(332, 40, 12)
+    s.balloon(456, 28, 15)
+    s.balloon(566, 40, 12)
+    s.balloon(664, 24, 16)
     s.cloud(150, 60, 44)
     s.cloud(280, 22, 36)
-    s.cloud(384, 66, 40)
+    s.cloud(394, 66, 40)
+    s.cloud(516, 64, 42)
+    s.cloud(612, 62, 34)
     s.pine(40, 84, 16, opacity=0.6)
     s.pine(262, 80, 14, opacity=0.6)
-    s.birds([(26, 30), (300, 58)], 4)
+    s.pine(480, 80, 16, opacity=0.6)
+    s.pine(700, 84, 14, opacity=0.6)
+    s.birds([(26, 30), (300, 58), (420, 16), (700, 52)], 4)
 
 
 def heading_village(s: Sketch) -> None:
@@ -869,34 +891,47 @@ def heading_village(s: Sketch) -> None:
     s.cottage(280, 88, 18, 12)
     s.cottage(314, 88, 26, 18)
     s.tower(350, 88, 10, 32, roof=11)
+    s.pine(384, 88, 28, opacity=0.7)
+    s.cottage(422, 88, 22, 14)
+    s.cottage(458, 88, 26, 17, smoke=True)
+    s.tower(496, 88, 12, 44, roof=13, windows=2)
+    s.cottage(532, 88, 20, 13)
+    s.windmill(580, 88, 42)
+    s.cottage(628, 88, 24, 15, smoke=True)
+    s.tower(662, 88, 10, 30, roof=11, flag=True)
     s.pine(30, 88, 26, opacity=0.7)
-    s.pine(386, 88, 30, opacity=0.7)
-    s.birds([(150, 26), (170, 18), (290, 30)], 4)
-    s.ground(6, 414, 89, tufts=6)
+    s.pine(696, 88, 30, opacity=0.7)
+    s.birds([(150, 26), (170, 18), (290, 30), (420, 20), (540, 26)], 4)
+    s.ground(6, 714, 89, tufts=10)
 
 
 def heading_river(s: Sketch) -> None:
-    s.line([(6, 66), (128, 64)], weight=1.0, opacity=0.7, shake=0.8)
-    s.line([(294, 64), (414, 66)], weight=1.0, opacity=0.7, shake=0.8)
-    s.bridge(128, 294, 62, arches=3, rise=17, floor=86)
-    s.waves(120, 300, 80, 92, rows=3)
-    s.reeds(106, 70, 4, 16)
-    s.reeds(298, 70, 4, 16)
-    for x, height in ((30, 30), (56, 40), (84, 24), (336, 36), (362, 26), (392, 42)):
+    s.line([(6, 66), (252, 64)], weight=1.0, opacity=0.7, shake=0.8)
+    s.line([(470, 64), (714, 66)], weight=1.0, opacity=0.7, shake=0.8)
+    s.bridge(252, 470, 62, arches=4, rise=17, floor=86)
+    s.waves(244, 478, 80, 92, rows=3)
+    s.reeds(228, 70, 4, 16)
+    s.reeds(474, 70, 4, 16)
+    for x, height in ((30, 30), (56, 40), (84, 24), (124, 34), (154, 26), (192, 38), (514, 36), (544, 26), (576, 42), (612, 30),
+                      (646, 38), (686, 28)):
         s.pine(x, 66, height, opacity=0.75)
-    s.birds([(190, 22), (212, 14), (244, 26)], 4)
+    s.birds([(330, 22), (352, 14), (384, 26)], 4)
     s.sun(40, 20, 9)
+    s.cloud(600, 18, 40)
 
 
 def heading_night_watch(s: Sketch) -> None:
-    s.mountains([(70, 48), (150, 30), (226, 52)], 84, opacity=0.42)
-    s.moon(288, 22, 11)
-    s.stars([(20, 14), (58, 24), (108, 12), (190, 16), (240, 30), (330, 14), (368, 34), (402, 18), (320, 44)])
-    s.curve((250, 89), (420, 89), 20, weight=1.0, opacity=0.7)
-    s.dome(344, 72, 15)
-    s.pine(296, 84, 18, opacity=0.7)
-    s.pine(394, 84, 22, opacity=0.7)
-    s.ground(6, 414, 89, tufts=7)
+    s.mountains([(70, 48), (150, 30), (226, 52), (300, 36), (372, 50)], 84, opacity=0.42)
+    s.moon(470, 22, 11)
+    s.stars([(20, 14), (58, 24), (108, 12), (190, 16), (260, 12), (336, 18), (410, 14), (520, 12), (560, 30), (620, 16), (668, 34),
+             (704, 18)])
+    s.curve((440, 89), (720, 89), 22, weight=1.0, opacity=0.7)
+    s.dome(590, 70, 16)
+    s.tower(636, 74, 10, 22, roof=10)
+    s.pine(500, 84, 18, opacity=0.7)
+    s.pine(540, 80, 22, opacity=0.7)
+    s.pine(676, 82, 20, opacity=0.7)
+    s.ground(6, 714, 89, tufts=12)
 
 
 # --- card-window: at the edge of a card and in an empty box (200 x 140) ----------------------------------------
