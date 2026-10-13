@@ -1,6 +1,6 @@
 # Performans raporu (0.1.0)
 
-`docs/PLAN.md` bölüm 10'daki her hedefin ölçülen değeri. Hepsi ölçümdür; tahmin ya da yuvarlanmış beklenti yoktur.
+Performans hedeflerinin her birinin ölçülen değeri. Hepsi ölçümdür; tahmin ya da yuvarlanmış beklenti yoktur.
 
 - **Tarih:** 2026-10-11, commit `d7920fe` (sürüm 0.1.0).
 - **Vault:** gerçek vault, 124 Markdown dosyası (taramada 115 kayıt; frontmatter türüne göre 63 `receipt`, 20 `fact`, 13 `task`, 10 `receipt-index`, 9 `note`), Windows diskinde.
@@ -49,7 +49,7 @@
 
 ## Ölçek: 2.000 notluk vault (2026-10-12)
 
-PLAN'ın rahat hedefi olan boyut, `scripts/synthetic_vault.py --notes 2000` ile üretilen vault'ta ölçüldü (tek klasörde 2.000 dosya; 500 `fact`, 1.500 `note`). Önceki sütun commit `ffc0a39`, sonraki sütun tarama ölçeği paketi (dosya başına `resolve()` kalktı; stat ve okuma en çok 8 iş parçacığıyla).
+Rahat hedef olan boyut, `scripts/synthetic_vault.py --notes 2000` ile üretilen vault'ta ölçüldü (tek klasörde 2.000 dosya; 500 `fact`, 1.500 `note`). Önceki sütun commit `ffc0a39`, sonraki sütun tarama ölçeği paketi (dosya başına `resolve()` kalktı; stat ve okuma en çok 8 iş parçacığıyla).
 
 | Ortam | Ölçü | Önce | Sonra |
 |---|---|---:|---:|

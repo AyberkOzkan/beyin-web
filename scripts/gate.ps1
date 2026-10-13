@@ -1,6 +1,6 @@
 # Gate: runs every check of the project in one working tree and prints only what failed.
-# Used by Claude after applying a package and by kodzilla.ps1 (-Gate) outside the Codex sandbox,
-# which is the only place the browser tests can start Edge.
+# Run it before a commit. A code agent's sandbox usually cannot start Edge, so run it outside one:
+# only there do the browser tests run.
 #   exit 0  all checks passed
 #   exit 1  some checks fail; the output is short enough to hand back to the code agent
 #   exit 3  the checks could not run as intended (no Python, browser tests skipped)

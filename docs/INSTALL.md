@@ -159,4 +159,4 @@ Beyin Windows'ta çalışıyorsa `--no-beyin` seçeneğini kaldırın. Kısayol 
 | `Python bulunamadı. Python 3.11 ya da üstünü kurun.` | Python'u ve PATH ayarını denetleyin, terminali yeniden açın. |
 | `Sunucu başlatılamadı. Ayarları ve kullanılabilir portları kontrol edin.` | Ayar klasörünün vault dışında olduğunu ve seçilen port aralığının kullanılabildiğini denetleyin. |
 
-Diğer seçenekler ve sınırlar için [README](../README.md), mimari için [PLAN](PLAN.md).
+Diğer seçenekler ve sınırlar için [README](../README.md).

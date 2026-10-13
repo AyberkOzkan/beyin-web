@@ -212,7 +212,7 @@ python scripts/measure.py VAULT --api --no-beyin --repeat 20 --idle 60
 
 İlk komut `cold_ms`, `warm_ms`, türlere göre sayılar, `warnings` ve belleği yazdırır. İkincisi yerel API'nin ilk, ortanca ve en büyük sürelerini ve boşta işlemci yüzdesini ekler. Veri veya Beyin gerektiren ölçümler karşılıkları yoksa `atlandı` olur. Bellek yalnız `/proc/self/status` üzerinden ölçülür; diğer ortamlarda `rss_mb: unavailable` yazılır. Beyin çağrılarını da ölçmek için `--no-beyin` seçeneğini kaldırın.
 
-[Mimari ve PLAN](docs/PLAN.md) · [Kurulum](docs/INSTALL.md) · [Performans raporu](docs/PERFORMANCE.md) · [Ajan kuralları](AGENTS.md)
+[Kurulum](docs/INSTALL.md) · [Performans raporu](docs/PERFORMANCE.md) · [Ajan kuralları](AGENTS.md)
 
 Lisans: [MIT](LICENSE), avenoxbeyin ile aynı.
 

@@ -16,8 +16,15 @@ htmlcov/
 # Node (only at the repo root; the fixture vault keeps its own node_modules on purpose)
 /node_modules/
 
-# Design sources: large PNG mockups stay local
-/design/mockups/
+# Design sources and review screenshots stay local
+/design/
+
+# The maintainers' working notes (plan, agent instructions, work orders, package scripts) stay local
+/CLAUDE.md
+/docs/PLAN.md
+/docs/specs/
+/scripts/take-package.ps1
+/scripts/finish-package.ps1
 
 # Editors and OS
 .vscode/
@@ -41,6 +48,3 @@ desktop.ini
 *.rej
 .env
 .env.*
-
-# Screenshots taken for design review may show real vault content
-/design/screenshots/
