@@ -66,3 +66,43 @@ class SettingsTests(PageTestCase):
             return False
 
         self.wait_until(stopped)
+
+
+class PointerTests(PageTestCase):
+    def cursor(self, css: str) -> str:
+        return str(self.driver.execute_script("return getComputedStyle(document.querySelector(arguments[0])).cursor", css))
+
+    def choice(self) -> str:
+        return str(self.driver.execute_script("return document.documentElement.dataset.cursor"))
+
+    def test_dark_pointer_is_the_default_and_settings_give_the_system_one_back(self) -> None:
+        self.open()
+        self.assertEqual(self.choice(), "ink")
+        self.assertIn("/static/cursor/arrow.svg", self.cursor("#main"))
+        self.assertIn("/static/cursor/hand.svg", self.cursor(".nav-link"))
+        self.assertIn("/static/cursor/hand.svg", self.cursor(".settings-button"))
+        served = self.driver.execute_async_script("""
+            const done = arguments[arguments.length - 1];
+            Promise.all(['arrow', 'hand'].map(name => fetch(`/static/cursor/${name}.svg`).then(response =>
+              [response.status, response.headers.get('Content-Type')]))).then(done, error => done(String(error)));
+        """)
+        self.assertEqual(served, [[200, "image/svg+xml"], [200, "image/svg+xml"]])
+        self.open("#/grafik")
+        self.wait_for(".graph-canvas")
+        self.assertEqual(self.cursor(".graph-canvas"), "grab")
+
+        self.wait_for(".settings-button").click()
+        self.wait_for(".settings-drawer[open]")
+        self.assertEqual(self.wait_for('.settings-cursor[data-cursor="ink"]').get_attribute("aria-pressed"), "true")
+        self.wait_for('.settings-cursor[data-cursor="system"]').click()
+        self.assertEqual(self.choice(), "system")
+        self.assertEqual(self.wait_for('.settings-cursor[data-cursor="system"]').get_attribute("aria-pressed"), "true")
+        self.assertEqual(self.wait_for('.settings-cursor[data-cursor="ink"]').get_attribute("aria-pressed"), "false")
+        self.assertEqual((self.cursor("#main"), self.cursor(".nav-link")), ("auto", "pointer"))
+        self.driver.refresh()
+        self.wait_for("#main h1")
+        self.assertEqual(self.choice(), "system")
+        self.assertEqual(self.cursor(".nav-link"), "pointer")
+        self.wait_for(".settings-button").click()
+        self.wait_for('.settings-cursor[data-cursor="ink"]').click()
+        self.assertIn("/static/cursor/arrow.svg", self.cursor("#main"))

@@ -175,8 +175,14 @@ def bind_server(
 
 def open_address(address: str) -> None:
     if os.environ.get("WSL_DISTRO_NAME"):
-        executable = shutil.which("wslview") or "explorer.exe"
-        subprocess.Popen([executable, address], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        viewer = shutil.which("wslview")
+        if viewer:
+            command = [viewer, address]
+        else:
+            # Not explorer.exe: it takes an address with a query string for a folder and opens Documents (measured).
+            handler = shutil.which("rundll32.exe") or "/mnt/c/Windows/System32/rundll32.exe"
+            command = [handler, "url.dll,FileProtocolHandler", address]
+        subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
         webbrowser.open(address)
 

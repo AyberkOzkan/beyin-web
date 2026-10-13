@@ -6,6 +6,7 @@ import { navigationIndex, shouldFocusMain, preserveFocus } from "./accessibility
 import { errorState, statusDot, skeleton, illustrationSlot, setDrawings, obsidianTarget } from "./components/index.js";
 import { healthDrawer } from "./components/health-drawer.js";
 import { settingsDrawer } from "./components/settings-drawer.js";
+import { storedCursor } from "./preferences.js";
 import { indicatorState } from "./pages/memory-model.js";
 import * as placeholder from "./pages/placeholder.js";
 import * as showcase from "./pages/showcase.js";
@@ -187,6 +188,7 @@ function buildShell(pulse) {
   } });
 }
 
+document.documentElement.dataset.cursor = storedCursor();
 document.addEventListener("beyin:unauthorized", showLogin);
 try {
   // The server names the default language, so the pulse is read before any text is.

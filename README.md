@@ -71,7 +71,8 @@ Kurulum bir kısayol bırakır; bundan sonra terminale gerek kalmaz:
 | WSL | Windows'un Başlat menüsünde ve masaüstünde **Beyin Web**; tıklayınca WSL'i başlatır |
 
 - **Açmak:** kısayola tıklayın; tarayıcı açılır. Arayüz zaten açıksa ikinci tıklama yenisini başlatmaz, açık olanı gösterir.
-- **Kapatmak:** sağ üstteki dişli (Ayarlar) → **Arayüzü kapat**. Kapatmayı unutursanız 30 dakika kullanılmayınca kendiliğinden kapanır.
+- **Ayarlar:** sağ üstteki dişli. Dil, imleç (koyu ya da sistemin imleci) ve Beyin'in rehberlerine bağlantılar buradadır.
+- **Kapatmak:** Ayarlar → **Arayüzü kapat**. Kapatmayı unutursanız 30 dakika kullanılmayınca kendiliğinden kapanır.
 - **Nereye kurulur:** arayüzün bir kopyası kullanıcı klasörünüze alınır (Windows'ta `%LOCALAPPDATA%\beyin-web`, Linux'ta `~/.local/share/beyin-web`, macOS'ta `~/Library/Application Support/beyin-web`); indirdiğiniz klasörü sonra silebilirsiniz. Vault yolu ayar dosyasına yazılır. **Vault'un içine hiçbir dosya konmaz.**
 - **Güncellemek:** yeni sürümü indirip aynı komutu yeniden çalıştırın.
 - **Kaldırmak:** `scripts/beyin-web --uninstall` (Windows'ta `scripts\beyin-web.cmd --uninstall`). Kısayolları ve kopyayı siler; ayarlarınıza ve vault'unuza dokunmaz.
@@ -218,7 +219,7 @@ python scripts/measure.py VAULT --api --no-beyin --repeat 20 --idle 60
 
 İlk komut `cold_ms`, `warm_ms`, türlere göre sayılar, `warnings` ve belleği yazdırır. İkincisi yerel API'nin ilk, ortanca ve en büyük sürelerini ve boşta işlemci yüzdesini ekler. Veri veya Beyin gerektiren ölçümler karşılıkları yoksa `atlandı` olur. Bellek yalnız `/proc/self/status` üzerinden ölçülür; diğer ortamlarda `rss_mb: unavailable` yazılır. Beyin çağrılarını da ölçmek için `--no-beyin` seçeneğini kaldırın.
 
-[Kurulum](docs/INSTALL.md) · [Performans raporu](docs/PERFORMANCE.md) · [Ajan kuralları](AGENTS.md)
+[Kurulum](docs/INSTALL.md) · [Performans raporu](docs/PERFORMANCE.md)
 
 Lisans: [MIT](LICENSE), avenoxbeyin ile aynı.
 

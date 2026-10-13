@@ -11,12 +11,13 @@ Yeni sayfalar ve dil:
 Kurulum ve kullanım:
 
 - **Tek komutla kurulum.** `--install` arayüzün bir kopyasını kullanıcı klasörüne alır, vault yolunu ayarlara yazar ve bir kısayol bırakır (Windows'ta Başlat menüsü ve masaüstü, Linux'ta uygulama menüsü, macOS'ta masaüstü; WSL'de Windows kısayolu). Sonrası çift tık; vault'a dosya konmaz. `--uninstall` geri alır.
-- **Ayarlar çekmecesi.** Dişli düğmesi artık çalışıyor: dil seçimi (üst çubukta ayrı bir dil düğmesi yoktur), Beyin'in Yakala, tercihler ve güncelleme rehberlerine bağlantılar ve **Arayüzü kapat**.
+- **Koyu imleç.** Açık zeminde kaybolan beyaz imlecin yerine arayüzde koyu bir imleç kullanılır; Ayarlar'dan sistemin imlecine dönülebilir.
+- **Ayarlar çekmecesi.** Dişli düğmesi artık çalışıyor: dil seçimi (üst çubukta ayrı bir dil düğmesi yoktur), imleç seçimi, Beyin'in Yakala, tercihler ve güncelleme rehberlerine bağlantılar ve **Arayüzü kapat**.
 - İkinci kez başlatılan arayüz yeni sunucu açmaz, çalışanı gösterir (`--reuse`).
 
 Çizimler:
 
-- **31 karakalem çizim.** Ana Sayfa karşılamasında, yan menünün altında, sayfa başlıklarında, "Bilgi Kasam" kartında ve boş kutularda; her yer kendi çizimlerinden birini rastgele gösterir. Kendi çiziminizi `static/img/` altına yuvanın adıyla koyabilirsiniz.
+- **31 karakalem çizim.** Ana Sayfa karşılamasında, yan menünün altında, sayfa başlıklarında, "Bilgi Kasam" kartında ve boş kutularda; her yer kendi çizimlerinden birini rastgele gösterir. Çizimler kutu içinde küçük resimler değil, sayfanın parçasıdır: karşılamadaki çizim satırından taşar, karttaki çizim sayaçların altına uzanır, yan menüdeki çizim kenardan kenara yayılır. Kendi çiziminizi `static/img/` altına yuvanın adıyla koyabilirsiniz.
 
 Var olan sayfalar:
 

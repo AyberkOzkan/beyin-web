@@ -69,7 +69,11 @@ public static class BeyinWebShortcut {
 if ($env:BW_FOLDERS) { $folders = $env:BW_FOLDERS -split '\|' }
 else { $folders = @([Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop')) }
 $target = $env:BW_TARGET
-if ($target -and -not (Split-Path -Parent $target)) { $target = (Get-Command $target -CommandType Application)[0].Source }
+if ($target -and -not (Split-Path -Parent $target)) {
+  # A bare program name: prefer the copy in System32, whose path survives updates of the program.
+  $system = Join-Path $env:SystemRoot (Join-Path 'System32' $target)
+  if (Test-Path -LiteralPath $system) { $target = $system } else { $target = (Get-Command $target -CommandType Application)[0].Source }
+}
 foreach ($folder in $folders) {
   if (-not $folder -or -not (Test-Path -LiteralPath $folder)) { continue }
   $path = Join-Path $folder ($env:BW_NAME + '.lnk')

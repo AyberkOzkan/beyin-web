@@ -2,6 +2,11 @@
 [hidden] { display: none !important; }
 /* A page that grows past the window must not shift sideways when the scrollbar arrives: its room is always kept. */
 html { scrollbar-gutter: stable; }
+/* A white system pointer gets lost on paper. The dark one is the default; Settings can give the system's back.
+   The graph keeps its own pointers: its scene is dark. */
+html[data-cursor="ink"] { cursor: url("/static/cursor/arrow.svg") 3 2, auto; }
+html[data-cursor="ink"] :is(a[href], button, summary, select, label, input:is([type="checkbox"], [type="radio"]), [role="button"], [role="tab"]) { cursor: url("/static/cursor/hand.svg") 9 2, pointer; }
+html[data-cursor="ink"] :is(button:disabled, label:not([for]):not(:has(input, select))) { cursor: url("/static/cursor/arrow.svg") 3 2, default; }
 /* 960px, not 1024: a 1024px window keeps about 977px for the page (frame and scrollbar) and must not scroll sideways. */
 body { margin: 0; min-width: 960px; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
 h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); line-height: 1.15; margin: 0 0 16px; }

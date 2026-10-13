@@ -1,5 +1,5 @@
 .shell { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); min-height: 100vh; }
-.sidebar { position: sticky; top: 0; height: 100vh; background: var(--paper-side); border-right: 1px solid var(--line); padding: 20px 16px; display: flex; flex-direction: column; overflow-y: auto; }
+.sidebar { position: sticky; top: 0; height: 100vh; background: var(--paper-side); border-right: 1px solid var(--line); padding: 20px 16px; display: flex; flex-direction: column; overflow: hidden auto; }
 .brand { display: flex; align-items: center; gap: 16px; color: var(--ink); text-decoration: none; margin: 0 8px 32px; }
 .brand > .icon { width: 40px; height: 40px; }
 .brand-name { display: block; font: 700 25px/1.2 var(--font-heading); }
@@ -8,8 +8,8 @@
 .nav-link:hover { background: var(--card); }
 .nav-link[aria-current="page"] { background: var(--line); }
 /* The drawing takes the room the menu leaves and gives it back when the window is short. */
-#sidebar-art { margin-top: auto; flex: 0 1 180px; min-height: 0; overflow: hidden; }
-.vault-status { padding: 16px; margin-top: 24px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--card); font-size: 13px; }
+#sidebar-art { margin: auto -16px -40px; flex: 0 1 270px; min-height: 0; overflow: hidden; }
+.vault-status { position: relative; padding: 16px; margin-top: 24px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--card); font-size: 13px; }
 .vault-status p { margin-bottom: 4px; }
 .vault-name { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .workspace { min-width: 0; }
@@ -21,7 +21,7 @@
 .content { padding: 20px 28px; }
 .page-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; margin-bottom: 18px; }
 .page-heading > * { grid-column: 1; }
-.page-heading > .illustration { grid-column: 2; grid-row: 1 / span 4; align-self: center; height: 64px; width: auto; }
+.page-heading > .illustration { grid-column: 2; grid-row: 1 / span 4; align-self: end; height: clamp(80px, 6.4vw, 124px); width: auto; margin: -18px -6px -12px 0; }
 .page-heading p { margin: 0; color: var(--ink-soft); }
 .three-columns { display: grid; grid-template-columns: var(--list-width) minmax(0, 1fr) var(--context-width); gap: var(--gap); }
 .three-columns > * { min-width: 0; }

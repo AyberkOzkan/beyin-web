@@ -18,15 +18,23 @@ class IllustrationPlacementTests(PageTestCase):
         drawings = self.server.drawings
         self.open()
         self.wait_for('.home-page[aria-busy="false"]')
-        places = (("#home-greeting .illustration-hero-palace", "hero-palace", 104),
-                  ("#home-counts .illustration-card-window", "card-window", 96),
-                  ("#sidebar-art .illustration-sidebar-tree", "sidebar-tree", None))
+        places = (("#home-greeting .illustration-hero-palace", "hero-palace", 132),
+                  ("#home-counts .illustration-card-window", "card-window", 150),
+                  ("#sidebar-art .illustration-sidebar-tree", "sidebar-tree", 130))
         for css, slot, height in places:
             with self.subTest(slot=slot):
                 self.assertIn(self.path_of(css), drawings[slot])
-                if height is not None:
-                    self.assertEqual(round(self.picture(css).rect["height"]), height)
-        self.assertGreater(self.picture("#sidebar-art img").rect["height"], 60)
+                self.assertGreaterEqual(round(self.picture(css).rect["height"]), height)
+        # The drawings belong to the page: the one beside the greeting is taller than its row, the one in the
+        # card lies under the last counter, and the one under the menu reaches the edges of the side bar.
+        self.assertTrue(self.driver.execute_script("""
+            const box = selector => document.querySelector(selector).getBoundingClientRect();
+            const hero = box('#home-greeting .illustration'), row = box('#home-greeting');
+            const card = box('#home-counts .illustration'), last = box('#home-counts .home-counter:last-child');
+            const tree = box('#sidebar-art'), side = box('.sidebar');
+            return hero.height > row.height - 12 && card.left < last.right && card.bottom <= box('#home-counts').bottom + 9 &&
+              Math.abs(tree.width - side.width) <= 1;
+        """))
         # The drawing under the menu never pushes the vault box out of the window.
         self.assertTrue(self.driver.execute_script(
             "return document.getElementById('vault-status').getBoundingClientRect().bottom <= innerHeight"))
@@ -37,7 +45,9 @@ class IllustrationPlacementTests(PageTestCase):
         css = ".page-heading .illustration-heading-mountains"
         first = self.path_of(css)
         self.assertIn(first, self.server.drawings["heading-mountains"])
-        self.assertEqual(round(self.picture(css).rect["height"]), 64)
+        self.assertGreaterEqual(round(self.picture(css).rect["height"]), 100)
+        heading = self.driver.execute_script("return document.querySelector('.page-heading').getBoundingClientRect().height")
+        self.assertLess(heading, 110, "the drawing must not make the heading taller")
         sidebar = self.path_of("#sidebar-art img")
         self.driver.execute_script("location.hash = '#/hafiza'")
         self.wait_until(lambda driver: self.text("#main h1") == self.messages["page.memory.title"])
@@ -63,4 +73,4 @@ class IllustrationPlacementTests(PageTestCase):
         for box in boxes:
             self.assertEqual(len(box.find_elements("css selector", ".illustration-card-window")), 1)
             self.assertEqual(box.find_elements("css selector", ".icon"), [])
-        self.assertEqual(round(self.picture(".state .illustration-card-window").rect["height"]), 84)
+        self.assertEqual(round(self.picture(".state .illustration-card-window").rect["height"]), 120)

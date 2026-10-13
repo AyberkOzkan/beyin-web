@@ -21,6 +21,7 @@ htmlcov/
 
 # The maintainers' working notes (plan, agent instructions, work orders, package scripts) stay local
 /CLAUDE.md
+/AGENTS.md
 /docs/PLAN.md
 /docs/specs/
 /scripts/take-package.ps1

@@ -330,15 +330,21 @@ class LaunchTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True), patch("beyin_web.__main__.webbrowser.open") as browser:
             open_address(address)
             browser.assert_called_once_with(address)
-        for executable in ("/usr/bin/wslview", None):
+        found = {"wslview": {"wslview": "/usr/bin/wslview", "rundll32.exe": "/mnt/c/WINDOWS/system32/rundll32.exe"},
+                 "rundll32": {"rundll32.exe": "/mnt/c/WINDOWS/system32/rundll32.exe"}, "nothing": {}}
+        expected = {"wslview": ["/usr/bin/wslview", address],
+                    "rundll32": ["/mnt/c/WINDOWS/system32/rundll32.exe", "url.dll,FileProtocolHandler", address],
+                    "nothing": ["/mnt/c/Windows/System32/rundll32.exe", "url.dll,FileProtocolHandler", address]}
+        for case, programs in found.items():
             with (
-                self.subTest(executable=executable),
+                self.subTest(case=case),
                 patch.dict(os.environ, {"WSL_DISTRO_NAME": "test"}),
-                patch("beyin_web.__main__.shutil.which", return_value=executable),
+                patch("beyin_web.__main__.shutil.which", side_effect=programs.get),
                 patch("beyin_web.__main__.subprocess.Popen") as process,
             ):
                 open_address(address)
-                self.assertEqual(process.call_args.args[0], [executable or "explorer.exe", address])
+                # explorer.exe is never used: it opens the Documents folder for an address that carries a token.
+                self.assertEqual(process.call_args.args[0], expected[case])
 
     def test_main_config_and_companion_setup(self) -> None:
         config_dir = self.root / "config"

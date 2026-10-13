@@ -1,6 +1,7 @@
 import { post } from "../api.js";
 import { el, icon } from "../dom.js";
 import { t, LANGUAGES, storeLanguage } from "../i18n.js";
+import { CURSORS, storedCursor, applyCursor } from "../preferences.js";
 
 // Beyin's own switches (capture, checks, context) are changed in Beyin; the page only points to their guides.
 const BEYIN_DOCS = "https://github.com/avenoxai/avenoxbeyin/blob/main/docs/v3/";
@@ -23,6 +24,16 @@ export function settingsDrawer({ language, onStopped }) {
         "aria-pressed": String(code === language),
         onclick: () => { if (code !== language && storeLanguage(code)) location.reload(); },
       }, t(`settings.language.${code}`))))),
+    section("cursor", el("p", { class: "muted" }, t("settings.cursor.note")),
+      el("div", { class: "row", role: "group", "aria-labelledby": "settings-cursor" },
+        CURSORS.map(name => el("button", {
+          type: "button", class: "button settings-cursor", "data-cursor": name, "aria-pressed": String(name === storedCursor()),
+          onclick: event => {
+            const now = applyCursor(name);
+            event.currentTarget.parentElement.querySelectorAll(".settings-cursor").forEach(button =>
+              button.setAttribute("aria-pressed", String(button.dataset.cursor === now)));
+          },
+        }, t(`settings.cursor.${name}`))))),
     section("beyin", el("p", { class: "muted" }, t("settings.beyin.note")),
       el("ul", { class: "settings-guides" }, GUIDES.map(([name, file]) => el("li", {},
         el("a", { href: BEYIN_DOCS + file, target: "_blank", rel: "noopener noreferrer" },
