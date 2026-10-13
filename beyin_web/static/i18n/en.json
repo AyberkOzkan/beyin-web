@@ -34,8 +34,6 @@
   "settings.stop.error": "The interface could not be closed. Please try again.",
   "settings.stopped.title": "The interface is closed",
   "settings.stopped.message": "You can close this tab. Click the Beyin Web shortcut to open it again.",
-  "shell.otherLanguage": "Türkçe",
-  "shell.otherLanguageLabel": "Türkçeye geç",
   "shell.recordCount": {"one": "{count} record", "other": "{count} records"},
   "shell.lastScan": "Last scan: {time}",
   "shell.pulseError": "The vault status could not be reached. Waiting to reconnect.",

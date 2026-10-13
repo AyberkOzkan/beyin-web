@@ -1,7 +1,7 @@
 import { get } from "../api.js";
 import { el } from "../dom.js";
 import { t } from "../i18n.js";
-import { card, emptyState, errorState, filterBox, skeleton } from "../components/index.js";
+import { headingArt, card, emptyState, errorState, filterBox, skeleton } from "../components/index.js";
 import { createGraphCanvas } from "../components/graph-canvas.js";
 import { layoutMetrics } from "../components/graph-core.js";
 import { readState, stateHash, apiParams, adjacency, focusGraph, searchMatches } from "./graph-model.js";
@@ -50,7 +50,7 @@ export function render(root, params = {}) {
     checkbox("graph-connected", "graph.connected", state.connectedOnly, "connectedOnly"),
     checkbox("graph-receipts", "graph.receipts", state.receipts, "receipts"));
   root.replaceChildren(el("div", { class: "graph-page" },
-    el("header", { class: "page-heading" }, el("h1", {}, t("page.graph.title")), el("p", {}, t("page.graph.description"))),
+    el("header", { class: "page-heading" }, el("h1", {}, t("page.graph.title")), el("p", {}, t("page.graph.description")), headingArt("graph")),
     filters, el("div", { class: "row" }, back, notice), el("div", { class: "graph-layout" }, area, panel)));
   let data = { nodes: [], edges: [] };
 

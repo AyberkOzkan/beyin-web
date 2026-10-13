@@ -1,7 +1,7 @@
 import { get } from "../api.js";
 import { el } from "../dom.js";
 import { t } from "../i18n.js";
-import { filterBox, listRow, emptyState, errorState, skeleton } from "../components/index.js";
+import { headingArt, filterBox, listRow, emptyState, errorState, skeleton } from "../components/index.js";
 import { mountRecordView } from "../components/reader.js";
 import { filterGroups, firstNote } from "./knowledge-model.js";
 
@@ -67,7 +67,7 @@ export function render(root, params = {}) {
   state.input.addEventListener("input", state.filterChanged);
   const sidebar = el("nav", { class: "card knowledge-sidebar", "aria-label": t("knowledge.notes") }, filter, state.list);
   root.replaceChildren(el("div", { class: "knowledge-page" },
-    el("header", { class: "page-heading" }, el("h1", {}, t("page.knowledge.title")), el("p", {}, t("page.knowledge.description"))),
+    el("header", { class: "page-heading" }, el("h1", {}, t("page.knowledge.title")), el("p", {}, t("page.knowledge.description")), headingArt("knowledge")),
     el("div", { class: "three-columns knowledge-columns" }, sidebar, state.reader, state.context)));
   if (state.rid) state.view = mountRecordView(state.reader, state.context, state.rid);
   void load(state);

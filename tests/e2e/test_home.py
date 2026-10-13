@@ -83,9 +83,7 @@ class HomeTests(BrowserTestCase):
         self.assertIn(self.golden["last_session"]["label"], self.text("#home-last_session"))
         self.assertEqual(self.text("#vault-status .vault-name strong"), self.vault.name)
         self.assertEqual(len(self.driver.find_elements("css selector", ".home-chart rect")), 7)
-        self.assertEqual(self.driver.find_elements("css selector", "#home-greeting .illustration, #sidebar-art img, [style], style"), [])
-        resources = self.driver.execute_script("return performance.getEntriesByType('resource').map(entry => entry.name)")
-        self.assertFalse(any("/static/img/" in url for url in resources))
+        self.assertEqual(self.driver.find_elements("css selector", "[style], style"), [])
 
     def test_note_project_and_memory_links(self) -> None:
         cases = [("#home-recent .home-row", "#/not/" + self.golden["recent"][0]["rid"]),
@@ -149,6 +147,7 @@ class HomeTests(BrowserTestCase):
 
     def test_drawing_appears_when_present_at_server_start(self) -> None:
         images = self.static_dir / "img"
+        shutil.rmtree(images)
         images.mkdir()
         pixel = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGP4DwQACfsD/fteaysAAAAASUVORK5CYII=")
         (images / "hero-palace.png").write_bytes(pixel)

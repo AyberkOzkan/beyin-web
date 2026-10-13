@@ -38,6 +38,19 @@ test("illustration slots accept only the four English names and local sources", 
       }
       assert.equal(illustrationSlot(name, {}), null);
     }
+    // A slot with several drawings shows one of them, and keeps it for that place until the page is loaded again.
+    const many = ["/static/img/card-window-01.svg", "/static/img/card-window-02.svg", "/static/img/card-window-by-night.webp"];
+    const offered = { "card-window": [...many, "https://example.org/card-window-03.svg", "/static/img/card-window-04.svg?x", 7] };
+    const seen = new Set();
+    for (let place = 0; place < 60; place++) {
+      const first = illustrationSlot("card-window", offered, `place-${place}`).attributes.src;
+      assert.ok(many.includes(first), first);
+      assert.equal(illustrationSlot("card-window", offered, `place-${place}`).attributes.src, first);
+      seen.add(first);
+    }
+    assert.equal(seen.size, many.length);
+    assert.equal(illustrationSlot("card-window", { "card-window": ["/static/img/card-window_05.svg", "/static/img/card-windows.svg"] }), null);
+    assert.equal(illustrationSlot("card-window", { "card-window": [] }), null);
     const legacy = ["hero-" + "saray", "yan-" + "agac", "baslik-" + "daglar", "kart-" + "cam"];
     for (const name of legacy) assert.equal(illustrationSlot(name, { [name]: "/static/img/" + name + ".png" }), null);
   } finally { globalThis.document = original; }

@@ -125,7 +125,9 @@ class KnowledgeTests(PageTestCase):
         self.assertEqual(self.text(".reader-untrusted"), self.messages["knowledge.untrusted"])
         self.assertIn("<script>window.__untrustedExecuted = true</script>", self.text(".reader-body"))
         self.assertIsNone(self.driver.execute_script("return window.__untrustedExecuted"))
-        self.assertEqual(self.all("#main img, #main script"), [])
+        # The page's own drawing is the only picture; nothing from the note becomes an image or a script.
+        self.assertEqual(self.all("#main img:not(.illustration), #main script"), [])
+        self.assertEqual(self.all(".reader-body img, .record-reader img"), [])
         resources = self.driver.execute_script("return performance.getEntriesByType('resource').map(entry => entry.name)")
         self.assertTrue(resources)
         self.assertTrue(all(urlparse(url).hostname == "127.0.0.1" for url in resources), resources)

@@ -91,7 +91,7 @@ class ServerTests(ServerCase):
         snapshot = self.source.snapshot()
         self.assertEqual(set(payload), {"generation", "scanned_at", "records", "hidden_private", "beyin", "vault_name", "drawings", "obsidian_uri", "language"})
         self.assertEqual(payload["vault_name"], self.vault.name)
-        self.assertEqual(payload["drawings"], {})
+        self.assertEqual(payload["drawings"], self.server.drawings)
         self.assertEqual(payload["generation"], snapshot.generation)
         self.assertEqual(payload["records"], len(snapshot.records))
         self.assertEqual(payload["hidden_private"], snapshot.hidden_private)
@@ -124,24 +124,27 @@ class ServerTests(ServerCase):
         self.assertEqual(log.read_text(encoding="utf-8").splitlines(), ['["doctor"]'])
 
     def test_drawings_are_discovered_once_at_startup(self) -> None:
-        self.assertEqual(self.server.drawings, {})
+        shipped = dict(self.server.drawings)
+        self.assertEqual(sorted(shipped), ["card-window", "heading-mountains", "hero-palace", "sidebar-tree"])
         images = self.static_dir / "img"
+        shutil.rmtree(images)
         images.mkdir()
-        for name in ("hero-palace.png", "hero-palace.svg", "hero-palace.webp", "sidebar-tree.svg",
-                     "sidebar-tree.webp", "heading-mountains.webp", "card-window.jpg", "unknown.png",
-                     "hero-palace.PNG", "card-window.txt"):
+        for name in ("hero-palace.png", "hero-palace.svg", "hero-palace-02.svg", "hero-palace-by-the-lake.webp",
+                     "sidebar-tree.svg", "heading-mountains.webp", "card-window.jpg", "unknown.png", "hero-palace-.svg",
+                     "hero-palace_03.svg", "hero-palaces.svg", "hero-palace-02.svg.bak", "card-window.txt"):
             (images / name).write_bytes(b"image")
         (images / "card-window.png").mkdir()
         legacy_names = ("hero-" + "saray", "yan-" + "agac", "baslik-" + "daglar", "kart-" + "cam")
         for name in legacy_names:
             (images / (name + ".png")).write_bytes(b"legacy")
-        self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], {})
+        self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], shipped)
         self.stop_server()
         self.server = create_server(self.settings, self.source, self.runtime)
         self.thread = threading.Thread(target=self.server.serve_forever, kwargs={"poll_interval": 0.01})
         self.thread.start()
-        expected = {"hero-palace": "/static/img/hero-palace.png", "sidebar-tree": "/static/img/sidebar-tree.svg",
-                    "heading-mountains": "/static/img/heading-mountains.webp"}
+        expected = {"hero-palace": ["/static/img/hero-palace-02.svg", "/static/img/hero-palace-by-the-lake.webp",
+                                    "/static/img/hero-palace.png", "/static/img/hero-palace.svg"],
+                    "sidebar-tree": ["/static/img/sidebar-tree.svg"], "heading-mountains": ["/static/img/heading-mountains.webp"]}
         self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], expected)
         (images / "card-window.svg").write_bytes(b"image")
         self.assertEqual(json.loads(self.request("/api/v1/pulse")[2])["drawings"], expected)

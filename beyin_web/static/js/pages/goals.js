@@ -1,7 +1,7 @@
 import { get, post } from "../api.js";
 import { el, icon } from "../dom.js";
 import { t, formatDate } from "../i18n.js";
-import { card, emptyState, errorState, skeleton, progressBar } from "../components/index.js";
+import { headingArt, card, emptyState, errorState, skeleton, progressBar } from "../components/index.js";
 import { monthFromParam, monthDays, monthLabel, monthNavigation, goalsHash, groupGoals, goalMeta,
   habitCount, goalPayload } from "./goals-model.js";
 
@@ -266,7 +266,7 @@ export function render(root, params = {}) {
     return section;
   }));
   state.root.append(el("header", { class: "page-heading" }, el("h1", {}, t("page.goals.title")),
-    el("p", {}, t("page.goals.description"))), state.notice, state.message, grid);
+    el("p", {}, t("page.goals.description")), headingArt("goals")), state.notice, state.message, grid);
   state.changed = () => { if (!state.pending) void load(state, false, false); };
   document.addEventListener("beyin:changed", state.changed);
   root.replaceChildren(state.root);

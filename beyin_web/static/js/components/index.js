@@ -81,7 +81,8 @@ export function filterBox({ label = t("component.filter"), value = "", disabled 
 }
 
 export function emptyState(title = t("state.emptyTitle"), message = t("state.emptyMessage")) {
-  return el("div", { class: "state" }, icon("inbox"), el("strong", { class: "state-title" }, title), el("p", {}, message));
+  return el("div", { class: "state" }, illustrationSlot("card-window", drawings, title) || icon("inbox"),
+    el("strong", { class: "state-title" }, title), el("p", {}, message));
 }
 
 export function errorState(message = t("state.errorMessage"), retry = null) {
@@ -101,9 +102,21 @@ export function setDrawings(value) {
   drawings = { ...value };
 }
 
-export function illustrationSlot(name, available = drawings) {
-  if (!["hero-palace", "sidebar-tree", "heading-mountains", "card-window"].includes(name)) return null;
-  const source = available[name];
-  if (!source || !source.startsWith(`/static/img/${name}.`) || /[?#]/.test(source)) return null;
-  return el("img", { class: "illustration", src: source, alt: "", onerror: event => event.target.remove() });
+const SLOTS = ["hero-palace", "sidebar-tree", "heading-mountains", "card-window"];
+const chosen = new Map();
+
+// A slot may hold several drawings. One is picked at random for each place and kept until the page is loaded again,
+// so a redraw does not swap the picture under the reader's eyes.
+export function illustrationSlot(name, available = drawings, place = "") {
+  if (!SLOTS.includes(name)) return null;
+  const local = new RegExp(`^/static/img/${name}(-[a-z0-9]+)*\\.(png|svg|webp)$`);
+  const sources = [available[name]].flat().filter(source => typeof source === "string" && local.test(source));
+  if (!sources.length) return null;
+  const key = `${name}:${place}`;
+  if (!sources.includes(chosen.get(key))) chosen.set(key, sources[Math.floor(Math.random() * sources.length)]);
+  return el("img", { class: `illustration illustration-${name}`, src: chosen.get(key), alt: "", onerror: event => event.target.remove() });
+}
+
+export function headingArt(page) {
+  return illustrationSlot("heading-mountains", drawings, page);
 }

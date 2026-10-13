@@ -34,8 +34,6 @@
   "settings.stop.error": "Arayüz kapatılamadı. Lütfen yeniden deneyin.",
   "settings.stopped.title": "Arayüz kapatıldı",
   "settings.stopped.message": "Bu sekmeyi kapatabilirsiniz. Yeniden açmak için Beyin Web kısayoluna tıklayın.",
-  "shell.otherLanguage": "English",
-  "shell.otherLanguageLabel": "Switch to English",
   "shell.recordCount": "{count} kayıt",
   "shell.lastScan": "Son tarama: {time}",
   "shell.pulseError": "Vault durumuna ulaşılamadı. Yeniden bağlantı kurulması bekleniyor.",

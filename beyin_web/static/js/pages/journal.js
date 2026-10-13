@@ -2,7 +2,7 @@ import { get } from "../api.js";
 import { el, icon } from "../dom.js";
 import { t, formatDate } from "../i18n.js";
 import { preserveFocus } from "../accessibility.js";
-import { card, emptyState, errorState, listRow, skeleton, statusDot } from "../components/index.js";
+import { headingArt, card, emptyState, errorState, listRow, skeleton, statusDot } from "../components/index.js";
 import { calendar } from "../components/calendar.js";
 import { heatmap } from "../components/heatmap.js";
 import { timeline } from "../components/timeline.js";
@@ -211,7 +211,7 @@ export function render(root, params = {}) {
   };
   active = state;
   const heading = el("header", { class: "page-heading" }, el("h1", {}, t("page.journal.title")),
-    el("p", { class: "journal-notice" }, icon("info"), t("journal.notice")));
+    el("p", { class: "journal-notice" }, icon("info"), t("journal.notice")), headingArt("journal"));
   const selected = el("section", { class: "card journal-selected-heading" },
     el("h2", { id: "journal-selected-date" }, state.date ? dayLabel(state.date) : t("state.loading")), state.navigation);
   paintNavigation(state);

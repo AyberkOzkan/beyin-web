@@ -6,13 +6,17 @@ Yeni sayfalar ve dil:
 
 - **Hedefler sayfası.** Uzun vadeli hedefler, yıl hedefleri, yılın teması, odak alanları ve alışkanlık takibi. Arayüzün vault'a yazan tek sayfasıdır: hedef ve alışkanlık eklenir, adımlar ve günler işaretlenir, silinen not vault'un `.trash` klasörüne taşınır ve sayfadaki Çöp Kutusu'ndan geri alınır. `--read-only` yazmayı kapatır.
 - **Raporlar sayfası.** Haftalık özet, son 30 gün, proje ilerlemeleri, bilgi birikimi ve haftanın öğrenilenleri; yalnızca vault'taki kayıtlardan hesaplanır.
-- **İngilizce arayüz.** Üst çubukta dil düğmesi; `--lang en` ya da `config.json`'da `"language": "en"` varsayılanı değiştirir. Tarih, sayı ve çoğul biçimleri dile uyar.
+- **İngilizce arayüz.** Dil, Ayarlar'dan seçilir; `--lang en` ya da `config.json`'da `"language": "en"` varsayılanı değiştirir. Tarih, sayı ve çoğul biçimleri dile uyar.
 
 Kurulum ve kullanım:
 
 - **Tek komutla kurulum.** `--install` arayüzün bir kopyasını kullanıcı klasörüne alır, vault yolunu ayarlara yazar ve bir kısayol bırakır (Windows'ta Başlat menüsü ve masaüstü, Linux'ta uygulama menüsü, macOS'ta masaüstü; WSL'de Windows kısayolu). Sonrası çift tık; vault'a dosya konmaz. `--uninstall` geri alır.
-- **Ayarlar çekmecesi.** Dişli düğmesi artık çalışıyor: dil seçimi, Beyin'in Yakala, tercihler ve güncelleme rehberlerine bağlantılar ve **Arayüzü kapat**.
+- **Ayarlar çekmecesi.** Dişli düğmesi artık çalışıyor: dil seçimi (üst çubukta ayrı bir dil düğmesi yoktur), Beyin'in Yakala, tercihler ve güncelleme rehberlerine bağlantılar ve **Arayüzü kapat**.
 - İkinci kez başlatılan arayüz yeni sunucu açmaz, çalışanı gösterir (`--reuse`).
+
+Çizimler:
+
+- **30 karakalem çizim.** Ana Sayfa karşılamasında, yan menünün altında, sayfa başlıklarında, "Bilgi Kasam" kartında ve boş kutularda; her yer kendi çizimlerinden birini rastgele gösterir. Kendi çiziminizi `static/img/` altına yuvanın adıyla koyabilirsiniz.
 
 Var olan sayfalar:
 

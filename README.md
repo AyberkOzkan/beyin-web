@@ -184,9 +184,15 @@ Hedefler sıradan Markdown notlarıdır; Obsidian'da ya da asistanınızla da ya
 - Bir hedefin başlığını ya da adımlarının metnini düzeltmek için notu Obsidian'da açın; arayüz metin düzenlemez.
 - `"visibility": "private"` hedef arayüzde hiç görünmez.
 
+## Çizimler
+
+Arayüzde karakalem tarzında 30 çizim vardır: Ana Sayfa karşılamasında sekiz, yan menünün altında yedi, sayfa başlıklarında sekiz, kart köşelerinde ve boş kutularda yedi. Her yer kendi çizimlerinden birini rastgele gösterir; seçim sayfa yeniden yüklenene kadar değişmez. Çizimleri `scripts/draw_illustrations.py` üretir (tarifler betiğin içindedir, sonuç her çalıştırmada aynıdır) ve `beyin_web/static/img/` altına yazar.
+
+Kendi çiziminizi eklemek için dosyayı aynı klasöre yuvanın adıyla koyun: `hero-palace-benim.png`, `sidebar-tree-2.svg`, `heading-mountains-kis.webp`, `card-window-01.png` gibi (küçük harf, rakam ve tire; PNG, SVG ya da WebP). Arayüz yeniden başlatıldığında o da rastgele seçilenler arasına girer. Kâğıt zeminine oturması için arka planı saydam ya da beyaz olmalıdır.
+
 ## Sınırlar
 
-Not düzenleme ve oluşturma yoktur; yazılabilen yalnızca hedefler ve alışkanlıklardır. Koyu tema ve mobil düzen yoktur; en düşük genişlik **1.024 px**'dir. Arama `ı`/`i` ayrımı yapmaz. Dekoratif çizimler henüz eklenmemiştir; notların bağlantı grafiği çalışır.
+Not düzenleme ve oluşturma yoktur; yazılabilen yalnızca hedefler ve alışkanlıklardır. Koyu tema ve mobil düzen yoktur; en düşük genişlik **1.024 px**'dir. Arama `ı`/`i` ayrımı yapmaz.
 
 ## Geliştirme ve ölçüm
 

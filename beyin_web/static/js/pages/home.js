@@ -50,12 +50,12 @@ function greeting(data) {
 
 function counts(data) {
   const names = [["notes", "file-text"], ["knowledge", "book-open"], ["open_tasks", "list-todo"], ["receipts", "scroll-text"]];
-  return [el("div", { class: "home-counters" }, names.map(([key, name]) => {
+  return [el("div", { class: "home-counts-body" }, el("div", { class: "home-counters" }, names.map(([key, name]) => {
     const value = data?.[key] || { total: 0, last_7_days: 0 };
     return el("div", { class: "home-counter", "data-counter": key }, icon(name),
       el("strong", { class: "home-number" }, value.total), el("span", {}, t(`home.count.${key}`)),
       el("small", { class: value.last_7_days > 0 ? "home-increase" : "" }, t(changeKey(value.last_7_days), { count: value.last_7_days })));
-  })), !names.some(([key]) => data?.[key]?.total) ? empty("counts") : null];
+  })), illustrationSlot("card-window", undefined, "home-counts")), !names.some(([key]) => data?.[key]?.total) ? empty("counts") : null];
 }
 
 function lastSession(data) {

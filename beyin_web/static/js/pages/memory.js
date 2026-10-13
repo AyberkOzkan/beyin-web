@@ -2,7 +2,7 @@ import { get } from "../api.js";
 import { el } from "../dom.js";
 import { t, formatDate, formatTime } from "../i18n.js";
 import { mountMarkdown } from "../markdown.js";
-import { card, tabs, filterBox, emptyState, errorState, skeleton } from "../components/index.js";
+import { headingArt, card, tabs, filterBox, emptyState, errorState, skeleton } from "../components/index.js";
 import { withoutLeadingTitle } from "./knowledge-model.js";
 import { sections, sectionFromHash, scopeList, filterRules, sectionHasContent, sectionCount } from "./memory-model.js";
 
@@ -185,7 +185,7 @@ export function render(root, params = {}) {
     return section;
   }));
   state.root.append(el("header", { class: "page-heading" }, el("h1", {}, t("page.memory.title")),
-    el("p", {}, t("page.memory.description"))), state.navigation, state.layout);
+    el("p", {}, t("page.memory.description")), headingArt("memory")), state.navigation, state.layout);
   root.replaceChildren(state.root);
   void load(state);
 }

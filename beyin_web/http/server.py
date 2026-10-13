@@ -30,6 +30,7 @@ CONTENT_TYPES: dict[str, str] = {
     ".webp": "image/webp",
     ".woff2": "font/woff2",
 }
+DRAWING = re.compile(r"(hero-palace|sidebar-tree|heading-mountains|card-window)(?:-[a-z0-9]+)*\.(?:png|svg|webp)")
 APIHandler = Callable[["RequestHandler", re.Match[str]], Mapping[str, object] | None]
 WriteHandler = Callable[["RequestHandler", re.Match[str], Mapping[str, object]], None]
 MAX_WRITE_BODY = 16 * 1024
@@ -46,16 +47,14 @@ class BeyinHTTPServer(ThreadingHTTPServer):
         self.settings = settings
         self.source = source
         self.runtime = runtime
-        self.drawings: dict[str, str] = {}
+        # Every slot may hold several drawings (hero-palace.png, hero-palace-02.svg, ...); the page shows one at random.
+        self.drawings: dict[str, list[str]] = {}
         static_root = settings.static_dir.resolve()
         try:
-            images = {path.name: path for path in (static_root / "img").iterdir()}
-            for name in ("hero-palace", "sidebar-tree", "heading-mountains", "card-window"):
-                for extension in (".png", ".svg", ".webp"):
-                    path = images.get(name + extension)
-                    if path is not None and path.is_file() and path.resolve().is_relative_to(static_root):
-                        self.drawings[name] = f"/static/img/{path.name}"
-                        break
+            for path in sorted((static_root / "img").iterdir(), key=lambda item: item.name):
+                match = DRAWING.fullmatch(path.name)
+                if match is not None and path.is_file() and path.resolve().is_relative_to(static_root):
+                    self.drawings.setdefault(match.group(1), []).append(f"/static/img/{path.name}")
         except OSError:
             pass
         self.routes: list[tuple[re.Pattern[str], APIHandler]] = []

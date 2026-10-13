@@ -3,7 +3,46 @@
   "scanned_at": "2026-01-12T16:00:00+03:00",
   "records": 30,
   "vault_name": "vault",
-  "drawings": {},
+  "drawings": {
+    "card-window": [
+      "/static/img/card-window-01.svg",
+      "/static/img/card-window-02.svg",
+      "/static/img/card-window-03.svg",
+      "/static/img/card-window-04.svg",
+      "/static/img/card-window-05.svg",
+      "/static/img/card-window-06.svg",
+      "/static/img/card-window-07.svg"
+    ],
+    "heading-mountains": [
+      "/static/img/heading-mountains-01.svg",
+      "/static/img/heading-mountains-02.svg",
+      "/static/img/heading-mountains-03.svg",
+      "/static/img/heading-mountains-04.svg",
+      "/static/img/heading-mountains-05.svg",
+      "/static/img/heading-mountains-06.svg",
+      "/static/img/heading-mountains-07.svg",
+      "/static/img/heading-mountains-08.svg"
+    ],
+    "hero-palace": [
+      "/static/img/hero-palace-01.svg",
+      "/static/img/hero-palace-02.svg",
+      "/static/img/hero-palace-03.svg",
+      "/static/img/hero-palace-04.svg",
+      "/static/img/hero-palace-05.svg",
+      "/static/img/hero-palace-06.svg",
+      "/static/img/hero-palace-07.svg",
+      "/static/img/hero-palace-08.svg"
+    ],
+    "sidebar-tree": [
+      "/static/img/sidebar-tree-01.svg",
+      "/static/img/sidebar-tree-02.svg",
+      "/static/img/sidebar-tree-03.svg",
+      "/static/img/sidebar-tree-04.svg",
+      "/static/img/sidebar-tree-05.svg",
+      "/static/img/sidebar-tree-06.svg",
+      "/static/img/sidebar-tree-07.svg"
+    ]
+  },
   "obsidian_uri": "obsidian://open?path=%2Fvault",
   "hidden_private": 3,
   "language": "tr",

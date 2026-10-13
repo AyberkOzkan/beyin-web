@@ -1,7 +1,7 @@
 import { get } from "../api.js";
 import { el, icon } from "../dom.js";
 import { t, messageList, formatDate, currentLocale } from "../i18n.js";
-import { card, emptyState, errorState, skeleton, progressBar } from "../components/index.js";
+import { headingArt, card, emptyState, errorState, skeleton, progressBar } from "../components/index.js";
 import { weeklyBars } from "./home-model.js";
 import { activeDaysLabel, dailyPoints, percentage, rangeLabel, weekNavigation } from "./reports-model.js";
 
@@ -168,7 +168,7 @@ export function render(root, params = {}) {
     grid.append(section);
   }
   state.root.append(el("header", { class: "page-heading" }, el("h1", {}, t("page.reports.title")),
-    el("p", {}, t("page.reports.description")), el("p", { class: "reports-notice" }, icon("info"), t("reports.notice"))),
+    el("p", {}, t("page.reports.description")), el("p", { class: "reports-notice" }, icon("info"), t("reports.notice")), headingArt("reports")),
   state.navigation, grid);
   root.replaceChildren(state.root);
   void load(state);

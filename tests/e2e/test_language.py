@@ -22,7 +22,8 @@ class LanguageTestCase(PageTestCase):
         return [link.text for link in self.all(".nav-link")]
 
     def switch_language(self, expected: str) -> None:
-        self.wait_for(".language-switch").click()
+        self.wait_for(".settings-button").click()
+        self.wait_for(f'.settings-language[data-language="{expected}"]').click()
         self.wait_until(lambda driver: self.document_language() == expected)
         self.wait_for("#shell:not([hidden])")
         self.wait_for("#main h1")
@@ -34,9 +35,7 @@ class LanguageSwitchTests(LanguageTestCase):
         self.open("#/gunlukler/2026-01-12")
         self.assertEqual(self.document_language(), "tr")
         self.assertEqual(self.menu(), [turkish[f"page.{page}.title"] for page in PAGES])
-        button = self.wait_for(".language-switch")
-        self.assertEqual((button.text, button.get_attribute("lang"), button.get_attribute("aria-label")),
-                         ("English", "en", "Switch to English"))
+        self.assertEqual(self.all(".language-switch"), [])
         self.assertIn("12 Ocak 2026 Pazartesi", self.text("#main"))
 
         self.switch_language("en")
@@ -49,9 +48,7 @@ class LanguageSwitchTests(LanguageTestCase):
         count = len(self.source.snapshot().records)
         self.assertEqual(self.text("#vault-records"), f"{count} records")
         self.assertEqual(self.wait_for("#global-search").get_attribute("placeholder"), english["shell.searchPlaceholder"])
-        button = self.wait_for(".language-switch")
-        self.assertEqual((button.text, button.get_attribute("lang"), button.get_attribute("aria-label")),
-                         ("Türkçe", "tr", "Türkçeye geç"))
+        self.assertEqual(self.wait_for(".settings-button").get_attribute("aria-label"), "Settings")
 
         self.driver.refresh()
         self.wait_for("#main h1")

@@ -44,8 +44,8 @@ test("every message is a non-empty string, a list of strings or a set of plural 
 });
 
 test("the English file carries no untranslated Turkish text", () => {
-  // The font sample shows Turkish letters on purpose, and the switch names Turkish in Turkish.
-  const turkishLetters = new Set(["showcase.fontSample", "shell.otherLanguage", "shell.otherLanguageLabel", "settings.language.tr"]);
+  // The font sample shows Turkish letters on purpose, and the language setting names Turkish in Turkish.
+  const turkishLetters = new Set(["showcase.fontSample", "settings.language.tr"]);
   // Names, symbols and patterns that read the same in both languages.
   const same = new Set(["shell.brand", "shell.documentTitle", "shell.version", "shell.searchShortcut", "projects.taskLabel",
     "knowledge.dateTime", "home.dateTime", "reports.learnedTime", "reports.rangeSameMonth", "reports.rangeFull",
