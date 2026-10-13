@@ -1,5 +1,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* A page that grows past the window must not shift sideways when the scrollbar arrives: its room is always kept. */
+html { scrollbar-gutter: stable; }
 /* 960px, not 1024: a 1024px window keeps about 977px for the page (frame and scrollbar) and must not scroll sideways. */
 body { margin: 0; min-width: 960px; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-body); }
 h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); line-height: 1.15; margin: 0 0 16px; }
