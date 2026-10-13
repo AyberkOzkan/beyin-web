@@ -25,7 +25,6 @@
 .context-path { font-size: 13px; }
 .context-panel .card-title h2 { font-size: 23px; }
 .context-panel h3 { font-size: 18px; margin: 20px 0 8px; }
-.context-panel .list-row { padding: 12px 0; }
 .context-panel .list-row strong, .context-panel .list-row small { overflow-wrap: anywhere; }
 .context-unresolved { display: grid; gap: 8px; }
 .context-unresolved span { padding: 8px 0; overflow-wrap: anywhere; }

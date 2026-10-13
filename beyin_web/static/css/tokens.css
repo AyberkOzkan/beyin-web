@@ -25,7 +25,7 @@
   --radius-card: 12px;
   --radius-control: 10px;
   --gap: 16px;
-  --card-padding: 24px;
+  --card-padding: 18px 20px;
 }
 
 /* Reserved for 0.2; no current control enables this selector. */

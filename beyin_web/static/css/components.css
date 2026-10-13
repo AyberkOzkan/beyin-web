@@ -3,7 +3,7 @@
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-card); padding: var(--card-padding); min-width: 0; }
 .card-title { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .card-title h2 { margin: 0; }
-.list-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.list-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; }
 .list-row:last-child { border-bottom: 0; }
 .list-row-content { flex: 1; min-width: 0; }
 .list-row-content strong, .list-row-content small { display: block; }

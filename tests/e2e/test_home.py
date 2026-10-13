@@ -137,6 +137,16 @@ class HomeTests(BrowserTestCase):
             columns = self.driver.execute_script("return getComputedStyle(document.querySelector('.home-middle')).gridTemplateColumns.split(' ').length")
             self.assertEqual(columns, 2 if width == 1280 else 3)
 
+    def test_whole_page_fits_one_screen_at_the_mockup_size(self) -> None:
+        self.open()
+        self.filled()
+        self.wait_for("#home-week svg, #home-week .home-empty")
+        # Headless Edge takes its window chrome out of the 941px, so the page is measured against the mockup's height.
+        bottom = self.driver.execute_script(
+            "return document.querySelector('.home-page').getBoundingClientRect().bottom + scrollY"
+            " + parseFloat(getComputedStyle(document.getElementById('main')).paddingBottom)")
+        self.assertLessEqual(bottom, 941)
+
     def test_drawing_appears_when_present_at_server_start(self) -> None:
         images = self.static_dir / "img"
         images.mkdir()
