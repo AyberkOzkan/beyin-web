@@ -1189,7 +1189,8 @@ def app_icon(size: int) -> str:
     """A pencil brain on a paper tile. A desktop may be dark, so the drawing brings its own sheet of paper.
 
     Each pixel size gets its own drawing: below 48 px the fine folds and the shading would turn to grey mud,
-    so a small icon keeps the outline and the two great furrows, drawn with a heavier hand."""
+    so a small icon keeps the outline and the two great furrows, drawn with a heavier hand. From 128 px up there
+    is room for the whole drawing: every fold, the shading and the shadow on the paper."""
     s = Sketch("app-icon", seed=size * 7 + 3)
     hand = {16: 3.6, 24: 2.8, 32: 2.3, 48: 1.75, 64: 1.5, 128: 1.15}.get(size, 1.0)
     fine = size >= 48
@@ -1199,21 +1200,80 @@ def app_icon(size: int) -> str:
     tile = [*corner, *[(246 - (x - 10), y) for x, y in reversed(corner)], *[(246 - (x - 10), 246 - (y - 10)) for x, y in corner],
             *[(x, 246 - (y - 10)) for x, y in reversed(corner)], corner[0]]
     s.line(tile, weight=1.6 * hand, opacity=0.5, shake=0.6, passes=1)
-    brain(s, hand, fine)
+    brain(s, hand, "rich" if size >= 128 else "fine" if fine else "small")
     return s.svg().replace(f'width="256" height="256"', f'width="{size}" height="{size}"', 1)
 
 
 def brand_mark() -> str:
     """The same brain beside the name in the sidebar, without its tile: the page is already paper.
 
-    It is shown 40 px high, so it takes the small icon's drawing; the view box is cut to the brain itself."""
+    It takes the richest drawing, with its shading and the shadow it casts; the view box is cut to the brain."""
     s = Sketch("app-icon", seed=41)
-    brain(s, 2.3, False)
-    return s.svg().replace('viewBox="0 0 256 256" width="256" height="256"', 'viewBox="30 34 196 172" width="57" height="50"', 1)
+    brain(s, 1.8, "rich")
+    return s.svg().replace('viewBox="0 0 256 256" width="256" height="256"', 'viewBox="30 34 196 180" width="62" height="57"', 1)
 
 
-def brain(s: Sketch, hand: float, fine: bool) -> None:
-    # The cerebrum, facing left: a smooth contour pushed in and out along its length, which reads as gyri.
+def _inside(polygon: list[Point], x: float, y: float) -> bool:
+    inside = False
+    for (x1, y1), (x2, y2) in zip(polygon, polygon[1:] + polygon[:1]):
+        if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1):
+            inside = not inside
+    return inside
+
+
+def _shade(s: Sketch, region: list[Point], tone: Callable[[float, float], float], hand: float,
+           layers: tuple[tuple[float, float, float, float], ...]) -> None:
+    """Shading that stays inside a shape and grows darker where ``tone`` is high.
+
+    Each layer is (angle in degrees, the tone it starts at, opacity, width): a wide, pale layer is graphite
+    rubbed in with the side of the pencil; the narrow ones are hatching laid over it, each crossing the last
+    to deepen the shadow, as a pencil builds a shadow up in passes rather than pressing harder. A hand does
+    not draw one ruled line across a whole shape: the strokes are short, a little bent, and break off."""
+    left, right = min(x for x, _ in region), max(x for x, _ in region)
+    top, bottom = min(y for _, y in region), max(y for _, y in region)
+    reach = math.hypot(right - left, bottom - top) / 2
+    cx, cy = (left + right) / 2, (top + bottom) / 2
+    for angle, threshold, opacity, width in layers:
+        wide = width > 2
+        gap, weight = (2.2 + 1.2 * hand, width * hand) if wide else (3.0 + 1.5 * hand, (0.45 + 0.3 * hand) * width)
+        dx, dy = math.cos(math.radians(angle)), math.sin(math.radians(angle))
+
+        def emit(run: list[Point], darkness: float) -> None:
+            if len(run) < 3:
+                return
+            (x1, y1), (x2, y2) = run[0], run[-1]
+            bend = s.random.uniform(-0.8, 0.8) * hand
+            middle = ((x1 + x2) / 2 - dy * bend, (y1 + y2) / 2 + dx * bend)
+            # Deeper tone, firmer stroke: the shadow darkens smoothly instead of stepping from layer to layer.
+            s._stroke([run[0], middle, run[-1]], round(weight, 1), round(opacity * min(1.5, 0.6 + darkness * 3) * 20) / 20, 0.3)
+
+        offset = -reach + s.random.uniform(0, gap)
+        while offset < reach:
+            run: list[Point] = []
+            darkness = 0.0
+            limit = s.random.uniform(9, 22) * (2.5 if wide else 1) * (0.6 + 0.4 * hand)
+            step = -reach + s.random.uniform(0, 4)
+            while step <= reach + 1.5:
+                x, y = cx - dy * offset + dx * step, cy + dx * offset + dy * step
+                level = tone(x, y) - threshold + s.random.uniform(-0.03, 0.03) if _inside(region, x, y) else -1
+                if step <= reach and level > 0 and len(run) * 1.5 < limit:
+                    run.append((x, y))
+                    darkness = max(darkness, level)
+                elif run:
+                    emit(run, darkness)
+                    run, darkness = [], 0.0
+                    limit = s.random.uniform(9, 22) * (2.5 if wide else 1) * (0.6 + 0.4 * hand)
+                    step += s.random.uniform(0, 3)
+                step += 1.5
+            offset += gap * s.random.uniform(0.8, 1.2)
+
+
+def brain(s: Sketch, hand: float, detail: str) -> None:
+    """A pencil brain facing left. ``detail`` is "small" (below 48 px: the outline and the two great furrows),
+    "fine" (some folds and a little hatching) or "rich" (every fold with its shadowed wall, shading in layers
+    that darkens away from the light at the top left, and the shadow the brain casts)."""
+    fine = detail != "small"
+    # The cerebrum: a smooth contour pushed in and out along its length, which reads as gyri.
     outline = s.sample([(74, 162), (52, 144), (40, 114), (48, 84), (72, 60), (106, 46), (144, 44), (180, 52), (206, 72),
                         (218, 102), (212, 130), (192, 146), (168, 152), (146, 160), (116, 166), (90, 166), (74, 162)], steps=8)
     bumps = 13 if fine else 9
@@ -1222,18 +1282,22 @@ def brain(s: Sketch, hand: float, fine: bool) -> None:
         angle = math.atan2(y - 108, x - 130)
         push = (3.6 if fine else 2.2) * math.sin(index / (len(outline) - 1) * math.tau * bumps)
         shaped.append((x + math.cos(angle) * push, y + math.sin(angle) * push))
+    cerebellum = s.sample([(170, 151), (176, 166), (192, 172), (206, 162), (210, 144), (204, 136)])
+    stem = [(146, 162), (148, 182), (151, 198), (170, 196), (167, 178), (166, 160)]
+    if detail == "rich":
+        _brain_shading(s, hand, shaped, cerebellum, stem)
     s.line(shaped, weight=3.0 * hand, opacity=0.9, shake=0.8)
     # The cerebellum tucked under the back, and the stem below it.
-    s.flow([(170, 151), (176, 166), (192, 172), (206, 162), (210, 144), (204, 136)], weight=2.6 * hand, opacity=0.85, shake=0.6)
+    s.line(cerebellum, weight=2.6 * hand, opacity=0.85, shake=0.6)
     s.flow([(146, 162), (148, 182), (151, 198)], weight=2.6 * hand, opacity=0.85, shake=0.5)
     s.flow([(166, 160), (167, 178), (170, 196)], weight=2.6 * hand, opacity=0.85, shake=0.5)
     # The two great furrows: the lateral one splits off the temporal lobe, the central one the frontal.
     s.flow([(84, 142), (110, 132), (138, 122), (160, 120), (180, 128)], weight=2.6 * hand, opacity=0.85, shake=0.6)
     s.flow([(138, 48), (132, 70), (140, 88), (132, 106), (136, 120)], weight=2.4 * hand, opacity=0.85, shake=0.6)
-    if not fine:
+    if detail == "small":
         s.flow([(70, 104), (86, 96), (96, 108), (112, 98)], weight=2.0 * hand, opacity=0.75, shake=0.5)
         s.flow([(166, 70), (156, 88), (172, 98), (164, 112)], weight=2.0 * hand, opacity=0.75, shake=0.5)
-    else:
+    elif detail == "fine":
         for fold in ([(60, 98), (74, 90), (84, 102), (100, 92), (108, 100)], [(68, 124), (82, 114), (96, 124), (112, 110)],
                      [(92, 68), (108, 78), (102, 92), (118, 100)], [(112, 60), (120, 66)], [(160, 64), (152, 82), (166, 92), (158, 108)],
                      [(184, 76), (196, 92), (184, 106), (200, 116)], [(148, 100), (166, 106), (178, 100)],
@@ -1244,6 +1308,63 @@ def brain(s: Sketch, hand: float, fine: bool) -> None:
         # The shaded underside: hatching under the temporal lobe and the cerebellum.
         s.hatch(94, 152, 64, 12, count=12, lean=0.35, opacity=0.4)
         s.hatch(184, 158, 20, 12, count=5, lean=0.3, opacity=0.4)
+    else:
+        _brain_folds(s, hand)
+
+
+def _brain_folds(s: Sketch, hand: float) -> None:
+    folds = (
+        # Frontal lobe: the two long frontal furrows, the one in front of the central furrow, and the small ones between.
+        [(64, 80), (80, 72), (96, 78), (110, 68), (124, 62)],
+        [(50, 104), (64, 96), (80, 102), (96, 92), (112, 98), (126, 88)],
+        [(122, 56), (116, 74), (124, 90), (116, 108), (122, 120)],
+        [(80, 60), (90, 66), (100, 58)], [(48, 90), (58, 86)], [(70, 88), (80, 84), (86, 90)],
+        [(56, 122), (70, 114), (82, 122), (96, 112), (108, 118)], [(98, 80), (106, 86)],
+        [(64, 136), (74, 130)], [(90, 128), (100, 124), (112, 130), (126, 122)],
+        # Parietal and occipital lobes, behind the central furrow.
+        [(152, 52), (148, 70), (156, 86), (150, 102), (154, 116)],
+        [(162, 92), (176, 84), (190, 94), (206, 88)],
+        [(166, 62), (178, 70), (192, 62), (200, 74)], [(176, 104), (188, 114), (200, 106), (210, 116)],
+        [(162, 106), (168, 114)], [(196, 124), (206, 132)], [(184, 128), (194, 138)],
+        # Temporal lobe, under the lateral furrow.
+        [(96, 148), (114, 140), (134, 146), (154, 136), (176, 138)],
+        [(100, 160), (118, 154), (136, 158), (152, 150)], [(158, 146), (172, 150)], [(84, 152), (90, 158)],
+    )
+    for fold in folds:
+        line = s.sample(fold)
+        s.line(line, weight=1.6 * hand, opacity=0.75, shake=0.5)
+        # The far wall of a furrow is in shadow: a pale second stroke just below and right of it.
+        s.line([(x + 1.8 * hand, y + 2.2 * hand) for x, y in line[1:-1]], weight=1.1 * hand, opacity=0.32, shake=0.4, passes=1)
+    # The folia of the cerebellum: fine curved bands across it.
+    for index, (left, right, y) in enumerate(((176, 204, 148), (176, 206, 154), (178, 206, 160), (180, 204, 166), (186, 200, 170))):
+        s.curve((left, y), (right, y - 5 + index), -3, weight=0.9 * hand, opacity=0.55, shake=0.3, passes=1)
+
+
+def _brain_shading(s: Sketch, hand: float, cerebrum: list[Point], cerebellum: list[Point], stem: list[Point]) -> None:
+    def cerebrum_tone(x: float, y: float) -> float:
+        # Away from the light: more tone towards the bottom right, and more again at the rim that turns away.
+        slope = 0.62 * (y - 44) / 122 + 0.38 * (x - 40) / 178
+        ex, ey = (x - 130) / 92, (y - 106) / 64
+        rim = max(0.0, math.hypot(ex, ey) - 0.72) * (0.55 + 0.45 * (ex * 0.6 + ey * 0.8) / (math.hypot(ex, ey) or 1))
+        # The temporal lobe lies in the shadow of the lobe above it, just under the lateral furrow.
+        under = max(0.0, 1 - abs(y - (136 + (x - 110) * -0.12)) / 9) * 0.18 if 92 < x < 184 else 0.0
+        return slope * 0.8 + rim * 1.6 + under
+
+    _shade(s, cerebrum, cerebrum_tone, hand,
+           ((-12, 0.42, 0.06, 4.5), (-58, 0.48, 0.3, 1), (32, 0.64, 0.28, 1), (-20, 0.8, 0.28, 1)))
+    # The cerebellum and the stem sit under the cerebrum: in shadow all over, darkest at the bottom and the back.
+    back = [*cerebellum, (192, 146), (176, 150)]
+    _shade(s, back, lambda x, y: 0.55 + (y - 136) / 60 + (x - 170) / 200, hand,
+           ((-12, 0.4, 0.07, 4.5), (-58, 0.5, 0.32, 1), (32, 0.62, 0.3, 1), (-20, 0.85, 0.28, 1)))
+    _shade(s, stem, lambda x, y: 0.4 + (x - 146) / 24 * 0.5 + (y - 160) / 80, hand,
+           ((-12, 0.35, 0.07, 4.5), (-58, 0.5, 0.32, 1), (32, 0.72, 0.28, 1)))
+    # The shadow it casts on the paper, thrown to the right of the stem by the light at the top left.
+    for row in range(4):
+        y = 202 + row * 2.2
+        left = 112 + row * 10 + s.random.uniform(-3, 3)
+        right = 214 - row * 14 + s.random.uniform(-3, 3)
+        s._stroke([(left, y + s.random.uniform(-0.6, 0.6)), (right, y + s.random.uniform(-0.6, 0.6))], 0.6 + 0.35 * hand, 0.26, 0.4)
+    s.rub([(140, 203), (196, 205)], 4.0 * hand, opacity=0.07)
 
 
 def render() -> dict[str, str]:

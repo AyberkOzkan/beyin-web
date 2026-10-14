@@ -79,7 +79,7 @@ class IllustrationTests(unittest.TestCase):
     def test_sidebar_brand_is_the_icon_brain_without_its_tile(self) -> None:
         text = brand_mark()
         self.assertEqual((IMAGES.parent / "brand-mark.svg").read_text(encoding="utf-8"), text)
-        self.assertIn('viewBox="30 34 196 172"', text)
+        self.assertIn('viewBox="30 34 196 180"', text)
         self.assertNotIn("<rect", text)
         self.assertIn("<rect", app_icon(256))
         points = [(float(x), float(y)) for x, y in re.findall(r"[ML](-?[0-9.]+) (-?[0-9.]+)", text)]
@@ -87,7 +87,7 @@ class IllustrationTests(unittest.TestCase):
         self.assertGreaterEqual(min(x for x, _ in points), 30)
         self.assertLessEqual(max(x for x, _ in points), 226)
         self.assertGreaterEqual(min(y for _, y in points), 34)
-        self.assertLessEqual(max(y for _, y in points), 206)
+        self.assertLessEqual(max(y for _, y in points), 214)
 
 
 if __name__ == "__main__":
