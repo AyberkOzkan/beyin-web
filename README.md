@@ -6,7 +6,9 @@
 
 Sürüm 0.2.0 · [Değişiklikler](CHANGELOG.md) · [Kurulum rehberi](docs/INSTALL.md) · MIT
 
-![Ana Sayfa: karşılama, bilgi kasası, son oturum, son notlar, projeler ve açık başlıklar](docs/img/home.png)
+![Arayüzde kısa bir gezinti: Ana Sayfa, Projeler, Günlükler, Grafik, arama ve Hedefler](docs/img/demo.gif)
+
+*Görüntüdeki kişi, projeler ve notlar uydurmadır.*
 
 ## Ne işe yarar?
 
@@ -23,13 +25,6 @@ Beyin her şeyi Markdown dosyalarında tutar; bu doğru bir tercih, ama dosya li
 | Arama | Şu kelime nerede geçiyor? Beyin bu konuda ne hatırlıyor? | Yerel kelime araması ve `beyin.py context` |
 | Hafıza | Asistan beni nasıl tanıyor, hangi kurallara uyuyor? | Companion klasörü: kimlik, kurallar, son oturum, konular |
 | Raporlar | Bu hafta ne oldu, birikim nereye gidiyor? | Receipt'ler ve notlardan sayılır; yapay zekâ özeti değildir |
-
-| | |
-|---|---|
-| ![Projeler: liste, proje notu, yol haritası](docs/img/projects.png) | ![Günlükler: takvim, oturum kartları, zaman çizgisi](docs/img/journal.png) |
-| ![Grafik: notlar arasındaki bağlantılar](docs/img/graph.png) | ![Hedefler: uzun vadeli hedefler, yıl hedefleri, odak alanları](docs/img/goals.png) |
-
-Görüntüler, Beyin'in kurulu olduğu bir demo vault'tan alınmıştır. Vault'un biçimi iki haftalık gerçek bir Beyin kullanımından gelir: hangi gün kaç işlem kaydı yazıldığı, görevlerin nasıl durduğu, bilgi notlarının projelere dağılımı. Kişi (Deniz), projeleri ve bütün metinler uydurmadır. Demo vault'u `scripts/make_demo_vault.py` üretir.
 
 ## Beyin ile ilişkisi
 

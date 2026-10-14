@@ -49,3 +49,6 @@ desktop.ini
 *.rej
 .env
 .env.*
+
+# Demo vault and the README film: made here, kept local
+/scripts/demo/

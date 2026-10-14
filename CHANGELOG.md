@@ -15,7 +15,7 @@ Kurulum ve kullanım:
 - **Ayarlar çekmecesi.** Dişli düğmesi artık çalışıyor: dil seçimi (üst çubukta ayrı bir dil düğmesi yoktur), imleç seçimi, Beyin'in Yakala, tercihler ve güncelleme rehberlerine bağlantılar ve **Arayüzü kapat**.
 - İkinci kez başlatılan arayüz yeni sunucu açmaz, çalışanı gösterir (`--reuse`).
 - Yeni kurulmuş, henüz güncelleme denetimi yapmamış bir Beyin'de üst köşede "Yalın kip" yazıyordu; sürüm artık vault'taki `.beyin-version`'dan okunuyor.
-- README görselleri, Beyin'in kurulu olduğu gerçekçi bir demo vault'tan yeniden alındı (`scripts/make_demo_vault.py`; uydurma kişi ve projeler).
+- README'nin başındaki ekran görüntüsünün yerine arayüzü gezen kısa bir GIF kondu (uydurma kişi ve projeler).
 - **Asistana kurdurma.** `beyin-web.md`, Beyin'in `beyin.md`'si gibi bir ajan kurulum rehberidir: asistana verilince Python'u bulur, depoyu indirir, kurar ve vault'a dokunulmadığını denetler.
 - Linux ve macOS başlatıcısı 3.11'den eski bir `python3`'ü atlar, `python3.11` gibi sürümlü adları kendisi bulur (Ubuntu 22.04'te `python3` 3.10'dur). Windows'ta çıktı bir programa aktarılırken Türkçe harfte çöken komut satırı düzeltildi.
 - **Kısayol simgesi.** Kısayol kâğıt zemin üstünde karakalem bir beyinle görünür; küçük boylar için ayrıca, daha kalın çizilmiş bir sürüm vardır. Yan menüdeki adın yanında da aynı beyin durur.
