@@ -42,7 +42,7 @@ class LanguageSwitchTests(LanguageTestCase):
         self.assertEqual(self.hash(), "#/gunlukler/2026-01-12")
         self.assertEqual(self.menu(), [english[f"page.{page}.title"] for page in PAGES])
         self.assertEqual(self.text("#main h1"), "Journal")
-        self.assertEqual(self.driver.title, "Journal · Beyin Notları")
+        self.assertEqual(self.driver.title, "Journal · Beyin")
         self.assertRegex(self.text("#main"), "Monday,? 12 January 2026")
         self.assertNotIn("Ocak", self.text("#main .journal-selected-heading"))
         count = len(self.source.snapshot().records)

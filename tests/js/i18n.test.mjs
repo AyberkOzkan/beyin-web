@@ -55,7 +55,7 @@ test("the English file carries no untranslated Turkish text", () => {
   for (const [key, value] of Object.entries(files.en)) {
     if (key === "meta.locale") continue;
     if (!turkishLetters.has(key)) {
-      for (const form of forms(value)) assert.doesNotMatch(form.replaceAll("Beyin", ""), /[çğıöşüÇĞİÖŞÜ]/, key);
+      for (const form of forms(value)) assert.doesNotMatch(form, /[çğıöşüÇĞİÖŞÜ]/, key);
     }
     if (same.has(key)) assert.deepEqual(value, files.tr[key], key);
     else assert.notDeepEqual(value, files.tr[key], key);

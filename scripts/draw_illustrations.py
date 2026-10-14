@@ -1199,7 +1199,20 @@ def app_icon(size: int) -> str:
     tile = [*corner, *[(246 - (x - 10), y) for x, y in reversed(corner)], *[(246 - (x - 10), 246 - (y - 10)) for x, y in corner],
             *[(x, 246 - (y - 10)) for x, y in reversed(corner)], corner[0]]
     s.line(tile, weight=1.6 * hand, opacity=0.5, shake=0.6, passes=1)
+    brain(s, hand, fine)
+    return s.svg().replace(f'width="256" height="256"', f'width="{size}" height="{size}"', 1)
 
+
+def brand_mark() -> str:
+    """The same brain beside the name in the sidebar, without its tile: the page is already paper.
+
+    It is shown 40 px high, so it takes the small icon's drawing; the view box is cut to the brain itself."""
+    s = Sketch("app-icon", seed=41)
+    brain(s, 2.3, False)
+    return s.svg().replace('viewBox="0 0 256 256" width="256" height="256"', 'viewBox="30 34 196 172" width="57" height="50"', 1)
+
+
+def brain(s: Sketch, hand: float, fine: bool) -> None:
     # The cerebrum, facing left: a smooth contour pushed in and out along its length, which reads as gyri.
     outline = s.sample([(74, 162), (52, 144), (40, 114), (48, 84), (72, 60), (106, 46), (144, 44), (180, 52), (206, 72),
                         (218, 102), (212, 130), (192, 146), (168, 152), (146, 160), (116, 166), (90, 166), (74, 162)], steps=8)
@@ -1231,7 +1244,6 @@ def app_icon(size: int) -> str:
         # The shaded underside: hatching under the temporal lobe and the cerebellum.
         s.hatch(94, 152, 64, 12, count=12, lean=0.35, opacity=0.4)
         s.hatch(184, 158, 20, 12, count=5, lean=0.3, opacity=0.4)
-    return s.svg().replace(f'width="256" height="256"', f'width="{size}" height="{size}"', 1)
 
 
 def render() -> dict[str, str]:

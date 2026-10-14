@@ -137,7 +137,9 @@ function buildShell(pulse) {
   const sidebarArt = illustrationSlot("sidebar-tree");
   document.getElementById("sidebar-art").replaceChildren(...(sidebarArt ? [sidebarArt] : []));
   const brand = document.getElementById("brand");
-  brand.replaceChildren(icon("brain"), el("span", {}, el("span", { class: "brand-name" }, t("shell.brand")),
+  // The same pencil brain as the shortcut icon, so the page and the desktop look like one thing.
+  brand.replaceChildren(el("img", { class: "brand-mark", src: "/static/brand-mark.svg", alt: "" }),
+    el("span", {}, el("span", { class: "brand-name" }, t("shell.brand")),
     el("small", { id: "brand-version", class: "brand-version" }, t("state.loading"))));
   const nav = document.getElementById("navigation");
   nav.setAttribute("aria-label", t("shell.navigation"));

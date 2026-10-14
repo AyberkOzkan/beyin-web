@@ -7,7 +7,7 @@ from pathlib import Path
 
 from beyin_web.http.server import DRAWING
 from scripts.build_icon import ICO_SIZES
-from scripts.draw_illustrations import DRAWINGS, SIZES, app_icon, render
+from scripts.draw_illustrations import DRAWINGS, SIZES, app_icon, brand_mark, render
 
 IMAGES = Path(__file__).resolve().parents[1] / "beyin_web" / "static" / "img"
 
@@ -75,6 +75,19 @@ class IllustrationTests(unittest.TestCase):
             sizes.append(width or 256)
         self.assertEqual(sizes, list(ICO_SIZES))
         self.assertEqual(struct.unpack(">II", (assets / "app-icon.png").read_bytes()[16:24]), (256, 256))
+
+    def test_sidebar_brand_is_the_icon_brain_without_its_tile(self) -> None:
+        text = brand_mark()
+        self.assertEqual((IMAGES.parent / "brand-mark.svg").read_text(encoding="utf-8"), text)
+        self.assertIn('viewBox="30 34 196 172"', text)
+        self.assertNotIn("<rect", text)
+        self.assertIn("<rect", app_icon(256))
+        points = [(float(x), float(y)) for x, y in re.findall(r"[ML](-?[0-9.]+) (-?[0-9.]+)", text)]
+        # The cut view box holds the whole brain: nothing is drawn outside it.
+        self.assertGreaterEqual(min(x for x, _ in points), 30)
+        self.assertLessEqual(max(x for x, _ in points), 226)
+        self.assertGreaterEqual(min(y for _, y in points), 34)
+        self.assertLessEqual(max(y for _, y in points), 206)
 
 
 if __name__ == "__main__":

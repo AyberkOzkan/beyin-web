@@ -24,7 +24,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 VERSION = '0.2.0'
-SHA256 = '2d06649d94ef62f91661db68acdff5817b71fccdd30eaab2e60c03827bad323d'
+SHA256 = '5dc6bc1752c65f0669f3904b324863e135674e20ed79e01c861e4c57990e8b68'
 URL = 'https://github.com/AyberkOzkan/beyin-web/releases/download/v{version}/beyin-web-{version}.zip'
 FOLDER = 'web'
 STATE_FILE = 'web.json'

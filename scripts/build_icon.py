@@ -3,7 +3,8 @@
     py -3 scripts/build_icon.py [--out beyin_web/assets]
 
 Writes app-icon.svg (the drawing), app-icon.png (256 px, for a Linux application menu) and app-icon.ico (16 to
-256 px, for a Windows shortcut). The pixels come from headless Edge through Selenium, the same browser the
+256 px, for a Windows shortcut), and beside them the same brain without its tile for the sidebar
+(beyin_web/static/brand-mark.svg). The pixels come from headless Edge through Selenium, the same browser the
 interface tests use; the package itself needs neither, it only carries the files. Run it after the drawing
 changes and commit the result.
 """
@@ -18,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts.draw_illustrations import app_icon  # noqa: E402
+from scripts.draw_illustrations import app_icon, brand_mark  # noqa: E402
 
 ICO_SIZES = (16, 24, 32, 48, 64, 128, 256)
 # The browser draws the SVG onto a canvas of exactly the asked size, so each size is drawn, not shrunk.
@@ -72,7 +73,8 @@ def main(argv: list[str] | None = None) -> int:
     (args.out / "app-icon.svg").write_text(app_icon(256), encoding="utf-8", newline="\n")
     (args.out / "app-icon.png").write_bytes(images[256])
     (args.out / "app-icon.ico").write_bytes(ico(images))
-    print(f"app-icon: {len(images)} sizes -> {args.out}")
+    (ROOT / "beyin_web" / "static" / "brand-mark.svg").write_text(brand_mark(), encoding="utf-8", newline="\n")
+    print(f"app-icon: {len(images)} sizes -> {args.out}; brand-mark.svg")
     return 0
 
 
