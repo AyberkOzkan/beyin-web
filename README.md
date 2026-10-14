@@ -29,7 +29,7 @@ Beyin her şeyi Markdown dosyalarında tutar; bu doğru bir tercih, ama dosya li
 | ![Projeler: liste, proje notu, yol haritası](docs/img/projects.png) | ![Günlükler: takvim, oturum kartları, zaman çizgisi](docs/img/journal.png) |
 | ![Grafik: notlar arasındaki bağlantılar](docs/img/graph.png) | ![Hedefler: uzun vadeli hedefler, yıl hedefleri, odak alanları](docs/img/goals.png) |
 
-Görüntüler, testlerde kullanılan sentetik örnek vault'la alınmıştır; içindeki notlar gerçek değildir.
+Görüntüler, Beyin'in kurulu olduğu bir demo vault'tan alınmıştır. Vault'un biçimi iki haftalık gerçek bir Beyin kullanımından gelir: hangi gün kaç işlem kaydı yazıldığı, görevlerin nasıl durduğu, bilgi notlarının projelere dağılımı. Kişi (Deniz), projeleri ve bütün metinler uydurmadır. Demo vault'u `scripts/make_demo_vault.py` üretir.
 
 ## Beyin ile ilişkisi
 

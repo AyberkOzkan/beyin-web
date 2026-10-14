@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -59,6 +60,16 @@ class BeyinRuntime:
                 self.last_error = None
             self._doctor_at = time.monotonic()
             return self._doctor_result
+
+    def stamped_version(self) -> str | None:
+        """The version Beyin's installer wrote into the vault (.beyin-version).
+
+        doctor reports a version only after Beyin has checked for updates once; a fresh install has not."""
+        try:
+            text = (self.vault / ".beyin-version").read_text(encoding="utf-8").strip()
+        except (OSError, UnicodeError):
+            return None
+        return text if re.fullmatch(r"\d+\.\d+\.\d+", text) else None
 
     def context(
         self,

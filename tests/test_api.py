@@ -132,6 +132,19 @@ class APITests(unittest.TestCase):
         self.server.settings = replace(self.server.settings, language="en")
         self.assertEqual(self.payload("/pulse")["language"], "en")
 
+    def test_fresh_beyin_without_an_update_check_shows_its_stamped_version(self) -> None:
+        doctor = self.server.runtime.doctor()
+        fresh = {**doctor, "updates": {"status": "unknown"}}
+        stamp = self.vault / ".beyin-version"
+        for text, expected in (("3.9.0\n", "3.9.0"), ("bozuk", None)):
+            stamp.write_text(text, encoding="utf-8")
+            with self.subTest(text=text), patch.object(self.server.runtime, "doctor", return_value=fresh):
+                self.assertEqual(self.payload("/pulse")["beyin"]["version"], expected)
+        # A Beyin that does not answer is not given a version from the stamp.
+        stamp.write_text("3.9.0\n", encoding="utf-8")
+        with patch.object(self.server.runtime, "doctor", return_value=None):
+            self.assertIsNone(self.payload("/pulse")["beyin"]["version"])
+
     def test_etags_and_generation_changes(self) -> None:
         for name, endpoint in ENDPOINTS.items():
             if name == "search_beyin":

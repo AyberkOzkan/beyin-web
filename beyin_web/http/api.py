@@ -169,7 +169,11 @@ class API:
         params = {key: values[0] for key, values in query.items()}
         if path in {"pulse", "health"}:
             available = self.server.runtime.available
-            health = health_summary(self.server.runtime.doctor() if available else None)
+            doctor = self.server.runtime.doctor() if available else None
+            health = health_summary(doctor)
+            if doctor is not None and not health["installed_version"]:
+                # Beyin answered but has not checked for updates yet (a fresh install): its own stamp says the version.
+                health["installed_version"] = self.server.runtime.stamped_version()
             directory = health.get("companion_dir")
             if isinstance(directory, str):
                 directory = _path_key(directory)
