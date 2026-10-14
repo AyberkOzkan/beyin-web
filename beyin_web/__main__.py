@@ -225,6 +225,11 @@ def serve(server: ThreadingHTTPServer, idle_exit: int | None) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    # Piped to another program on Windows, stdout takes the ANSI code page, which has no "ı" or "İ";
+    # a Turkish message must not crash the command after its work is done.
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     args = parse_args(argv)
     directory = config_directory()
     text = MESSAGES[resolve_language(args.lang, read_config(directory / "config.json"))]

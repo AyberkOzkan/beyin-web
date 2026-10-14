@@ -31,6 +31,9 @@ class LauncherTests(unittest.TestCase):
             command_line = subprocess.list2cmdline([str(launcher), *args])
             command = f'{subprocess.list2cmdline([os.environ.get("COMSPEC", "cmd.exe")])} /d /s /c "{command_line}"'
         else:
+            # Git Bash has an sh on Windows, but a Windows Python cannot read the launcher's POSIX PYTHONPATH.
+            if os.name == "nt":
+                self.skipTest("POSIX launcher is tested on Linux")
             shell = shutil.which("sh")
             if shell is None:
                 self.skipTest("POSIX launcher requires sh; sh was not found")
@@ -73,6 +76,22 @@ class LauncherTests(unittest.TestCase):
         except (OSError, NotImplementedError) as error:
             self.skipTest(f"Symbolic links unavailable: {error}")
         self.assert_version(second)
+
+    def test_posix_skips_a_python3_older_than_3_11(self) -> None:
+        # Ubuntu 22.04: python3 is 3.10 and 3.11 sits beside it as python3.11.
+        if os.name == "nt":
+            self.skipTest("POSIX launcher is tested on Linux")
+        bin_dir = self.tmp / "bin"
+        bin_dir.mkdir()
+        old = bin_dir / "python3"
+        old.write_text("#!/bin/sh\necho 'old python3 was used' >&2\nexit 1\n", encoding="utf-8")
+        old.chmod(0o755)
+        (bin_dir / "python3.11").symlink_to(sys.executable)
+        self.env["PATH"] = str(bin_dir) + os.pathsep + os.environ.get("PATH", "")
+        result = self.run_launcher(ROOT / "scripts" / "beyin-web", ["--version"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "beyin-web 0.2.0\n")
+        self.assertNotIn("old python3", result.stderr)
 
     def assert_fake_package(self, filename: str) -> None:
         repo = self.tmp / "depo klasörü ğü"

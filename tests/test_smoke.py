@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -45,6 +46,15 @@ class SmokeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "beyin-web 0.2.0\n")
         self.assertEqual(result.stderr, "")
+
+    def test_turkish_output_survives_a_pipe_without_utf8(self) -> None:
+        # An agent captures the output through a pipe; on Windows that pipe takes cp1252, which has no "İ".
+        environment = {key: value for key, value in os.environ.items() if key not in {"PYTHONUTF8", "PYTHONIOENCODING"}}
+        environment["PYTHONIOENCODING"] = "cp1252"
+        result = subprocess.run([sys.executable, "-m", "beyin_web", "--help"], cwd=ROOT, capture_output=True,
+                                env=environment, timeout=10, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr.decode("cp1252", "replace"))
+        self.assertIn(b"--install", result.stdout)
 
     def test_missing_vault(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

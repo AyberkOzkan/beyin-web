@@ -14,7 +14,7 @@ Linux ve macOS'ta Terminal'i, Windows'ta Başlat menüsünden PowerShell'i açı
 | Windows | `py -3 --version` | `Python 3.11.x` veya daha yeni bir sürüm. `py` yoksa `python --version` deneyin. |
 | WSL | `python3 --version` | WSL içinde kurulu Python'un `Python 3.11.x` veya daha yeni sürümü. |
 
-Komut bulunamıyorsa önce Python 3.11 ya da üstünü kurun. Windows'ta kurulumda Python'u PATH'e ekleme seçeneğini işaretleyin, ardından terminali yeniden açın. WSL, Windows'taki Python kurulumundan ayrı bir ortamdır. Uygulama için pip paketi veya Node kurulumu gerekmez. Güncel Edge, Chrome ya da Firefox kullanın.
+Komut bulunamıyorsa ya da sürüm 3.11'den eskiyse önce Python 3.11 ya da üstünü kurun. Ubuntu 22.04'te `python3` 3.10'dur: `sudo apt install python3.11` 3.11'i yanına kurar, `python3`'ü değiştirmez; başlatıcı onu kendisi bulur. Windows'ta kurulumda Python'u PATH'e ekleme seçeneğini işaretleyin, ardından terminali yeniden açın. WSL, Windows'taki Python kurulumundan ayrı bir ortamdır. Uygulama için pip paketi veya Node kurulumu gerekmez. Güncel Edge, Chrome ya da Firefox kullanın.
 
 ## 2. Depoyu edinin ve klasöre girin
 
@@ -155,8 +155,9 @@ Beyin Windows'ta çalışıyorsa `--no-beyin` seçeneğini kaldırın. Kısayol 
 | `Bu sayfayı açmak için terminalde gösterilen belirteçli adresi kullanın.` | Çerez yok veya geçersiz. Terminaldeki tam belirteçli adresi yeniden açın; yeni tarayıcı/profil de bu adresle giriş yapmalıdır. |
 | Sayfa boş veya yazı tipi yok | Zorla yenileyin (`Ctrl+Shift+R`; macOS'ta `Cmd+Shift+R`). Gerekirse bu yerel adresin tarayıcı önbelleğini temizleyip terminaldeki adresi yeniden açın. |
 | `Beyin bulunamadı; yalın kipte çalışıyor.` | Yerel notlar, projeler, günlükler, grafik ve kelime araması çalışır. Beyin başka ortamdaysa `--no-beyin` verin veya uygulamayı Beyin'in çalıştığı ortamda açın. |
-| `Tarayıcı açılamadı. Terminaldeki adresi tarayıcıda açın.` veya WSL'de tarayıcı açılmıyor | Terminaldeki tam adresi Windows tarayıcısında elle açın. WSL'de `--open`, varsa `wslview`, yoksa `explorer.exe` kullanır. |
-| `Python bulunamadı. Python 3.11 ya da üstünü kurun.` | Python'u ve PATH ayarını denetleyin, terminali yeniden açın. |
+| `Tarayıcı açılamadı. Terminaldeki adresi tarayıcıda açın.` veya WSL'de tarayıcı açılmıyor | Terminaldeki tam adresi Windows tarayıcısında elle açın. WSL'de `--open`, varsa `wslview`, yoksa Windows'un `rundll32.exe url.dll,FileProtocolHandler` yolunu kullanır. |
+| `Python bulunamadı. Python 3.11 ya da üstünü kurun.` (Windows) ya da `Python 3.11 ya da üstü bulunamadı.` (Linux, macOS) | Python'u ve PATH ayarını denetleyin, terminali yeniden açın. Linux ve macOS'taki başlatıcı `python3.14`'ten `python3.11`'e kadar sürümlü adları, sonra `python3` ve `python`'u dener ve 3.11'den eskisini atlar. |
+| `Unknown option: -P` | Komut Python 3.10 ya da daha eskisiyle çalıştı (Ubuntu 22.04'te `python3` 3.10'dur). `scripts/beyin-web`'i kullanın ya da 3.11'i tam adıyla çağırın (`python3.11`). Sistemin `python3`'ünü başka sürüme yönlendirmeyin; Ubuntu'nun kendi araçları ona bağlıdır. |
 | `Sunucu başlatılamadı. Ayarları ve kullanılabilir portları kontrol edin.` | Ayar klasörünün vault dışında olduğunu ve seçilen port aralığının kullanılabildiğini denetleyin. |
 
 Diğer seçenekler ve sınırlar için [README](../README.md).

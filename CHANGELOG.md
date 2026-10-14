@@ -14,6 +14,8 @@ Kurulum ve kullanım:
 - **Koyu imleç.** Açık zeminde kaybolan beyaz imlecin yerine arayüzde koyu bir imleç kullanılır; Ayarlar'dan sistemin imlecine dönülebilir.
 - **Ayarlar çekmecesi.** Dişli düğmesi artık çalışıyor: dil seçimi (üst çubukta ayrı bir dil düğmesi yoktur), imleç seçimi, Beyin'in Yakala, tercihler ve güncelleme rehberlerine bağlantılar ve **Arayüzü kapat**.
 - İkinci kez başlatılan arayüz yeni sunucu açmaz, çalışanı gösterir (`--reuse`).
+- **Asistana kurdurma.** `beyin-web.md`, Beyin'in `beyin.md`'si gibi bir ajan kurulum rehberidir: asistana verilince Python'u bulur, depoyu indirir, kurar ve vault'a dokunulmadığını denetler.
+- Linux ve macOS başlatıcısı 3.11'den eski bir `python3`'ü atlar, `python3.11` gibi sürümlü adları kendisi bulur (Ubuntu 22.04'te `python3` 3.10'dur). Windows'ta çıktı bir programa aktarılırken Türkçe harfte çöken komut satırı düzeltildi.
 - **Kısayol simgesi.** Kısayol kâğıt zemin üstünde karakalem bir beyinle görünür; küçük boylar için ayrıca, daha kalın çizilmiş bir sürüm vardır. Yan menüdeki adın yanında da aynı beyin durur.
 - **Ad.** Arayüz kendini "Beyin" diye adlandırır; vault'un klasör adı yan menünün altında görünmeye devam eder.
 - **Beyin için başlatıcı (önizleme).** `upstream/beyin_v3_web.py`, `yakala` düzeninde `kur | ac | durum | kaldir`; `scripts/build_release.py` her makinede aynı sürüm paketini ve SHA-256 özetini üretir.

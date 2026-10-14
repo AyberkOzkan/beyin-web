@@ -15,10 +15,13 @@ root=$(CDPATH= cd -P "$directory/.." && pwd) || exit 1
 PYTHONPATH=$root${PYTHONPATH:+:$PYTHONPATH}
 export PYTHONPATH
 
-if command -v python3 >/dev/null 2>&1; then
-    exec python3 -P -m beyin_web "$@"
-elif command -v python >/dev/null 2>&1; then
-    exec python -P -m beyin_web "$@"
-fi
-printf '%s\n' 'Python bulunamadı. Python 3.11 ya da üstünü kurun.' >&2
+# python3 may be older than 3.11 (Ubuntu 22.04 ships 3.10 and installs 3.11 beside it as python3.11),
+# so the versioned names are tried first and every candidate is asked for its version.
+for python in python3.14 python3.13 python3.12 python3.11 python3 python; do
+    if command -v "$python" >/dev/null 2>&1 &&
+        "$python" -c 'import sys; sys.exit(sys.version_info < (3, 11))' >/dev/null 2>&1; then
+        exec "$python" -P -m beyin_web "$@"
+    fi
+done
+printf '%s\n' 'Python 3.11 ya da üstü bulunamadı. Python 3.11 ya da üstünü kurun.' >&2
 exit 127

@@ -47,6 +47,10 @@ Görüntüler, testlerde kullanılan sentetik örnek vault'la alınmıştır; i�
 
 ## Kurulum
 
+**Asistana kurdurmak:** Beyin'i kurduğunuz asistana (Claude Code, Codex) [beyin-web.md](beyin-web.md) dosyasını verip "beyin-web'i kur" deyin. Python'u bulmak, depoyu indirmek, kurmak ve kurulumu denetlemek dahil adımları o yapar; Beyin'in kendi `beyin.md` rehberiyle aynı yol.
+
+Elle kurmak için:
+
 Bu depoyu indirin (ZIP indirdiyseniz açın) ve terminalde depo klasörüne girin. Aşağıdaki komutu **bir kez** çalıştırın; vault yolunu Beyin'i kurduğunuz Obsidian klasörüyle değiştirin.
 
 Windows (PowerShell veya Komut İstemi):
