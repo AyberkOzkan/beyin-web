@@ -17,4 +17,4 @@ beyin-web = "beyin_web.__main__:main"
 include = ["beyin_web*"]
 
 [tool.setuptools.package-data]
-beyin_web = ["static/*", "static/**/*"]
+beyin_web = ["static/*", "static/**/*", "assets/*"]

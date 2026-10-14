@@ -56,6 +56,16 @@ class PlanTests(InstallTestCase):
         self.assertTrue(args.open and args.reuse)
         self.assertEqual(args.idle_exit, 30)
 
+    def test_launcher_arguments_are_quoted_only_when_they_need_it(self) -> None:
+        arguments = ["-m", "beyin_web", "--vault", "/home/deniz/Beyin Notları", "--open"]
+        entry = desktop_entry("/usr/bin/python3", PurePosixPath("/opt/app"), "x", arguments)
+        self.assertIn('Exec="/usr/bin/python3" -m beyin_web --vault "/home/deniz/Beyin Notları" --open\n', entry)
+        self.assertIn("cd '/opt/app' && exec '/usr/bin/python3' -m beyin_web --vault '/home/deniz/Beyin Notları' --open\n",
+                      command_file("/usr/bin/python3", PurePosixPath("/opt/app"), arguments))
+        values = wsl_shortcut("Ubuntu", "/usr/bin/python3", PurePosixPath("/opt/app"), "x", arguments)
+        self.assertTrue(values["BW_ARGUMENTS"].endswith('-m beyin_web --vault "/home/deniz/Beyin Notları" --open'))
+        self.assertEqual((values["BW_ICON"], values["BW_ICON_COPY"]), ("/opt/app/beyin_web/assets/app-icon.ico", "1"))
+
     def test_desktop_entry_quotes_what_a_shell_would_expand(self) -> None:
         app = PurePosixPath("/home/deniz/.local/share/beyin-web/app")
         entry = desktop_entry('/opt/my "py"/python$3 100%`x`', app, "Beyin'in web arayüzünü açar")
@@ -145,6 +155,8 @@ class InstallTests(InstallTestCase):
         entry = target.read_text(encoding="utf-8")
         self.assertIn('Exec="/usr/bin/python3" -m beyin_web --open --reuse --idle-exit 30\n', entry)
         self.assertIn(f"Path={self.data / 'app'}\n", entry)
+        self.assertIn(f"Icon={self.data / 'app' / 'beyin_web' / 'assets' / 'app-icon.png'}\n", entry)
+        self.assertTrue((self.data / "app" / "beyin_web" / "assets" / "app-icon.png").is_file())
         self.assertIn("Comment=Beyin'in web arayüzünü açar\n", entry)
         self.assertEqual(json.loads((self.config / "config.json").read_text(encoding="utf-8"))["vault"], str(self.vault))
         self.assertEqual(sorted(str(path.relative_to(self.vault)) for path in self.vault.rglob("*")), before)
@@ -170,26 +182,31 @@ class InstallTests(InstallTestCase):
         folders = [self.root / "Başlat Menüsü", self.root / "Masaüstü"]
         for folder in folders:
             folder.mkdir()
+        icons = self.root / "icons"
         written = install(self.vault, self.config, data_dir=self.data, platform="win32",
-                          description="Beyin'in web arayüzünü açar", shortcut_folders=[*folders, self.root / "missing"])
+                          description="Beyin'in web arayüzünü açar", shortcut_folders=[*folders, self.root / "missing"],
+                          icon_dir=str(icons))
         self.assertEqual(written, [str(folder / "Beyin Web.lnk") for folder in folders])
         # The scripting shortcut object cannot open a path outside the legacy code page; read a copy beside it.
         plain = self.root / "copy.lnk"
         shutil.copyfile(written[0], plain)
         read_back = ("[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); "
                      "$l = (New-Object -ComObject WScript.Shell).CreateShortcut($env:BW_PATH); "
-                     "$l.TargetPath; $l.Arguments; $l.WorkingDirectory; $l.Description")
+                     "$l.TargetPath; $l.Arguments; $l.WorkingDirectory; $l.Description; $l.IconLocation")
         result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", read_back],
                                 env={**os.environ, "BW_PATH": str(plain)}, capture_output=True, encoding="utf-8",
                                 timeout=60, check=False)
-        target, arguments, workdir, description = result.stdout.splitlines()[:4]
+        target, arguments, workdir, description, icon = result.stdout.splitlines()[:5]
         self.assertIn(Path(target).name.lower(), {"python.exe", "pythonw.exe"})
         self.assertTrue(Path(target).is_file())
         self.assertEqual(arguments, "-m beyin_web --open --reuse --idle-exit 30")
         self.assertEqual(Path(workdir), self.data / "app")
         self.assertEqual(description, "Beyin'in web arayüzünü açar")
+        # A Windows installation points at the icon inside its own copy; nothing is copied beside it.
+        self.assertEqual(icon, f"{self.data / 'app' / 'beyin_web' / 'assets' / 'app-icon.ico'},0")
+        self.assertFalse(icons.exists())
         self.assertTrue((Path(workdir) / "beyin_web" / "__main__.py").is_file())
-        removed = uninstall(data_dir=self.data, platform="win32", shortcut_folders=folders)
+        removed = uninstall(data_dir=self.data, platform="win32", shortcut_folders=folders, icon_dir=str(icons))
         self.assertEqual(removed, [*written, str(self.data / "app")])
         self.assertEqual([path for folder in folders for path in folder.iterdir()], [])
 
@@ -199,12 +216,21 @@ class InstallTests(InstallTestCase):
         folder = self.root / "desktop"
         folder.mkdir()
         windows = subprocess.run(["wslpath", "-w", str(folder)], capture_output=True, encoding="utf-8", check=True).stdout.strip()
-        values = wsl_shortcut(os.environ["WSL_DISTRO_NAME"], sys.executable, self.data / "app", "Beyin Web")
-        written = run_shortcut_script(values, folders=[Path(windows)])
+        icons = self.root / "icons"
+        icons_windows = subprocess.run(["wslpath", "-w", str(self.root)], capture_output=True, encoding="utf-8",
+                                       check=True).stdout.strip() + "\\icons"
+        app = copy_package(self.data)
+        values = wsl_shortcut(os.environ["WSL_DISTRO_NAME"], sys.executable, app, "Beyin Web")
+        written = run_shortcut_script(values, folders=[Path(windows)], icon_dir=icons_windows)
         self.assertEqual(len(written), 1)
         self.assertTrue((folder / "Beyin Web.lnk").is_file())
-        self.assertEqual(len(run_shortcut_script({"BW_NAME": "Beyin Web"}, folders=[Path(windows)], remove=True)), 1)
+        # The icon is copied to the Windows side, so drawing the shortcut never reaches into the distribution.
+        self.assertEqual((icons / "app-icon.ico").read_bytes(),
+                         (app / "beyin_web" / "assets" / "app-icon.ico").read_bytes())
+        self.assertEqual(len(run_shortcut_script({"BW_NAME": "Beyin Web"}, folders=[Path(windows)], remove=True,
+                                                 icon_dir=icons_windows)), 1)
         self.assertFalse((folder / "Beyin Web.lnk").exists())
+        self.assertFalse((icons / "app-icon.ico").exists())
 
     def test_cli_installs_warns_without_beyin_and_refuses_both_flags(self) -> None:
         cases = ((["--install", "--vault", str(self.vault)], "beyin-web kuruldu"),

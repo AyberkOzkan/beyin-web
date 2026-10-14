@@ -74,10 +74,29 @@ Kurulum bir kısayol bırakır; bundan sonra terminale gerek kalmaz:
 - **Ayarlar:** sağ üstteki dişli. Dil, imleç (koyu ya da sistemin imleci) ve Beyin'in rehberlerine bağlantılar buradadır.
 - **Kapatmak:** Ayarlar → **Arayüzü kapat**. Kapatmayı unutursanız 30 dakika kullanılmayınca kendiliğinden kapanır.
 - **Nereye kurulur:** arayüzün bir kopyası kullanıcı klasörünüze alınır (Windows'ta `%LOCALAPPDATA%\beyin-web`, Linux'ta `~/.local/share/beyin-web`, macOS'ta `~/Library/Application Support/beyin-web`); indirdiğiniz klasörü sonra silebilirsiniz. Vault yolu ayar dosyasına yazılır. **Vault'un içine hiçbir dosya konmaz.**
-- **Güncellemek:** yeni sürümü indirip aynı komutu yeniden çalıştırın.
+- **Güncellemek:** yeni sürümü indirip aynı komutu yeniden çalıştırın. Kısayol kurulan kopyayı açar, indirdiğiniz klasörü değil; komutu yeniden çalıştırmadan yeni sürüm görünmez.
 - **Kaldırmak:** `scripts/beyin-web --uninstall` (Windows'ta `scripts\beyin-web.cmd --uninstall`). Kısayolları ve kopyayı siler; ayarlarınıza ve vault'unuza dokunmaz.
 
-Kurulum Windows 11'de ve WSL'de (Ubuntu) denendi. Linux masaüstü ve macOS kısayolları otomatik testlerle sınandı, ama gerçek bir masaüstünde tıklanarak denenmedi; sorun görürseniz bildirin.
+Kurulum Windows 11'de ve WSL'de (Ubuntu) denendi. Linux masaüstü ve macOS kısayolları otomatik testlerle sınandı, ama gerçek bir masaüstünde tıklanarak denenmedi; sorun görürseniz bildirin. Kısayolun simgesi karakalem bir beyindir (`beyin_web/assets/`); WSL kurulumunda simgenin bir kopyası Windows tarafına konur, böylece masaüstü çizilirken WSL uyandırılmaz.
+
+### Beyin'in komutuyla kurulum (önizleme)
+
+`upstream/beyin_v3_web.py`, Beyin'in `yakala` aracıyla aynı düzende küçük bir başlatıcıdır. Beyin'e alınırsa kurulum `beyin.py web kur` olur ve vault yolu sorulmaz ([docs/UPSTREAM.md](docs/UPSTREAM.md)). Beyin onu tanıyana kadar dosya tek başına çalışır:
+
+```sh
+python3 scripts/build_release.py
+python3 upstream/beyin_v3_web.py --vault "$HOME/Beyin" kur --paket dist/beyin-web-0.2.0.zip
+python3 upstream/beyin_v3_web.py --vault "$HOME/Beyin" durum
+```
+
+| Komut | Yaptığı |
+|---|---|
+| `kur [--paket ZIP] [--kisayol-yok] [--dil en]` | Sabitlenen sürümü indirir (ya da `--paket` ile vereni okur), dosyada yazılı SHA-256 ile doğrular, Beyin'in durum klasöründe `web/<sürüm>/` altına açar, kısayol bırakır. Özet tutmazsa hiçbir şey yazılmaz. |
+| `ac` | Kurulu sürümü bu vault ile açar. |
+| `durum` | Kurulu mu, hangi sürüm, güncel mi, çalışıyor mu. |
+| `kaldir` | Kısayolu ve kurulu kopyayı siler; vault'a ve ayarlara dokunmaz. |
+
+`scripts/build_release.py` her makinede aynı baytları veren ZIP'i ve yanındaki `.sha256` dosyasını `dist/` altına yazar, sürümü ve özeti başlatıcıya işler. Sürüm henüz GitHub'da yayınlanmadığı için indirme yolu bugün çalışmaz; `--paket` ile kurun.
 
 ## Kurmadan çalıştırma
 

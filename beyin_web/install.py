@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -19,11 +20,16 @@ from beyin_web.config import read_config
 SHORTCUT_NAME = "Beyin Web"
 # A click opens the page; a second click finds the running server; an unused server stops by itself.
 LAUNCH_ARGUMENTS: tuple[str, ...] = ("-m", "beyin_web", "--open", "--reuse", "--idle-exit", "30")
+ICON_NAME = "app-icon"
+# An argument made only of these needs no quotes in a Desktop Entry or a shell line.
+_PLAIN = re.compile(r"[A-Za-z0-9_./:=@+-]+")
 
 # Asks Windows where the Start menu and the desktop are (the desktop may live in a synced folder), then
 # writes or removes one shortcut in each. Values arrive in the environment, so no path is ever parsed as code.
 # The shortcut is written through IShellLinkW: the scripting shortcut object keeps paths in the system's
 # legacy code page and cannot save into "Masaüstü" or point into a profile named "Ayşe" on every machine.
+# An icon inside WSL is copied to the Windows side first: a shortcut whose icon lives on \\wsl.localhost would
+# make Explorer reach into the distribution, and start it, whenever it draws the desktop.
 _SHORTCUT_SCRIPT = r"""
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -55,13 +61,15 @@ public static class BeyinWebShortcut {
     void Resolve(IntPtr window, int flags);
     void SetPath([MarshalAs(UnmanagedType.LPWStr)] string file);
   }
-  public static void Write(string path, string target, string arguments, string directory, int show, string description) {
+  public static void Write(string path, string target, string arguments, string directory, int show, string description,
+                           string icon) {
     IShellLinkW link = (IShellLinkW)new ShellLink();
     link.SetPath(target);
     link.SetArguments(arguments);
     if (directory.Length > 0) link.SetWorkingDirectory(directory);
     link.SetShowCmd(show);
     link.SetDescription(description);
+    if (icon.Length > 0) link.SetIconLocation(icon, 0);
     ((IPersistFile)link).Save(path, true);
   }
 }
@@ -74,6 +82,20 @@ if ($target -and -not (Split-Path -Parent $target)) {
   $system = Join-Path $env:SystemRoot (Join-Path 'System32' $target)
   if (Test-Path -LiteralPath $system) { $target = $system } else { $target = (Get-Command $target -CommandType Application)[0].Source }
 }
+$iconDir = $env:BW_ICON_DIR
+if (-not $iconDir) { $iconDir = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'beyin-web' }
+$icon = ''
+if ($env:BW_REMOVE -eq '1') {
+  $copy = Join-Path $iconDir 'app-icon.ico'
+  if (Test-Path -LiteralPath $copy) { Remove-Item -LiteralPath $copy }
+} elseif ($env:BW_ICON -and (Test-Path -LiteralPath $env:BW_ICON)) {
+  $icon = $env:BW_ICON
+  if ($env:BW_ICON_COPY -eq '1') {
+    New-Item -ItemType Directory -Force -Path $iconDir | Out-Null
+    $icon = Join-Path $iconDir 'app-icon.ico'
+    Copy-Item -LiteralPath $env:BW_ICON -Destination $icon -Force
+  }
+}
 foreach ($folder in $folders) {
   if (-not $folder -or -not (Test-Path -LiteralPath $folder)) { continue }
   $path = Join-Path $folder ($env:BW_NAME + '.lnk')
@@ -81,12 +103,13 @@ foreach ($folder in $folders) {
     if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path; $path }
     continue
   }
-  [BeyinWebShortcut]::Write($path, $target, $env:BW_ARGUMENTS, $env:BW_WORKDIR, [int]$env:BW_WINDOW, $env:BW_DESCRIPTION)
+  [BeyinWebShortcut]::Write($path, $target, $env:BW_ARGUMENTS, $env:BW_WORKDIR, [int]$env:BW_WINDOW, $env:BW_DESCRIPTION, $icon)
   $path
 }
 """
+# The /p one is a path inside WSL; WSL turns it into a Windows path on the way.
 _SHORTCUT_VARIABLES = ("BW_FOLDERS", "BW_NAME", "BW_REMOVE", "BW_TARGET", "BW_ARGUMENTS", "BW_WORKDIR",
-                       "BW_WINDOW", "BW_DESCRIPTION")
+                       "BW_WINDOW", "BW_DESCRIPTION", "BW_ICON/p", "BW_ICON_COPY", "BW_ICON_DIR")
 
 
 def data_directory(env: Mapping[str, str] | None = None, platform: str | None = None) -> Path:
@@ -143,38 +166,53 @@ def _desktop_quote(value: str) -> str:
     return '"' + escaped.replace("%", "%%") + '"'
 
 
-def desktop_entry(python: str, app: PurePath, description: str) -> str:
-    command = " ".join([_desktop_quote(python), *LAUNCH_ARGUMENTS])
+def icon_path(app: PurePath, suffix: str) -> PurePath:
+    """The shortcut icon inside an installed copy: ``.ico`` for Windows, ``.png`` for a Linux menu."""
+    return app / "beyin_web" / "assets" / f"{ICON_NAME}{suffix}"
+
+
+def desktop_entry(python: str, app: PurePath, description: str, arguments: Sequence[str] = LAUNCH_ARGUMENTS) -> str:
+    words = [value if _PLAIN.fullmatch(value) else _desktop_quote(value) for value in arguments]
+    command = " ".join([_desktop_quote(python), *words])
     return (f"[Desktop Entry]\nType=Application\nName={SHORTCUT_NAME}\nComment={_checked(description)}\n"
-            f"Exec={command}\nPath={_checked(str(app))}\nTerminal=false\nCategories=Office;\n")
+            f"Exec={command}\nPath={_checked(str(app))}\nIcon={_checked(str(icon_path(app, '.png')))}\n"
+            "Terminal=false\nCategories=Office;\n")
 
 
-def command_file(python: str, app: PurePath) -> str:
-    return f"#!/bin/sh\ncd {_shell_quote(str(app))} && exec {_shell_quote(python)} {' '.join(LAUNCH_ARGUMENTS)}\n"
+def command_file(python: str, app: PurePath, arguments: Sequence[str] = LAUNCH_ARGUMENTS) -> str:
+    words = " ".join(value if _PLAIN.fullmatch(value) else _shell_quote(value) for value in arguments)
+    return f"#!/bin/sh\ncd {_shell_quote(str(app))} && exec {_shell_quote(python)} {words}\n"
 
 
-def windows_shortcut(python: str, app: Path, description: str) -> dict[str, str]:
+def windows_shortcut(python: str, app: Path, description: str,
+                     arguments: Sequence[str] = LAUNCH_ARGUMENTS) -> dict[str, str]:
     """The shortcut of a Windows installation: no console window, so pythonw when it is there."""
     windowless = Path(python).with_name("pythonw.exe")
     return {"BW_NAME": SHORTCUT_NAME, "BW_TARGET": str(windowless if windowless.is_file() else python),
-            "BW_ARGUMENTS": subprocess.list2cmdline(LAUNCH_ARGUMENTS), "BW_WORKDIR": str(app),
-            "BW_WINDOW": "1", "BW_DESCRIPTION": description}
+            "BW_ARGUMENTS": subprocess.list2cmdline(arguments), "BW_WORKDIR": str(app),
+            "BW_WINDOW": "1", "BW_DESCRIPTION": description, "BW_ICON": str(icon_path(app, ".ico")), "BW_ICON_COPY": "0"}
 
 
-def wsl_shortcut(distribution: str, python: str, app: PurePath, description: str) -> dict[str, str]:
+def wsl_shortcut(distribution: str, python: str, app: PurePath, description: str,
+                 arguments: Sequence[str] = LAUNCH_ARGUMENTS) -> dict[str, str]:
     """A Windows shortcut for an installation inside WSL: Windows starts the distribution when it is clicked."""
-    arguments = ["-d", distribution, "--cd", str(app), "--exec", python, *LAUNCH_ARGUMENTS]
-    return {"BW_NAME": SHORTCUT_NAME, "BW_TARGET": "wsl.exe", "BW_ARGUMENTS": subprocess.list2cmdline(arguments),
-            "BW_WORKDIR": "", "BW_WINDOW": "7", "BW_DESCRIPTION": description}
+    line = ["-d", distribution, "--cd", str(app), "--exec", python, *arguments]
+    return {"BW_NAME": SHORTCUT_NAME, "BW_TARGET": "wsl.exe", "BW_ARGUMENTS": subprocess.list2cmdline(line),
+            "BW_WORKDIR": "", "BW_WINDOW": "7", "BW_DESCRIPTION": description,
+            "BW_ICON": str(icon_path(app, ".ico")), "BW_ICON_COPY": "1"}
 
 
 def run_shortcut_script(values: Mapping[str, str], *, folders: Sequence[Path] | None = None,
-                        remove: bool = False) -> list[str]:
-    """Run the shortcut script in Windows PowerShell (from Windows or from WSL) and return the paths it touched."""
+                        remove: bool = False, icon_dir: str | None = None) -> list[str]:
+    """Run the shortcut script in Windows PowerShell (from Windows or from WSL) and return the paths it touched.
+
+    ``icon_dir`` is the Windows folder that keeps the copied icon of a WSL installation; tests point it away
+    from the user's own application data."""
     environment = os.environ.copy()
     environment.update(values)
     environment["BW_REMOVE"] = "1" if remove else "0"
     environment["BW_FOLDERS"] = "|".join(str(folder) for folder in folders) if folders is not None else ""
+    environment["BW_ICON_DIR"] = icon_dir or ""
     # WSL hands a variable to a Windows program only when WSLENV names it.
     environment["WSLENV"] = ":".join(filter(None, [environment.get("WSLENV", ""), *_SHORTCUT_VARIABLES]))
     encoded = base64.b64encode(_SHORTCUT_SCRIPT.encode("utf-16le")).decode("ascii")
@@ -194,45 +232,66 @@ def _posix_targets(platform: str, env: Mapping[str, str]) -> Path:
     return root / "applications" / "beyin-web.desktop"
 
 
-def install(vault: Path, config_dir: Path, *, language: str | None = None, description: str = SHORTCUT_NAME,
-            data_dir: Path | None = None, python: str | None = None, platform: str | None = None,
-            env: Mapping[str, str] | None = None, shortcut_folders: Sequence[Path] | None = None) -> list[str]:
-    """Install for the current user and return the shortcuts written."""
+def write_shortcuts(app: Path, *, arguments: Sequence[str] = LAUNCH_ARGUMENTS, description: str = SHORTCUT_NAME,
+                    python: str | None = None, platform: str | None = None, env: Mapping[str, str] | None = None,
+                    shortcut_folders: Sequence[Path] | None = None, icon_dir: str | None = None) -> list[str]:
+    """Write the shortcuts that start ``python arguments`` in ``app`` and return their paths.
+
+    Shared by ``--install`` and by Beyin's ``web kur`` launcher, which passes the vault in ``arguments``."""
     environment = os.environ if env is None else env
     platform = sys.platform if platform is None else platform
     python = sys.executable if python is None else python
-    data_dir = data_directory(environment, platform) if data_dir is None else data_dir
-    data_dir.mkdir(parents=True, exist_ok=True)
-    app = copy_package(data_dir)
-    remember_vault(config_dir, vault, language)
     distribution = environment.get("WSL_DISTRO_NAME")
     if platform == "win32":
-        return run_shortcut_script(windows_shortcut(python, app, description), folders=shortcut_folders)
+        return run_shortcut_script(windows_shortcut(python, app, description, arguments), folders=shortcut_folders,
+                                   icon_dir=icon_dir)
     if distribution:
-        return run_shortcut_script(wsl_shortcut(distribution, python, app, description), folders=shortcut_folders)
+        return run_shortcut_script(wsl_shortcut(distribution, python, app, description, arguments),
+                                   folders=shortcut_folders, icon_dir=icon_dir)
     target = _posix_targets(platform, environment)
     target.parent.mkdir(parents=True, exist_ok=True)
-    text = command_file(python, app) if platform == "darwin" else desktop_entry(python, app, description)
+    text = command_file(python, app, arguments) if platform == "darwin" else desktop_entry(python, app, description, arguments)
     target.write_text(text, encoding="utf-8", newline="\n")
     if platform == "darwin":
         target.chmod(0o755)
     return [str(target)]
 
 
+def remove_shortcuts(*, platform: str | None = None, env: Mapping[str, str] | None = None,
+                     shortcut_folders: Sequence[Path] | None = None, icon_dir: str | None = None) -> list[str]:
+    environment = os.environ if env is None else env
+    platform = sys.platform if platform is None else platform
+    if platform == "win32" or environment.get("WSL_DISTRO_NAME"):
+        return run_shortcut_script({"BW_NAME": SHORTCUT_NAME}, folders=shortcut_folders, remove=True, icon_dir=icon_dir)
+    target = _posix_targets(platform, environment)
+    if target.is_file():
+        target.unlink()
+        return [str(target)]
+    return []
+
+
+def install(vault: Path, config_dir: Path, *, language: str | None = None, description: str = SHORTCUT_NAME,
+            data_dir: Path | None = None, python: str | None = None, platform: str | None = None,
+            env: Mapping[str, str] | None = None, shortcut_folders: Sequence[Path] | None = None,
+            icon_dir: str | None = None) -> list[str]:
+    """Install for the current user and return the shortcuts written."""
+    environment = os.environ if env is None else env
+    platform = sys.platform if platform is None else platform
+    data_dir = data_directory(environment, platform) if data_dir is None else data_dir
+    data_dir.mkdir(parents=True, exist_ok=True)
+    app = copy_package(data_dir)
+    remember_vault(config_dir, vault, language)
+    return write_shortcuts(app, description=description, python=python, platform=platform, env=environment,
+                           shortcut_folders=shortcut_folders, icon_dir=icon_dir)
+
+
 def uninstall(*, data_dir: Path | None = None, platform: str | None = None, env: Mapping[str, str] | None = None,
-              shortcut_folders: Sequence[Path] | None = None) -> list[str]:
+              shortcut_folders: Sequence[Path] | None = None, icon_dir: str | None = None) -> list[str]:
     """Remove the shortcuts and the installed copy; the settings and the vault are left alone."""
     environment = os.environ if env is None else env
     platform = sys.platform if platform is None else platform
     data_dir = data_directory(environment, platform) if data_dir is None else data_dir
-    removed: list[str] = []
-    if platform == "win32" or environment.get("WSL_DISTRO_NAME"):
-        removed += run_shortcut_script({"BW_NAME": SHORTCUT_NAME}, folders=shortcut_folders, remove=True)
-    else:
-        target = _posix_targets(platform, environment)
-        if target.is_file():
-            target.unlink()
-            removed.append(str(target))
+    removed = remove_shortcuts(platform=platform, env=environment, shortcut_folders=shortcut_folders, icon_dir=icon_dir)
     app = data_dir / "app"
     if app.is_dir():
         shutil.rmtree(app)

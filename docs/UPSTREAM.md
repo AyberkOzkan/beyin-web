@@ -67,9 +67,10 @@ Bu depodaki bir betik, Python paketini ve bütün ön uç dosyalarını gömerek
 
 İnce başlatıcı için bu depoda yapılacaklar (bakımcı olumlu bakarsa):
 
-1. Depoyu herkese açık yayınlamak ve sürüm etiketi atmak (`v0.2.0`). Kurulumun kendisi hazır: `beyin.py web kur`, bugünkü `--install` ile aynı işi yapar (kopya, kısayol); fark, paketi kendisinin indirip doğrulaması ve vault'u sormamasıdır.
-2. Sürüm ZIP'ini ve yanında `.sha256` dosyasını üreten bir betik (`scripts/build_release.py`); ZIP yalnızca `beyin_web/` ve lisansları içerir.
-3. `beyin.py`'nin verdiği vault ve durum klasörüyle başlatmayı sınayan bir test.
+1. Depoyu herkese açık yayınlamak ve sürüm etiketi atmak (`v0.2.0`), ZIP'i sürüm sayfasına koymak.
+2. Yapıldı (2026-10-14): başlatıcının taslağı `upstream/beyin_v3_web.py` (yaklaşık 300 satır, yalnızca standart kütüphane). Durum klasörünü `yakala` ile aynı yoldan bulur (`.beyin-runtime.json`'daki sabit yol, yoksa vault yolunun özeti); kısayolu kurulan kopyanın kendi kodu yazar, bu yüzden Windows, WSL, Linux ve macOS ayrıntısı Beyin'e girmez. Bugün `--vault` ile tek başına çalışır; Beyin'e alınırsa `beyin_entry.py`'de `yakala`'daki gibi bir yönlendirme yeter.
+3. Yapıldı (2026-10-14): `scripts/build_release.py` ZIP'i ve `.sha256` dosyasını üretir, sürümü ve özeti başlatıcıya işler. ZIP yalnızca `beyin_web/`, `LICENSE`, `README.md` ve `CHANGELOG.md` içerir; sıkıştırmasız, sabit tarih ve izinlerle yazıldığı için Windows'ta ve Linux'ta aynı özeti verir (ölçüm). `kur`, paketteki her yolu denetler: `beyin_web/` dışına, üst klasöre ya da mutlak yola yazan ve bağlantı (symlink) taşıyan paket reddedilir.
+4. `beyin.py`'nin verdiği vault ve durum klasörüyle başlatmayı Beyin'in test düzeninde (`tests/v3_*_test.py`) sınayan bir test; bu depodaki karşılığı `tests/test_release.py`.
 
 ## Bakımcıya açılacak konunun taslağı
 

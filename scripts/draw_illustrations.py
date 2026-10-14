@@ -20,7 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 GRAPHITE = "#333331"
 GLOW = "#EFE6D0"
 SIZES = {"hero-palace": (520, 170), "sidebar-tree": (216, 180), "heading-mountains": (720, 96), "card-window": (200, 140),
-         "margin-doodle": (120, 120)}
+         "margin-doodle": (120, 120), "app-icon": (256, 256)}
+PAPER = "#F4EEE2"
 Point = tuple[float, float]
 
 
@@ -1180,6 +1181,57 @@ DRAWINGS: dict[str, list[Callable[[Sketch], None]]] = {
                       doodle_paper_plane, doodle_lightbulb, doodle_scribble, doodle_cup, doodle_marks, doodle_eye, doodle_house,
                       doodle_loops, doodle_squares],
 }
+
+
+# --- app-icon: the shortcut on the desktop and in the application menu (256 x 256) ----------------------------
+
+def app_icon(size: int) -> str:
+    """A pencil brain on a paper tile. A desktop may be dark, so the drawing brings its own sheet of paper.
+
+    Each pixel size gets its own drawing: below 48 px the fine folds and the shading would turn to grey mud,
+    so a small icon keeps the outline and the two great furrows, drawn with a heavier hand."""
+    s = Sketch("app-icon", seed=size * 7 + 3)
+    hand = {16: 3.6, 24: 2.8, 32: 2.3, 48: 1.75, 64: 1.5, 128: 1.15}.get(size, 1.0)
+    fine = size >= 48
+    s.fills.append(f'<rect x="10" y="10" width="236" height="236" rx="46" fill="{PAPER}"/>')
+    # The outline of the tile is a pencil line too, so the paper does not look cut by a machine.
+    corner = [(10 + 46 - math.cos(step / 6 * math.pi / 2) * 46, 10 + 46 - math.sin(step / 6 * math.pi / 2) * 46) for step in range(7)]
+    tile = [*corner, *[(246 - (x - 10), y) for x, y in reversed(corner)], *[(246 - (x - 10), 246 - (y - 10)) for x, y in corner],
+            *[(x, 246 - (y - 10)) for x, y in reversed(corner)], corner[0]]
+    s.line(tile, weight=1.6 * hand, opacity=0.5, shake=0.6, passes=1)
+
+    # The cerebrum, facing left: a smooth contour pushed in and out along its length, which reads as gyri.
+    outline = s.sample([(74, 162), (52, 144), (40, 114), (48, 84), (72, 60), (106, 46), (144, 44), (180, 52), (206, 72),
+                        (218, 102), (212, 130), (192, 146), (168, 152), (146, 160), (116, 166), (90, 166), (74, 162)], steps=8)
+    bumps = 13 if fine else 9
+    shaped = []
+    for index, (x, y) in enumerate(outline):
+        angle = math.atan2(y - 108, x - 130)
+        push = (3.6 if fine else 2.2) * math.sin(index / (len(outline) - 1) * math.tau * bumps)
+        shaped.append((x + math.cos(angle) * push, y + math.sin(angle) * push))
+    s.line(shaped, weight=3.0 * hand, opacity=0.9, shake=0.8)
+    # The cerebellum tucked under the back, and the stem below it.
+    s.flow([(170, 151), (176, 166), (192, 172), (206, 162), (210, 144), (204, 136)], weight=2.6 * hand, opacity=0.85, shake=0.6)
+    s.flow([(146, 162), (148, 182), (151, 198)], weight=2.6 * hand, opacity=0.85, shake=0.5)
+    s.flow([(166, 160), (167, 178), (170, 196)], weight=2.6 * hand, opacity=0.85, shake=0.5)
+    # The two great furrows: the lateral one splits off the temporal lobe, the central one the frontal.
+    s.flow([(84, 142), (110, 132), (138, 122), (160, 120), (180, 128)], weight=2.6 * hand, opacity=0.85, shake=0.6)
+    s.flow([(138, 48), (132, 70), (140, 88), (132, 106), (136, 120)], weight=2.4 * hand, opacity=0.85, shake=0.6)
+    if not fine:
+        s.flow([(70, 104), (86, 96), (96, 108), (112, 98)], weight=2.0 * hand, opacity=0.75, shake=0.5)
+        s.flow([(166, 70), (156, 88), (172, 98), (164, 112)], weight=2.0 * hand, opacity=0.75, shake=0.5)
+    else:
+        for fold in ([(60, 98), (74, 90), (84, 102), (100, 92), (108, 100)], [(68, 124), (82, 114), (96, 124), (112, 110)],
+                     [(92, 68), (108, 78), (102, 92), (118, 100)], [(112, 60), (120, 66)], [(160, 64), (152, 82), (166, 92), (158, 108)],
+                     [(184, 76), (196, 92), (184, 106), (200, 116)], [(148, 100), (166, 106), (178, 100)],
+                     [(100, 152), (118, 144), (136, 150), (156, 140)], [(88, 156), (96, 150)]):
+            s.flow(fold, weight=1.7 * hand, opacity=0.7, shake=0.6)
+        for left, right, y in ((178, 204, 152), (180, 204, 160)):
+            s.curve((left, y), (right, y - 4), -3, weight=1.2 * hand, opacity=0.6, shake=0.4, passes=1)
+        # The shaded underside: hatching under the temporal lobe and the cerebellum.
+        s.hatch(94, 152, 64, 12, count=12, lean=0.35, opacity=0.4)
+        s.hatch(184, 158, 20, 12, count=5, lean=0.3, opacity=0.4)
+    return s.svg().replace(f'width="256" height="256"', f'width="{size}" height="{size}"', 1)
 
 
 def render() -> dict[str, str]:

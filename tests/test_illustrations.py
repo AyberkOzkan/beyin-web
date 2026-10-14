@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+import struct
 import unittest
 from pathlib import Path
 
 from beyin_web.http.server import DRAWING
-from scripts.draw_illustrations import DRAWINGS, SIZES, render
+from scripts.build_icon import ICO_SIZES
+from scripts.draw_illustrations import DRAWINGS, SIZES, app_icon, render
 
 IMAGES = Path(__file__).resolve().parents[1] / "beyin_web" / "static" / "img"
 
@@ -55,6 +57,24 @@ class IllustrationTests(unittest.TestCase):
                 self.assertEqual(text.count('<filter id="pencil"'), 1)
                 for forbidden in ("<script", "href", "style=", "<image", "<foreignObject", "onload", "feImage"):
                     self.assertNotIn(forbidden, text)
+
+    def test_shortcut_icon_is_the_drawing_and_carries_every_size(self) -> None:
+        assets = IMAGES.parent.parent / "assets"
+        self.assertEqual((assets / "app-icon.svg").read_text(encoding="utf-8"), app_icon(256))
+        # Below 48 px a different, bolder drawing is used, not a shrunk copy of the large one.
+        self.assertNotEqual(re.sub(r'width="\d+" height="\d+"', "", app_icon(16)), re.sub(r'width="\d+" height="\d+"', "", app_icon(256)))
+        data = (assets / "app-icon.ico").read_bytes()
+        reserved, kind, count = struct.unpack("<HHH", data[:6])
+        self.assertEqual((reserved, kind), (0, 1))
+        sizes = []
+        for index in range(count):
+            width, height, _, _, _, _, length, offset = struct.unpack("<BBBBHHII", data[6 + 16 * index:22 + 16 * index])
+            png = data[offset:offset + length]
+            self.assertEqual(png[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(struct.unpack(">II", png[16:24]), (width or 256, height or 256))
+            sizes.append(width or 256)
+        self.assertEqual(sizes, list(ICO_SIZES))
+        self.assertEqual(struct.unpack(">II", (assets / "app-icon.png").read_bytes()[16:24]), (256, 256))
 
 
 if __name__ == "__main__":
