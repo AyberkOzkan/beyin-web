@@ -32,7 +32,7 @@ Beyin her şeyi Markdown dosyalarında tutar; bu doğru bir tercih, ama dosya li
 - **Beyin'den yalnızca iki komut çağırır:** `doctor` (sürüm ve sağlık) ve `context --no-sync` (bağlam araması). İkisi de salt okunurdur. `sync`, `receipt`, `task-update` gibi yazan komutlar çağrılmaz.
 - **Yalnızca Hedefler sayfası vault'a yazar:** hedef ve alışkanlık notları, sıradan Markdown olarak `goals/` klasörüne. Beyin bu notları sonraki eşitlemede kendisi indeksler; asistan da görür. `--read-only` bunu da kapatır.
 - **Gizlilik Beyin'deki gibidir:** `visibility: private` notlar hiçbir sayfada, aramada ya da grafikte görünmez.
-- **Bağımsız bir projedir.** avenoxbeyin'in parçası değildir ve onun güncellemesiyle gelmez; aynı lisansla (MIT) ayrı bir depoda geliştirilir. Beyin'e nasıl eklenebileceği [docs/UPSTREAM.md](docs/UPSTREAM.md) dosyasındadır.
+- **Bağımsız bir projedir.** avenoxbeyin'in parçası değildir ve onun güncellemesiyle gelmez; aynı lisansla (MIT) ayrı bir depoda geliştirilir.
 
 ## Gereksinimler
 
@@ -80,7 +80,7 @@ Kurulum Windows 11'de ve WSL'de (Ubuntu) denendi. Linux masaüstü ve macOS kıs
 
 ### Beyin'in komutuyla kurulum (önizleme)
 
-`upstream/beyin_v3_web.py`, Beyin'in `yakala` aracıyla aynı düzende küçük bir başlatıcıdır. Beyin'e alınırsa kurulum `beyin.py web kur` olur ve vault yolu sorulmaz ([docs/UPSTREAM.md](docs/UPSTREAM.md)). Beyin onu tanıyana kadar dosya tek başına çalışır:
+`upstream/beyin_v3_web.py`, Beyin'in `yakala` aracıyla aynı düzende küçük bir başlatıcıdır. Beyin'e alınırsa kurulum `beyin.py web kur` olur ve vault yolu sorulmaz. Beyin onu tanıyana kadar dosya tek başına çalışır:
 
 ```sh
 python3 scripts/build_release.py

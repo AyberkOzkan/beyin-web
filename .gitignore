@@ -24,6 +24,7 @@ htmlcov/
 /AGENTS.md
 /docs/PLAN.md
 /docs/specs/
+/docs/UPSTREAM.md
 /scripts/take-package.ps1
 /scripts/finish-package.ps1
 
