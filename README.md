@@ -42,7 +42,7 @@ Beyin her şeyi Markdown dosyalarında tutar; bu doğru bir tercih, ama dosya li
 
 ## Kurulum
 
-**Asistana kurdurmak:** Beyin'i kurduğunuz asistana (Claude Code, Codex) [beyin-web.md](beyin-web.md) dosyasını verip "beyin-web'i kur" deyin. Python'u bulmak, depoyu indirmek, kurmak ve kurulumu denetlemek dahil adımları o yapar; Beyin'in kendi `beyin.md` rehberiyle aynı yol.
+**Asistana kurdurmak:** Beyin'i kurduğunuz asistana (Claude Code, Codex) [beyin-web.md](beyin-web.md) dosyasını verip "beyin-web'i kur" deyin. Python'u bulmak, son sürüm paketini indirip SHA-256 ile doğrulamak, kurmak ve kurulumu denetlemek dahil adımları o yapar; Beyin'in kendi `beyin.md` rehberiyle aynı yol.
 
 Elle kurmak için:
 
@@ -95,7 +95,7 @@ python3 upstream/beyin_v3_web.py --vault "$HOME/Beyin" durum
 | `durum` | Kurulu mu, hangi sürüm, güncel mi, çalışıyor mu. |
 | `kaldir` | Kısayolu ve kurulu kopyayı siler; vault'a ve ayarlara dokunmaz. |
 
-`scripts/build_release.py` her makinede aynı baytları veren ZIP'i ve yanındaki `.sha256` dosyasını `dist/` altına yazar, sürümü ve özeti başlatıcıya işler. Sürüm henüz GitHub'da yayınlanmadığı için indirme yolu bugün çalışmaz; `--paket` ile kurun.
+`scripts/build_release.py` her makinede aynı baytları veren ZIP'i ve yanındaki `.sha256` dosyasını `dist/` altına yazar, sürümü ve özeti başlatıcıya işler. Aynı iki dosya GitHub'daki sürüm sayfasına konur; `kur`, `--paket` verilmezse ZIP'i oradan indirir.
 
 ## Kurmadan çalıştırma
 

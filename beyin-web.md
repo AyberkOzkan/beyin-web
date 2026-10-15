@@ -5,14 +5,14 @@ Bu dosya, kullanıcının şu isteğini yerine getirmek için kurulum tarifidir:
 > Beyin vault'uma beyin-web arayüzünü kur. Kuruluysa güncelle. Gerekli indirme ve
 > kurulum adımlarını sen yap; sonunda kısayoldan açılıp açılmadığına birlikte bakalım.
 
-Kullanıcı depo indirmek, Python sürümü aramak ya da komut yazmak zorunda değildir; bunları
+Kullanıcı paket indirmek, Python sürümü aramak ya da komut yazmak zorunda değildir; bunları
 ajan yapar. Kullanıcıya kalanlar yalnızca şunlardır: yönetici parolası (Python kurmak
-gerekirse), GitHub girişi (depo özelken) ve ilk açılışta kısayola tıklamak.
+gerekirse) ve ilk açılışta kısayola tıklamak. GitHub hesabı gerekmez.
 
 ## Değişmez kurallar
 
 1. **Vault'a dokunma.** Kurulum vault'a hiçbir dosya yazmaz, taşımaz, silmez. Arayüzün
-   kopyası, ayar dosyası ve kısayol vault'un dışına gider. Depoyu da vault'un içine indirme.
+   kopyası, ayar dosyası ve kısayol vault'un dışına gider. Paketi de vault'un içine indirme.
 2. **Beyin'in durumuna dokunma.** Kurulum için `beyin.py sync`, `receipt`, `note-create`
    gibi yazan komutları çalıştırma. Beyin'in durum klasörüne (indeks, yedekler) yazma.
 3. **Sistemin `python3`'ünü değiştirme.** `update-alternatives`, `/usr/bin/python3`'ün
@@ -23,8 +23,9 @@ gerekirse), GitHub girişi (depo özelken) ve ilk açılışta kısayola tıklam
    alır. Bu değeri, belirteçli adresi ya da ayar klasöründeki `token` dosyasının
    içeriğini terminal çıktısına, sohbete veya dış bir servise yazma. Doğrulamak için
    sunucuyu elle başlatma; 5. adımdaki denetimler yeterlidir.
-5. **Yalnızca bu depo.** Kod `AyberkOzkan/beyin-web` deposundan alınır. Başka bir kopya,
-   çatal ya da üçüncü taraf paket kullanma. pip, npm ya da başka bir bağımlılık gerekmez.
+5. **Yalnızca resmî sürüm paketi.** Kod `AyberkOzkan/beyin-web` deposunun en son kararlı
+   GitHub sürümünden alınır. Kaynak arşivi (`Source code`), başka bir kopya, çatal ya da
+   üçüncü taraf paket kullanma. pip, npm ya da başka bir bağımlılık gerekmez.
 6. **Bitmeden "kuruldu" deme.** Kurulum komutunun çıkış kodunu, kurulan kopyanın sürümünü,
    ayar dosyasını ve kısayolu 5. adımdaki gibi denetle.
 
@@ -61,42 +62,48 @@ yalnızca o noktada kısa ve açık biçimde kullanıcıdan iste:
 
 Kurduktan sonra 3. kuralı hatırla: yeni Python `python3`'ün yerine geçirilmez.
 
-## 3. Kodu al
+## 3. Sürüm paketini indir ve doğrula
 
-Depoyu vault'un dışında geçici bir klasöre indir:
+En son kararlı sürümü GitHub'a sor:
 
 ```text
-git clone --depth 1 https://github.com/AyberkOzkan/beyin-web.git <geçici-klasör>/beyin-web
+https://api.github.com/repos/AyberkOzkan/beyin-web/releases/latest
 ```
 
-- Depo özelse `git clone` GitHub girişi ister. Kullanıcıdan `gh auth login` ile ya da kendi
-  SSH anahtarıyla giriş yapmasını iste; parolayı ya da anahtarı sohbete yazdırma.
-- `git` yoksa GitHub'ın depo sayfasındaki ZIP'i indirip aç; ZIP'i açarken mutlak yol,
-  `..` ile kaçış ya da sembolik bağ içeren üyeyi reddet.
-- Klasörde `beyin_web/__main__.py` ve `scripts/beyin-web` bulunmalıdır.
+- Yanıtta `draft` ve `prerelease` `false`, `tag_name` `vX.Y.Z` biçiminde olmalıdır. Değilse
+  ya da sürüm bulunamazsa dur; depoyu klonlamaya ya da kaynak arşivine geçme.
+- Sürümün iki dosyasını HTTPS ile vault'un dışında geçici bir klasöre indir:
+  `beyin-web-X.Y.Z.zip` ve `beyin-web-X.Y.Z.zip.sha256`. Adres kalıbı:
+
+  ```text
+  https://github.com/AyberkOzkan/beyin-web/releases/download/vX.Y.Z/beyin-web-X.Y.Z.zip
+  ```
+
+- ZIP'in SHA-256 özetini kendin hesapla (`sha256sum`, macOS'ta `shasum -a 256`, Windows'ta
+  `Get-FileHash`) ve `.sha256` dosyasındaki değerle karşılaştır. Tutmazsa ZIP'i açmadan dur
+  ve kullanıcıya söyle.
+- ZIP'i geçici bir klasöre aç. Mutlak yol, `..` ile kaçış ya da sembolik bağ içeren üye
+  varsa paketi reddet. Paket yalnızca `beyin_web/`, `LICENSE`, `README.md` ve `CHANGELOG.md`
+  içerir; açılan klasörde `beyin_web/__main__.py` bulunmalıdır.
 
 ## 4. Kur
 
-Komutu depo klasöründe çalıştır. Kurulu bir sürüm varsa aynı komut onu günceller; ayarlar
-korunur.
+Kurulu bir sürüm varsa aynı komut onu günceller; ayarlar korunur. `<paket>` 3. adımda
+açtığın klasör, `<python>` 2. adımda bulduğun Python'dur.
 
 Linux, macOS ve WSL:
 
 ```text
-scripts/beyin-web --install --vault "<mutlak-vault-yolu>"
+PYTHONPATH="<paket>" <python> -P -m beyin_web --install --vault "<mutlak-vault-yolu>"
 ```
 
 Windows (PowerShell):
 
 ```text
-& .\scripts\beyin-web.cmd --install --vault "<mutlak-vault-yolu>"
+$env:PYTHONPATH = "<paket>"; <python> -P -m beyin_web --install --vault "<mutlak-vault-yolu>"
 ```
 
-- Başlatıcı 2. adımdaki sırayla 3.11 ya da üstü bir Python arar. Uygun olanı bulamazsa
-  "Python 3.11 ya da üstü bulunamadı" der ve 127 ile çıkar; 2. adıma dön.
-- Python'u kendin seçmek istersen başlatıcının yaptığını elle yap:
-  `PYTHONPATH="<depo-klasörü>" <python> -P -m beyin_web --install --vault "<vault>"`.
-  `-P`, çalışma klasöründeki başka bir `beyin_web`'in araya girmesini önler.
+- `-P`, çalışma klasöründeki başka bir `beyin_web`'in araya girmesini önler.
 - Kullanıcı İngilizce arayüz isterse sona `--lang en` ekle; seçim ayar dosyasına yazılır.
 - Kurulum, kısayolu onu kuran Python'un tam yoluyla yazar. Bu yüzden kısayol, sistemin
   `python3`'ü eski olsa da doğru Python'la açılır.
@@ -131,7 +138,7 @@ Sunucuyu başlatmadan şunlara bak:
 
 `XDG_DATA_HOME` ya da `XDG_CONFIG_HOME` tanımlıysa Linux'taki yollar onların altındadır.
 
-Sonra geçici depo klasörünü sil; kurulu kopya ondan bağımsızdır.
+Sonra geçici klasörü (ZIP ve açılan paket) sil; kurulu kopya ondan bağımsızdır.
 
 ## 6. Kullanıcıyla ilk açılış
 
@@ -150,9 +157,9 @@ Kullanıcı Ana Sayfa'yı görmeden "kurulum doğrulandı" deme.
 
 - **Güncellemek:** 3. ve 4. adımları yeniden uygula. Arayüz açıksa önce kapatılmasını iste:
   açık sunucu eski kopyadan çalışır ve kısayol onu gösterir.
-- **Kaldırmak:** depo klasöründe `scripts/beyin-web --uninstall` (Windows'ta
-  `scripts\beyin-web.cmd --uninstall`). Kısayolu ve kopyayı siler; ayarlara ve vault'a
-  dokunmaz.
+- **Kaldırmak:** 3. adımdaki gibi indirip açtığın paket klasöründen 4. adımdaki komutu
+  `--install --vault …` yerine `--uninstall` ile çalıştır. Kısayolu ve kopyayı siler;
+  ayarlara ve vault'a dokunmaz.
 
 ## Sorun giderme
 
