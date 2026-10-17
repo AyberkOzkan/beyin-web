@@ -25,6 +25,7 @@ class Settings:
     beyin_enabled: bool = True
     read_only: bool = False
     language: str = LANGUAGES[0]
+    config_dir: Path = field(default_factory=lambda: config_directory())
 
 
 def config_directory(
@@ -54,9 +55,19 @@ def resolve_language(cli_value: str | None, config: Mapping[str, object]) -> str
     return LANGUAGES[0]
 
 
+TOKEN_FILE = "login-token"
+# Up to 0.2.0 the token lived here and was also the cookie value, which the browser sends to every
+# port on 127.0.0.1; it is dropped so that a copy picked up that way stops opening the interface.
+LEGACY_TOKEN_FILE = "token"
+
+
 def load_token(directory: Path) -> str:
     directory.mkdir(parents=True, exist_ok=True)
-    path = directory / "token"
+    try:
+        (directory / LEGACY_TOKEN_FILE).unlink(missing_ok=True)
+    except OSError:
+        pass
+    path = directory / TOKEN_FILE
     try:
         # Exclusive creation keeps concurrent starts from replacing the secret.
         descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -100,6 +111,7 @@ def load_settings(
     display_name = config.get("display_name", "")
     return Settings(
         vault=vault,
+        config_dir=directory,
         port=configured_port if port is None else port,
         token_enabled=token_enabled,
         token=load_token(directory) if token_enabled else "",

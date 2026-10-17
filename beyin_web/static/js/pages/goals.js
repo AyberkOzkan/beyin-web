@@ -143,7 +143,7 @@ function addButton(state, key) {
 function goalRow(state, goal) {
   const meta = goalMeta(goal);
   const steps = goal.steps.map(step => el("li", {}, el("label", { class: "goals-step" },
-    el("input", { type: "checkbox", checked: step.done, disabled: !state.data.writable, onchange: event =>
+    el("input", { type: "checkbox", checked: step.done, disabled: !state.data.writable || !goal.writable, onchange: event =>
       void save(state, `/api/v1/goals/${goal.rid}/steps/${step.index}`, { done: event.target.checked, text: step.text }) }),
     el("span", {}, step.text))));
   const details = el("details", { class: "goals-goal", "data-rid": goal.rid, open: state.open.has(goal.rid) },
@@ -152,9 +152,9 @@ function goalRow(state, goal) {
         el("small", { class: "muted" }, t("goals.noSteps"))),
     goal.summary && el("p", {}, goal.summary),
     steps.length ? el("ul", { class: "goals-steps" }, steps) : null,
-    state.confirm === goal.rid ? confirmDelete(state, "goals", goal) : el("div", { class: "row goals-row-actions" },
+    state.data.writable && goal.writable && state.confirm === goal.rid ? confirmDelete(state, "goals", goal) : el("div", { class: "row goals-row-actions" },
       el("a", { class: "goals-note", href: `#/not/${goal.rid}` }, t("goals.openNote")),
-      state.data.writable && deleteButton(state, goal, t("goals.delete"))));
+      state.data.writable && goal.writable && deleteButton(state, goal, t("goals.delete"))));
   details.addEventListener("toggle", () => {
     if (details.open) state.open.add(goal.rid);
     else state.open.delete(goal.rid);
@@ -194,15 +194,15 @@ function habits(state) {
     const done = new Set(habit.days);
     return el("tr", { "data-rid": habit.rid },
       el("th", { scope: "row" }, el("span", { class: "goals-habit-title" }, habit.title,
-        data.writable && deleteButton(state, habit)),
+        data.writable && habit.writable && deleteButton(state, habit)),
       el("small", {}, t("goals.habits.count", { count: habitCount(habit, month) }))),
       days.map(day => el("td", {}, el("button", { type: "button", class: "goals-day", "data-day": day,
-        "aria-pressed": String(done.has(day)), disabled: day > data.today || !data.writable,
+        "aria-pressed": String(done.has(day)), disabled: day > data.today || !data.writable || !habit.writable,
         "aria-label": t("goals.habits.day", { title: habit.title, date: formatDate(`${day}T12:00:00`) }),
         onclick: () => void save(state, `/api/v1/habits/${habit.rid}/days/${day}`, { done: !done.has(day) }) },
       done.has(day) ? icon("check") : null))));
   });
-  const doomed = data.habits.find(habit => habit.rid === state.confirm);
+  const doomed = data.habits.find(habit => data.writable && habit.writable && habit.rid === state.confirm);
   return [header, state.form === "habits" ? state.formNode : null, doomed ? confirmDelete(state, "habits", doomed) : null,
     el("div", { class: "goals-table-wrap" }, el("table", { class: "goals-table" },
       el("thead", {}, el("tr", {}, el("th", { scope: "col" }, t("goals.habits.name")),

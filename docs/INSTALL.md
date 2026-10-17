@@ -76,7 +76,7 @@ beyin-web adresi: http://127.0.0.1:7373/?t=…
 
 Bu, kendi bilgisayarınızdaki uygulamanın adresidir. `…` burada örnektir; terminaldeki gerçek adresi bütünüyle kullanın. Port değişebilir. `--open` tarayıcıyı açar; açmazsa adresi kopyalayıp tarayıcıya yapıştırın.
 
-`?t=…` kısmı giriş belirtecidir. Sunucu bunu denetleyip tarayıcıya bir oturum çerezi koyar, sonra adres çubuğundan kaldırır. Böylece aynı bilgisayarda belirteci bilmeyen bir kullanıcı veya başka bir web sayfası notlarınıza erişemez. **Belirteçli adresi başkasıyla paylaşmayın.** Belirteç vault dışında, ayar klasöründeki `token` dosyasında tutulur; uygulama bu dosyayı ilk çalıştırmada oluşturur.
+`?t=…` kısmı giriş belirtecidir. Sunucu bunu denetleyip tarayıcıya bir oturum çerezi koyar, sonra adres çubuğundan kaldırır. Böylece aynı bilgisayarda belirteci bilmeyen bir kullanıcı veya başka bir web sayfası notlarınıza erişemez. **Belirteçli adresi başkasıyla paylaşmayın.** Belirteç vault dışında, ayar klasöründeki `login-token` dosyasında tutulur; uygulama bu dosyayı ilk çalıştırmada oluşturur.
 
 ## 4. Kapatın veya boşta kapanmayı seçin
 

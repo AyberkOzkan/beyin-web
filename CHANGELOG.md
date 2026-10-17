@@ -1,5 +1,15 @@
 # Değişiklikler
 
+## Yayımlanmamış
+
+- Giriş çerezi artık geçici bir oturum değeri taşır; yeniden açma çalışan arayüzü kilit dosyasından bulur ve kalıcı belirteci başka portlara göndermez.
+- Giriş belirteci bir kez yenilenir: 0.2.0'ın `token` dosyası ve kalıcı belirteci taşıyan 30 günlük çerezi ilk açılışta silinir, belirteç artık `login-token` dosyasında durur.
+- Hedefler, yalnızca `goals/` altındaki hedef ve alışkanlıkları değiştirebilir; diğer klasörlerdeki notlar görünmeye devam eder.
+- Ajan kurulum rehberinde (`beyin-web.md`) kendiliğinden kapanmanın sekmeler kapandıktan ya da tarayıcı arka plana alındıktan sonra işlediği açıklandı.
+- Beyin başlatıcısı indirmeleri resmî HTTPS adresleri ve üç yönlendirmeyle sınırlar; durum denetimi kurulu kodu çalıştırmaz.
+
+Güvenlik incelemesi ve önerileri için bakımcıya teşekkürler.
+
 ## 0.2.0 (2026-10-13)
 
 Yeni sayfalar ve dil:

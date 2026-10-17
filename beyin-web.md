@@ -20,7 +20,7 @@ gerekirse) ve ilk açılışta kısayola tıklamak. GitHub hesabı gerekmez.
    araçları (`apt`, ağ ve masaüstü betikleri) sistemin `python3`'üne bağlıdır. Daha yeni bir
    Python gerekiyorsa onu yanına kur ve tam adıyla çağır (`python3.11`).
 4. **Giriş belirtecini gösterme.** Arayüz, tarayıcıyı içeri bir giriş belirteciyle (token)
-   alır. Bu değeri, belirteçli adresi ya da ayar klasöründeki `token` dosyasının
+   alır. Bu değeri, belirteçli adresi ya da ayar klasöründeki `login-token` dosyasının
    içeriğini terminal çıktısına, sohbete veya dış bir servise yazma. Doğrulamak için
    sunucuyu elle başlatma; 5. adımdaki denetimler yeterlidir.
 5. **Yalnızca resmî sürüm paketi.** Kod `AyberkOzkan/beyin-web` deposunun en son kararlı
@@ -147,8 +147,8 @@ Kullanıcıya şunları kısaca söyle ve kısayola tıklamasını iste:
 - **Açmak:** uygulama menüsünde (Windows'ta Başlat menüsünde ve masaüstünde) **Beyin Web**.
   Tarayıcı açılır, Ana Sayfa görünür. İkinci tıklama yeni bir sunucu başlatmaz, açık olanı
   gösterir.
-- **Kapatmak:** sağ üstteki dişli → **Arayüzü kapat**. Unutulursa 30 dakika kullanılmayınca
-  kendiliğinden kapanır.
+- **Kapatmak:** sağ üstteki dişli → **Arayüzü kapat**. Sekmeler kapatıldıktan (ya da tarayıcı
+  arka plana alındıktan) 30 dakika sonra kendiliğinden kapanır; açık ve görünür bir sekme onu açık tutar.
 - **Vault'a yazan tek yer Hedefler sayfasıdır** (`goals/` klasörü). Gerisi yalnızca okur.
 
 Kullanıcı Ana Sayfa'yı görmeden "kurulum doğrulandı" deme.

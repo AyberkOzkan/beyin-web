@@ -292,12 +292,18 @@ class API:
             return {"writable": not self.server.settings.read_only,
                     "items": [{key: item[key] for key in ("id", "title", "kind")} for item in self._trash()]}
         if path == "goals":
+            def writable(item: goal_model.Goal | goal_model.Habit) -> dict[str, object]:
+                parts = PurePosixPath(snapshot.records[item.rid].path).parts
+                return {**_fields(item), "writable":
+                        not self.server.settings.read_only and len(parts) >= 2 and parts[0] == self.writer.folder}
+
             goals = goal_model.build_goals(snapshot)
             themes = [goal for goal in goals if goal.horizon == "theme"]
             theme = next((goal for goal in themes if goal.period == str(now.year)), themes[-1] if themes else None)
             return {"today": now.date().isoformat(), "writable": not self.server.settings.read_only,
-                    "goals": [goal for goal in goals if goal.horizon != "theme"], "theme": theme,
-                    "areas": goal_model.areas(goals), "habits": goal_model.build_habits(snapshot)}
+                    "goals": [writable(goal) for goal in goals if goal.horizon != "theme"],
+                    "theme": writable(theme) if theme else None,
+                    "areas": goal_model.areas(goals), "habits": [writable(habit) for habit in goal_model.build_habits(snapshot)]}
         if path == "projects":
             return {"projects": self._projects(snapshot, models, now)}
         if path.startswith("projects/"):
@@ -491,7 +497,8 @@ class API:
 
         def existing(kind: str) -> Record:
             record = snapshot.records.get(match["rid"])
-            if record is None or record.kind != kind:
+            parts = PurePosixPath(record.path).parts if record else ()
+            if record is None or record.kind != kind or len(parts) < 2 or parts[0] != self.writer.folder:
                 raise APIError(404, "not_found")
             return record
 

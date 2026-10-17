@@ -359,6 +359,29 @@ class GoalServerCase(unittest.TestCase):
 
 
 class GoalAPITests(GoalServerCase):
+    def test_notes_outside_goals_are_visible_but_never_written(self) -> None:
+        for relative in ("notes/outside.md", "outside.md", "goals-copy/outside.md"):
+            for kind, text in (("goal", goals.goal_document("Outside", "long", None, None, ["Step"])),
+                               ("habit", goals.habit_document("Outside"))):
+                with self.subTest(relative=relative, kind=kind):
+                    path = self.vault / relative
+                    path.parent.mkdir(exist_ok=True)
+                    path.write_text(text, encoding="utf-8")
+                    before = path.read_bytes()
+                    rid = make_rid(relative)
+                    payload = self.goals()
+                    items = payload["goals" if kind == "goal" else "habits"]
+                    self.assertIs(next(item for item in items if item["rid"] == rid)["writable"], False)
+                    action = f"/goals/{rid}/steps/0" if kind == "goal" else f"/habits/{rid}/days/2026-01-10"
+                    body = {"done": True, "text": "Step"} if kind == "goal" else {"done": True}
+                    self.assert_refused(404, "not_found", action, body)
+                    self.assert_refused(404, "not_found", f"/{'goals' if kind == 'goal' else 'habits'}/{rid}/delete",
+                                        {"title": "Outside"})
+                    self.assertEqual(path.read_bytes(), before)
+        payload = self.goals()
+        self.assertTrue(next(item for item in payload["goals"] if item["rid"] == self.rid)["writable"])
+        self.assertTrue(next(item for item in payload["habits"] if item["rid"] == self.habit)["writable"])
+
     def test_goals_response(self) -> None:
         payload = self.goals()
         self.assertEqual(payload["today"], "2026-01-12")
@@ -577,7 +600,10 @@ class ReadOnlyGoalTests(GoalServerCase):
         self.assertEqual([item["title"] for item in cast(list[dict[str, str]], payload["items"])], ["Eski hedef"])
 
     def test_goals_response(self) -> None:
-        self.assertIs(self.goals()["writable"], False)
+        payload = self.goals()
+        self.assertIs(payload["writable"], False)
+        for item in [*payload["goals"], *payload["habits"], payload["theme"]]:
+            self.assertIs(item["writable"], False)
 
     def test_every_write_is_refused(self) -> None:
         for path, body in (("/goals", {"title": "Hedef", "horizon": "year"}), ("/habits", {"title": "Spor"}),
@@ -597,14 +623,14 @@ class TokenGoalTests(GoalServerCase):
 
     def test_goals_response(self) -> None:
         self.assertEqual(self.call("/goals", method="GET")[0], 401)
-        self.assertEqual(self.call("/goals", method="GET", headers={"Cookie": "bw_session=" + self.token})[0], 200)
+        self.assertEqual(self.call("/goals", method="GET", headers={"Cookie": f"bw_session_{self.port}={self.server.session}"})[0], 200)
 
     def test_write_needs_the_session_cookie(self) -> None:
         body = {"title": "Hedef", "horizon": "year"}
         self.assert_refused(401, "unauthorized", "/goals", body)
         self.assert_refused(401, "unauthorized", "/goals?t=" + self.token, body)
-        self.assert_refused(401, "unauthorized", "/goals", body, headers={"Cookie": "bw_session=wrong"})
-        self.assertEqual(self.call("/goals", body, headers={"Cookie": "bw_session=" + self.token})[0], 200)
+        self.assert_refused(401, "unauthorized", "/goals", body, headers={"Cookie": f"bw_session_{self.port}=wrong"})
+        self.assertEqual(self.call("/goals", body, headers={"Cookie": f"bw_session_{self.port}={self.server.session}"})[0], 200)
 
 
 

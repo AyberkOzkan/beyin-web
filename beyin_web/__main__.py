@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import argparse
 import errno
-import http.client
 import json
 import os
 import shutil
-import socket
 import subprocess
 import sys
 import threading
@@ -21,7 +19,7 @@ from urllib.parse import urlencode
 
 from beyin_web import __version__
 from beyin_web.config import LANGUAGES, Settings, config_directory, load_settings, read_config, resolve_language
-from beyin_web.domain.obsidian import obsidian_vault_uri
+from beyin_web import running as running_state
 from beyin_web.http.server import BeyinHTTPServer, create_server
 from beyin_web.install import install, uninstall
 from beyin_web.runtime.beyin_cli import BeyinRuntime, health_summary
@@ -132,32 +130,7 @@ def notify(message: str) -> None:
 
 
 def find_running(settings: Settings) -> int | None:
-    """Return the port of a server that already shows this vault, looking only at ports that are taken."""
-    if settings.port == 0:
-        return None
-    expected = obsidian_vault_uri(str(settings.vault))
-    for port in range(settings.port, min(settings.port + 20, 65535) + 1):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-            try:
-                probe.bind(("127.0.0.1", port))
-            except OSError:
-                pass
-            else:
-                # Servers take the first free port, so nothing of ours listens beyond a free one.
-                return None
-        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
-        try:
-            headers = {"Cookie": f"bw_session={settings.token}"} if settings.token_enabled else {}
-            connection.request("GET", "/api/v1/pulse", headers=headers)
-            response = connection.getresponse()
-            body = response.read(65536)
-            if response.status == 200 and json.loads(body).get("obsidian_uri") == expected:
-                return port
-        except (OSError, ValueError, AttributeError, http.client.HTTPException):
-            pass
-        finally:
-            connection.close()
-    return None
+    return running_state.find_running(settings.vault, settings.config_dir)
 
 
 def bind_server(
@@ -221,6 +194,7 @@ def serve(server: ThreadingHTTPServer, idle_exit: int | None) -> None:
                 application.activity.notify_all()
         if watcher is not None:
             watcher.join()
+        running_state.remove_running(application)
         server.server_close()
 
 
@@ -287,6 +261,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (OSError, ValueError):
         notify(text["server_failed"])
         return 2
+    running_state.write_running(cast(BeyinHTTPServer, server))
     address = f"http://127.0.0.1:{server.server_address[1]}/"
     if settings.token_enabled:
         address += "?" + urlencode({"t": settings.token})

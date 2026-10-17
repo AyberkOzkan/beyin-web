@@ -360,6 +360,7 @@ class LaunchTests(unittest.TestCase):
                 patch.dict(os.environ, {}, clear=True),
                 patch("beyin_web.__main__.BeyinRuntime", return_value=runtime),
                 patch("beyin_web.__main__.MarkdownSource") as source,
+                patch("beyin_web.__main__.running_state.write_running"),
                 patch("beyin_web.__main__.bind_server", return_value=server) as bind,
                 patch("beyin_web.__main__.serve") as serving,
                 contextlib.redirect_stdout(io.StringIO()) as output,
@@ -380,6 +381,7 @@ class LaunchTests(unittest.TestCase):
                 self.subTest(arguments=arguments, configured=configured),
                 patch("beyin_web.__main__.config_directory", return_value=config_dir),
                 patch("beyin_web.runtime.beyin_cli.subprocess.run") as run,
+                patch("beyin_web.__main__.running_state.write_running"),
                 patch("beyin_web.__main__.bind_server", return_value=Mock(server_address=("127.0.0.1", 7474))) as bind,
                 patch("beyin_web.__main__.serve"),
                 contextlib.redirect_stdout(io.StringIO()),
@@ -390,17 +392,42 @@ class LaunchTests(unittest.TestCase):
                 self.assertFalse(bind.call_args.args[0].beyin_enabled)
                 run.assert_not_called()
 
+    def test_lock_exists_before_the_browser_opens_and_is_removed_after_serving(self) -> None:
+        from beyin_web.config import load_settings
+        from beyin_web.running import read_running
+
+        directory = self.root / "config"
+        settings = load_settings(self.vault, directory, port=0)
+        server = create_server(settings, MarkdownSource(self.vault), BeyinRuntime(self.vault, enabled=False))
+        self.addCleanup(server.server_close)
+        path = directory / "running" / f"{server.server_port}.json"
+
+        def opened(address: str) -> None:
+            self.assertEqual(read_running(path)["session"], server.session)
+            self.assertIn(f":{server.server_port}/?t={settings.token}", address)
+            self.assertNotIn(server.session, address)
+
+        with (patch("beyin_web.__main__.config_directory", return_value=directory),
+              patch("beyin_web.__main__.bind_server", return_value=server),
+              patch.object(server, "serve_forever", side_effect=KeyboardInterrupt),
+              patch("beyin_web.__main__.open_address", side_effect=opened) as browser,
+              contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO())):
+            self.assertEqual(main(["--vault", str(self.vault), "--port", "0", "--no-beyin", "--open"]), 0)
+        browser.assert_called_once()
+        self.assertFalse(path.exists())
+
     def test_clean_ctrl_c_and_no_idle_thread_by_default(self) -> None:
         server = Mock()
         server.serve_forever.side_effect = KeyboardInterrupt
-        with patch("beyin_web.__main__.threading.Thread") as thread:
+        with patch("beyin_web.__main__.threading.Thread") as thread, \
+                patch("beyin_web.__main__.running_state.remove_running"):
             serve(server, None)
         server.server_close.assert_called_once()
         thread.assert_not_called()
 
     def test_idle_shutdown_and_request_reset(self) -> None:
         server = cast(BeyinHTTPServer, create_server(
-            Settings(self.vault, port=0, token_enabled=False),
+            Settings(self.vault, port=0, token_enabled=False, config_dir=self.root / "config"),
             MarkdownSource(self.vault), BeyinRuntime(self.vault),
         ))
         # A short test deadline exercises the same minutes-to-seconds conversion.
@@ -456,7 +483,7 @@ class LaunchTests(unittest.TestCase):
             process.terminate()
             _, stderr = process.communicate(timeout=10)
         self.assertIn("yalın kip", stderr)
-        self.assertFalse((self.root / "beyin-web" / "token").exists())
+        self.assertFalse((self.root / "beyin-web" / "login-token").exists())
 
 
 if __name__ == "__main__":

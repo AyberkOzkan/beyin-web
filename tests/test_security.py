@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from beyin_web.config import LANGUAGES, config_directory, load_settings, load_token, read_config
-from beyin_web.http.security import SECURITY_HEADERS
+from beyin_web.http.security import LEGACY_COOKIE_CLEAR, SECURITY_HEADERS
 from tests.support import make_vault
 from tests.test_server import ServerCase
 
@@ -80,27 +80,59 @@ class SecurityTests(ServerCase):
         self.assertNotIn("Set-Cookie", headers)
 
     def test_correct_token_redirect_and_cookie_access(self) -> None:
+        self.assertNotEqual(self.server.session, self.settings.token)
         for method in ("GET", "HEAD"):
             with self.subTest(method=method):
                 status, headers, body = self.request("/?t=test_session_secret", method)
                 self.assertEqual((status, body), (302, b""))
                 self.assertEqual(headers["Location"], "/")
+                self.assertNotIn("Max-Age", headers["Set-Cookie"])
+                self.assertNotIn("Expires", headers["Set-Cookie"])
                 self.assertEqual(headers["Set-Cookie"], (
-                    "bw_session=test_session_secret; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000"
+                    f"bw_session_{self.server.server_port}={self.server.session}; HttpOnly; SameSite=Strict; Path=/"
                 ))
-        cookie = {"Cookie": "bw_session=test_session_secret"}
+        cookie = {"Cookie": f"bw_session_{self.server.server_port}={self.server.session}"}
         for path in ("/", "/static/index.html", "/api/v1/pulse"):
             with self.subTest(path=path):
                 self.assertEqual(self.request(path, headers=cookie)[0], 200)
         self.assertEqual(self.request("/api/v1/pulse", headers={**cookie, "Host": f"localhost:{self.server.server_port}"})[0], 200)
 
+    def test_login_clears_the_cookie_that_held_the_persistent_token(self) -> None:
+        connection = http.client.HTTPConnection("127.0.0.1", self.server.server_port, timeout=5)
+        try:
+            connection.request("GET", "/?t=test_session_secret")
+            response = connection.getresponse()
+            response.read()
+            cookies = response.msg.get_all("Set-Cookie")
+        finally:
+            connection.close()
+        self.assertEqual(response.status, 302)
+        self.assertEqual(cookies, [
+            LEGACY_COOKIE_CLEAR,
+            f"bw_session_{self.server.server_port}={self.server.session}; HttpOnly; SameSite=Strict; Path=/",
+        ])
+        self.assertTrue(LEGACY_COOKIE_CLEAR.startswith("bw_session=;"))
+        self.assertIn("Max-Age=0", LEGACY_COOKIE_CLEAR)
+
     def test_invalid_cookies_are_unauthorized(self) -> None:
-        for cookie in ("bw_session=wrong", "other=test_session_secret", "bw_session=", "bw_session=wrong; broken"):
+        for cookie in (f"bw_session_{self.server.server_port}={self.settings.token}",
+                       f"bw_session={self.server.session}", f"bw_session_{self.server.server_port}=wrong", "bw_session=wrong", "other=test_session_secret", "bw_session=", "bw_session=wrong; broken"):
             with self.subTest(cookie=cookie):
                 status, headers, body = self.request("/api/v1/pulse", headers={"Cookie": cookie})
                 self.assertEqual(status, 401)
                 self.assertEqual(json.loads(body)["error"]["code"], "unauthorized")
                 self.assertNotIn("Set-Cookie", headers)
+
+    def test_sessions_differ_between_servers_and_never_appear_in_pulse(self) -> None:
+        from beyin_web.http.server import create_server
+        other = create_server(self.settings, self.source, self.runtime)
+        self.addCleanup(other.server_close)
+        self.assertNotEqual(other.session, self.server.session)
+        self.assertNotEqual(other.server_port, self.server.server_port)
+        cookie = {"Cookie": f"bw_session_{self.server.server_port}={self.server.session}"}
+        status, headers, body = self.request("/api/v1/pulse", headers=cookie)
+        self.assertEqual(status, 200)
+        self.assertNotIn(self.server.session, str(headers) + body.decode("utf-8"))
 
     def test_method_rejection_does_not_create_session(self) -> None:
         for method in ("POST", "PUT", "DELETE"):
@@ -164,20 +196,29 @@ class ConfigTests(unittest.TestCase):
     def test_token_persists_across_starts(self) -> None:
         directory = self.root / "config"
         first = load_settings(self.vault, directory)
-        content = (directory / "token").read_text(encoding="utf-8")
+        content = (directory / "login-token").read_text(encoding="utf-8")
         with patch("beyin_web.config.secrets.token_urlsafe") as generate:
             second = load_settings(self.vault, directory)
             generate.assert_not_called()
         self.assertEqual(first.token, second.token)
-        self.assertEqual(content, (directory / "token").read_text(encoding="utf-8"))
+        self.assertEqual(content, (directory / "login-token").read_text(encoding="utf-8"))
         self.assertGreaterEqual(len(first.token), 43)
         if os.name != "nt":
-            self.assertEqual((directory / "token").stat().st_mode & 0o777, 0o600)
+            self.assertEqual((directory / "login-token").stat().st_mode & 0o777, 0o600)
+
+    def test_token_from_before_the_session_cookie_is_replaced(self) -> None:
+        directory = self.root / "config"
+        directory.mkdir()
+        (directory / "token").write_text("old_token_from_0_2_0\n", encoding="utf-8")
+        token = load_token(directory)
+        self.assertNotEqual(token, "old_token_from_0_2_0")
+        self.assertFalse((directory / "token").exists())
+        self.assertEqual((directory / "login-token").read_text(encoding="utf-8"), token + "\n")
 
     def test_token_bom_crlf_and_invalid_file(self) -> None:
         directory = self.root / "config"
         directory.mkdir()
-        path = directory / "token"
+        path = directory / "login-token"
         path.write_text("\ufefftest_token\r\n", encoding="utf-8", newline="")
         self.assertEqual(load_token(directory), "test_token")
         for text in ("", "bad token", "bad\nvalue", "ü"):
@@ -196,7 +237,7 @@ class ConfigTests(unittest.TestCase):
         settings = load_settings(self.vault, directory, token_enabled=False)
         self.assertEqual((settings.port, settings.display_name), (7474, "Çınar"))
         self.assertEqual(load_settings(self.vault, directory, port=0, token_enabled=False).port, 0)
-        self.assertFalse((directory / "token").exists())
+        self.assertFalse((directory / "login-token").exists())
 
     def test_invalid_optional_config(self) -> None:
         directory = self.root / "config"

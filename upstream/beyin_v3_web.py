@@ -14,14 +14,18 @@ once dosya tek basina da calisir:
 """
 import argparse
 import hashlib
+import http.client
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import zipfile
 from pathlib import Path, PurePosixPath
+from urllib.parse import quote, urlsplit
+from urllib.request import HTTPRedirectHandler, build_opener
 
 VERSION = '0.2.0'
 SHA256 = '866ac6bce7d72d50eb1c95ded78b81270ddb446f3332eabb256776d33d9c9185'
@@ -46,15 +50,6 @@ else:
                                     description=request["description"])
 json.dump(paths, sys.stdout)
 '''
-RUNNING_CODE = '''import json, sys
-from pathlib import Path
-from beyin_web.__main__ import find_running
-from beyin_web.config import config_directory, load_settings
-settings = load_settings(Path(sys.argv[1]), config_directory())
-json.dump(find_running(settings), sys.stdout)
-'''
-
-
 # ---------------------------------------------------------------- state
 
 def default_state(vault):
@@ -99,9 +94,33 @@ def _installed(state):
 
 # ---------------------------------------------------------------- package
 
+def safe_url(url):
+    try:
+        parsed = urlsplit(url)
+        if (parsed.scheme == 'https' and parsed.hostname in {
+                'github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com'}
+                and parsed.username is None and parsed.password is None and parsed.port in (None, 443)):
+            return url
+    except ValueError:
+        pass
+    raise ValueError('Indirme adresine izin verilmiyor; yalnizca resmi HTTPS adresleri kullanilir.')
+
+
+class OfficialRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        safe_url(newurl)
+        count = getattr(req, '_official_redirects', 0) + 1
+        if count > 3:
+            raise ValueError('Cok fazla yonlendirme; indirme durduruldu.')
+        result = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if result is not None:
+            result._official_redirects = count
+        return result
+
+
 def download(url):
-    import urllib.request
-    with urllib.request.urlopen(url, timeout=60) as response:
+    url = safe_url(url)
+    with build_opener(OfficialRedirect()).open(url, timeout=60) as response:
         data = response.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
         raise ValueError('Indirilen paket beklenenden buyuk; kurulum durduruldu.')
@@ -211,16 +230,86 @@ def open_interface(vault, state):
                            cwd=str(app), env=_python_env())
 
 
+def config_directory(env=None, platform=None):
+    """beyin-web's settings folder, found the way beyin_web.config finds it (the test compares the two)."""
+    environment = os.environ if env is None else env
+    platform = sys.platform if platform is None else platform
+    if platform == 'win32' and environment.get('APPDATA'):
+        return Path(environment['APPDATA']) / 'beyin-web'
+    if platform != 'win32' and environment.get('XDG_CONFIG_HOME'):
+        return Path(environment['XDG_CONFIG_HOME']) / 'beyin-web'
+    return Path.home() / '.config' / 'beyin-web'
+
+
+def obsidian_vault_uri(vault_root):
+    """The same address beyin_web puts in /pulse (the test compares the two)."""
+    root = vault_root.rstrip('/\\')
+    if re.match(r'^/mnt/[a-zA-Z](/|$)', root):
+        root = root[5].upper() + ':' + (root[6:].replace('/', '\\') or '\\')
+    elif re.match(r'^[a-zA-Z]:', root) or root.startswith('\\\\'):
+        root = root.replace('/', '\\')
+        if re.match(r'^[a-zA-Z]:', root):
+            root = root[0].upper() + root[1:]
+        if len(root) == 2:
+            root += '\\'
+    return 'obsidian://open?path=' + quote(root or '/', safe='')
+
+
+def read_running(path):
+    try:
+        if path.is_symlink() or not path.is_file():
+            return None
+        value = json.loads(path.read_text(encoding='utf-8').lstrip('\ufeff'))
+        if not isinstance(value, dict):
+            return None
+        if (type(value.get('schema')) is not int or value['schema'] != 1
+                or type(value.get('port')) is not int or not 1 <= value['port'] <= 65535
+                or path.name != f"{value['port']}.json"
+                or type(value.get('pid')) is not int or value['pid'] <= 0
+                or not isinstance(value.get('vault'), str) or not Path(value['vault']).is_absolute()
+                or not isinstance(value.get('session'), str)
+                or re.fullmatch(r'[A-Za-z0-9_-]{0,256}', value['session']) is None):
+            return None
+        return value
+    except (OSError, ValueError, UnicodeError, RuntimeError):
+        return None
+
+
+def find_running(vault, directory):
+    """The port of the beyin-web that shows this vault, asked only where its lock file points."""
+    vault = vault.resolve()
+    expected = obsidian_vault_uri(str(vault))
+    try:
+        paths = sorted((directory / 'running').glob('*.json'))
+    except OSError:
+        return None
+    for path in paths:
+        value = read_running(path)
+        if value is None or value['vault'] != str(vault):
+            continue
+        port = int(value['port'])
+        connection = http.client.HTTPConnection('127.0.0.1', port, timeout=2)
+        try:
+            headers = {'Cookie': f"bw_session_{port}={value['session']}"} if value['session'] else {}
+            connection.request('GET', '/api/v1/pulse', headers=headers)
+            response = connection.getresponse()
+            body = response.read(65536)
+            if response.status == 200 and json.loads(body).get('obsidian_uri') == expected:
+                return port
+        except (OSError, ValueError, AttributeError, http.client.HTTPException):
+            pass
+        finally:
+            connection.close()
+    return None
+
+
 def status(vault, state, env=None):
     try:
         record, app = _installed(state)
     except ValueError:
         return {'status': 'tamam', 'kurulu': False, 'surum': None, 'beklenen_surum': VERSION, 'guncel': False,
                 'klasor': None, 'kisayol': [], 'calisiyor': None}
-    try:
-        port = _in_app(app, RUNNING_CODE, arguments=[str(Path(vault).resolve())], env=env)
-    except (OSError, ValueError, subprocess.SubprocessError):
-        port = None
+    port = find_running(Path(vault), config_directory(env))
     return {'status': 'tamam', 'kurulu': True, 'surum': record.get('surum'), 'beklenen_surum': VERSION,
             'guncel': record.get('surum') == VERSION and record.get('sha256') == SHA256, 'klasor': str(app),
             'kisayol': record.get('kisayol') or [], 'calisiyor': port}

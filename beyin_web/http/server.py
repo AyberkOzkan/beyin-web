@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import secrets
 import sys
 import threading
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from socketserver import TCPServer
 from typing import cast
@@ -14,7 +15,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from beyin_web.config import Settings
 from beyin_web.http.security import (
-    SECURITY_HEADERS, authenticated, session_cookie, valid_host, valid_token, valid_write,
+    LEGACY_COOKIE_CLEAR, SECURITY_HEADERS, authenticated, session_cookie, valid_host, valid_token, valid_write,
 )
 from beyin_web.runtime.beyin_cli import BeyinRuntime
 from beyin_web.vault.scan import VaultSource
@@ -44,6 +45,7 @@ class BeyinHTTPServer(ThreadingHTTPServer):
     ) -> None:
         if settings.token_enabled and not settings.token:
             raise ValueError("missing_token")
+        self.session = secrets.token_urlsafe(32)
         self.settings = settings
         self.source = source
         self.runtime = runtime
@@ -145,14 +147,14 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def send_body(
         self, status: int, body: bytes, content_type: str | None = None,
-        headers: Mapping[str, str] | None = None,
+        headers: Mapping[str, str] | Sequence[tuple[str, str]] | None = None,
     ) -> None:
         self.send_response(status)
         if content_type is not None:
             self.send_header("Content-Type", content_type)
         if status != 304:
             self.send_header("Content-Length", str(len(body)))
-        for name, value in (headers or {}).items():
+        for name, value in (headers.items() if isinstance(headers, Mapping) else headers or ()):
             self.send_header(name, value)
         self.end_headers()
         if self.command != "HEAD" and status != 304:
@@ -207,11 +209,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             query = parse_qs(target.query, keep_blank_values=True)
             tokens = query.get("t", [])
             if write is None and path == "/" and len(tokens) == 1 and valid_token(tokens[0], settings.token):
-                self.send_body(302, b"", headers={
-                    "Location": "/", "Set-Cookie": session_cookie(settings.token),
-                })
+                self.send_body(302, b"", headers=[
+                    ("Location", "/"),
+                    # 0.2.0 kept the persistent token in this cookie for 30 days.
+                    ("Set-Cookie", LEGACY_COOKIE_CLEAR),
+                    ("Set-Cookie", session_cookie(application.session, port)),
+                ])
                 return
-            if not authenticated(self.headers.get_all("Cookie", []), settings.token):
+            if not authenticated(self.headers.get_all("Cookie", []), application.session, port):
                 if path.startswith(("/api/", "/static/")) or path in {"/api", "/static"}:
                     self.send_error(401)
                 else:

@@ -97,7 +97,7 @@ Kısa cevap: neredeyse hiçbir şey.
 
 - **Okur.** Her şeyi vault'taki Markdown dosyalarından okur. Beyin'in durum klasörüne (indeks, yedekler) hiç girmez.
 - **Beyin'e yalnızca iki şey sorar:** `doctor` (sürüm ve sağlık) ve `context --no-sync` (bağlam araması). İkisi de bir şey yazmaz; `sync`, `receipt`, `task-update` gibi yazan komutlara hiç dokunmaz.
-- **Tek istisna Hedefler.** Oradan eklediğin hedef ve alışkanlıklar `goals/` klasörüne sıradan Markdown olarak yazılır; Beyin bir sonraki senkronda onları da görür. Bunu da istemiyorsan `--read-only`.
+- **Tek istisna Hedefler.** Yazma varsayılan olarak açıktır. Yeni hedef ve alışkanlıklar `goals/` klasörüne sıradan Markdown olarak yazılır; yalnızca bu klasördeki hedef ve alışkanlıklar değiştirilir ya da `.trash`'e taşınır. Beyin bir sonraki senkronda onları da görür. Çöp Kutusu yalnızca `.trash` içindeki hedef ve alışkanlık notlarını geri alır ya da, onay istedikten sonra, kalıcı olarak siler; bu silme geri alınamaz. Yazmayı tümüyle kapatmak için `--read-only` ya da `config.json` içinde `"read_only": true` kullan.
 - **Gizli olan gizli kalır.** `visibility: private` bir not hiçbir sayfada, aramada ya da grafikte görünmez.
 - **Not düzenleyici değildir.** Notları yazmak ve değiştirmek Obsidian'ın ve ajanının işi. Raporlar da yalnızca eldeki kayıtları sayar; model çağrılmaz.
 - **Ayrı bir proje.** avenoxbeyin'in parçası değil ve onun güncellemesiyle gelmez; aynı lisansla (MIT) bu depoda geliştiriliyor.
@@ -106,9 +106,11 @@ Kısa cevap: neredeyse hiçbir şey.
 
 ## Güvenlik
 
-Sunucu yalnızca `127.0.0.1` üzerinde dinler; dışarı ağ isteği, telemetri ya da CDN yoktur. İlk adres bir giriş belirteci taşır: açılışta `HttpOnly; SameSite=Strict` bir çerez konur ve belirteç adres çubuğundan kaldırılır. Belirteç ayar klasöründeki `token` dosyasında durur; ayar klasörü vault'un içinde olamaz. **Belirteçli adresi paylaşma.**
+Sunucu yalnızca `127.0.0.1` üzerinde dinler; dışarı ağ isteği, telemetri ya da CDN yoktur. İlk adres bir giriş belirteci taşır: açılışta `HttpOnly; SameSite=Strict` bir çerez konur ve belirteç adres çubuğundan kaldırılır. Çerez, her sunucu açılışında üretilen ve sunucu kapanınca geçersizleşen bir oturum değeri taşır; kalıcı belirteç yalnızca giriş adresinde kullanılır. `--reuse` çalışan arayüzü ayar klasöründeki `running/<port>.json` kilit dosyasından bulur. Belirteç ayar klasöründeki `login-token` dosyasında durur; ayar klasörü vault'un içinde olamaz. 0.2.0'dan kalan `token` dosyası ve 30 günlük eski çerez ilk açılışta silinir; eski belirteç artık geçmez. **Belirteçli adresi paylaşma.**
 
-API yalnızca okur (GET, HEAD). Yazan uçlar Hedefler'in sekiz POST ucu ve hiçbir dosyaya yazmayan "Arayüzü kapat" ucudur; hepsi isteğin arayüzün kendi sayfasından geldiğini (`Origin`, JSON türü ve özel başlık) denetler, başka bir sitenin ya da formun isteğini reddeder. Katı CSP uzak kaynakları ve satır içi betikleri engeller. Gizli notlar veri katmanında elenir.
+Yazma varsayılan olarak açıktır. Arayüz yalnızca `goals/` altındaki hedef ve alışkanlık notlarını değiştirir ya da `.trash`'e taşır. Çöp Kutusu'ndan kalıcı silme yalnızca `.trash` içindeki hedef ve alışkanlık notları için vardır ve geri alınamaz. `--read-only` ya da `config.json` içinde `"read_only": true` yazmayı tümüyle kapatır.
+
+Okuma uçları GET ve HEAD kullanır. Yazan uçlar Hedefler'in sekiz POST ucu ve hiçbir dosyaya yazmayan "Arayüzü kapat" ucudur; hepsi isteğin arayüzün kendi sayfasından geldiğini (`Origin`, JSON türü ve özel başlık) denetler, başka bir sitenin ya da formun isteğini reddeder. Katı CSP uzak kaynakları ve satır içi betikleri engeller. Gizli notlar veri katmanında elenir.
 
 Bir güvenlik açığı bulursan herkese açık issue yerine deponun **Security** sekmesindeki **Report a vulnerability** ile özel olarak bildir.
 
@@ -235,3 +237,7 @@ python scripts/measure.py VAULT --api --no-beyin --repeat 20 --idle 60
 ## In English
 
 beyin-web is a local web interface for [avenoxbeyin](https://github.com/avenoxai/avenoxbeyin) ("Beyin"), a local second brain for coding agents that keeps everything in Markdown inside an Obsidian vault. It shows what Beyin has written there (projects, tasks, receipts, session cards, rules, knowledge notes) on plain pages, for people who do not want to learn Obsidian. **It needs a vault managed by Beyin; on its own it has nothing to show.** It never writes to Beyin's state folder, calls only `doctor` and `context --no-sync`, and writes to the vault only from the Goals page. Python 3.11+, no dependencies, no build step. To install, open your vault in your AI client and ask it to read [beyin-web.md](https://raw.githubusercontent.com/AyberkOzkan/beyin-web/main/beyin-web.md) and install beyin-web; or download the package from the [latest release](https://github.com/AyberkOzkan/beyin-web/releases/latest) and run `python3 -m beyin_web --install --vault "/home/deniz/Beyin"` in its folder. The interface is in Turkish and English (Settings, or `--lang en`); the documentation is in Turkish.
+
+Security: the server listens only on `127.0.0.1`, with no external requests, telemetry or CDN. The `HttpOnly; SameSite=Strict` cookie carries a session value that becomes invalid when the server stops; the persistent token (`login-token` in the configuration folder) is used only in the login URL. Do not share that URL. The `token` file and the 30-day cookie left by 0.2.0 are removed on first start, so the old token no longer works. `--reuse` finds the running interface through a `running/<port>.json` lock file in the configuration folder.
+
+Writing is enabled by default. The interface changes or moves to `.trash` only goal and habit notes under `goals/`. Permanent deletion from the Bin is available only for goal and habit notes inside `.trash` and cannot be undone. `--read-only` or `"read_only": true` in `config.json` disables all vault writes. Write requests require the page's own origin, JSON and a custom header; a strict CSP blocks remote resources and inline scripts, and private notes are filtered before reaching the interface.

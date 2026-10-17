@@ -10,10 +10,20 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
+from urllib.request import Request
+
+from beyin_web.__main__ import serve
+from beyin_web.config import config_directory, load_settings
+from beyin_web.domain.obsidian import obsidian_vault_uri
+from beyin_web.http.server import create_server
+from beyin_web.running import write_running
+from beyin_web.runtime.beyin_cli import BeyinRuntime
+from beyin_web.vault.scan import MarkdownSource
 
 from beyin_web import __version__
 from scripts import build_release
@@ -79,6 +89,51 @@ class ReleaseArchiveTests(unittest.TestCase):
         self.assertLessEqual(imported, set(sys.stdlib_module_names))
 
 
+class LauncherSecurityTests(unittest.TestCase):
+    def test_safe_url_accepts_only_official_https_without_credentials_or_other_ports(self) -> None:
+        for host in ("github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com"):
+            for port in ("", ":443"):
+                url = f"https://{host}{port}/release.zip"
+                self.assertEqual(launcher.safe_url(url), url)
+        for url in ("http://github.com/file", "https://example.com/file", "https://github.com.evil.example/file",
+                    "https://user@github.com/file", "https://user:password@github.com/file",
+                    "https://@github.com/file", "https://github.com:8443/file", "https://github.com:bad/file",
+                    "file:///tmp/release.zip", "https://[broken"):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                launcher.safe_url(url)
+        with patch.object(launcher, "build_opener") as opener, self.assertRaises(ValueError):
+            launcher.download("http://github.com/file")
+        opener.assert_not_called()
+
+    def test_redirects_are_checked_and_limited_without_network(self) -> None:
+        handler = launcher.OfficialRedirect()
+        request = Request("https://github.com/file")
+        for url in ("https://example.com/file", "http://github.com/file", "https://github.com:8443/file"):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                handler.redirect_request(request, None, 302, "Found", {}, url)
+        for count in range(3):
+            request = handler.redirect_request(request, None, 302, "Found", {},
+                                               f"https://release-assets.githubusercontent.com/file{count}")
+            self.assertIsNotNone(request)
+        with self.assertRaises(ValueError):
+            handler.redirect_request(request, None, 302, "Found", {}, "https://objects.githubusercontent.com/final")
+
+    def test_config_directory_matches_the_application_on_every_platform(self) -> None:
+        with tempfile.TemporaryDirectory() as folder, patch.object(Path, "home", return_value=Path(folder)):
+            for platform in ("win32", "darwin", "linux"):
+                for env in ({}, {"APPDATA": folder}, {"XDG_CONFIG_HOME": folder},
+                            {"APPDATA": folder, "XDG_CONFIG_HOME": folder + "/other"}):
+                    with self.subTest(platform=platform, env=env):
+                        self.assertEqual(launcher.config_directory(env, platform), config_directory(env, platform))
+                        with patch.dict(os.environ, env, clear=True), patch.object(sys, "platform", platform):
+                            self.assertEqual(launcher.config_directory(), config_directory())
+
+    def test_vault_uri_matches_the_application_including_wsl_and_drive_roots(self) -> None:
+        for root in ("/home/deniz/Beyin", "/mnt/c/Users/deniz/Beyin", "/mnt/d/", "/", "c:/", "c:/Beyin",
+                     r"\\server\vault"):
+            self.assertEqual(launcher.obsidian_vault_uri(root), obsidian_vault_uri(root))
+
+
 class LauncherTestCase(unittest.TestCase):
     def setUp(self) -> None:
         temporary = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
@@ -88,11 +143,13 @@ class LauncherTestCase(unittest.TestCase):
         self.state = self.root / "state"
         self.package = self.root / "beyin-web.zip"
         self.package.write_bytes(build_release.build())
+        with zipfile.ZipFile(self.package) as package:
+            self.assertIn("beyin_web/running.py", package.namelist())
         self.digest = hashlib.sha256(self.package.read_bytes()).hexdigest()
         pinned = patch.object(launcher, "SHA256", self.digest)
         pinned.start()
         self.addCleanup(pinned.stop)
-        # Whatever the installed copy writes for itself (a token for the status probe) stays in the test folder.
+        # Installation settings and shortcuts stay inside the test folder.
         self.env = {**launcher._python_env(), "APPDATA": str(self.root / "config"), "XDG_CONFIG_HOME": str(self.root / "config"),
                     "XDG_DATA_HOME": str(self.root / "share")}
         self.env.pop("WSL_DISTRO_NAME", None)
@@ -129,6 +186,7 @@ class LauncherTests(LauncherTestCase):
                          {"schema": 1, "surum": __version__, "sha256": self.digest, "dil": "en", "kisayol": []})
         result = subprocess.run([sys.executable, "-m", "beyin_web", "--version"], cwd=app, env=self.env,
                                 capture_output=True, encoding="utf-8", timeout=60, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, f"beyin-web {__version__}\n")
         state = launcher.status(self.vault, self.state, env=self.env)
         self.assertEqual((state["kurulu"], state["surum"], state["guncel"], state["calisiyor"]),
@@ -139,6 +197,26 @@ class LauncherTests(LauncherTestCase):
         self.assertEqual(removed["kaldirilan"], ["web/", "web.json"])
         self.assertEqual(list(self.state.iterdir()), [])
         self.assertEqual(self.vault_files(), before)
+
+    def test_status_uses_the_lock_without_executing_installed_code(self) -> None:
+        launcher.install(self.vault, self.state, package=self.package, shortcut=False)
+        directory = config_directory(self.env)
+        settings = load_settings(self.vault, directory, port=0)
+        server = create_server(settings, MarkdownSource(self.vault), BeyinRuntime(self.vault, enabled=False))
+        write_running(server)
+        thread = threading.Thread(target=serve, args=(server, None))
+        thread.start()
+        try:
+            with (patch.object(subprocess, "run", side_effect=AssertionError("status ran installed code")),
+                  patch.object(subprocess, "Popen", side_effect=AssertionError("status started a process"))):
+                self.assertEqual(launcher.status(self.vault, self.state, env=self.env)["calisiyor"], server.server_port)
+                other = make_vault(self.root / "other")
+                self.assertIsNone(launcher.status(other, self.state, env=self.env)["calisiyor"])
+        finally:
+            server.shutdown()
+            thread.join(timeout=5)
+            server.server_close()
+        self.assertFalse((directory / "running" / f"{server.server_port}.json").exists())
 
     def test_a_package_with_another_digest_changes_nothing(self) -> None:
         launcher.install(self.vault, self.state, package=self.package, shortcut=False)

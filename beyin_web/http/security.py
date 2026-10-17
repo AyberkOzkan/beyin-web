@@ -44,7 +44,7 @@ def valid_token(candidate: str, token: str) -> bool:
     )
 
 
-def authenticated(cookies: Sequence[str], token: str) -> bool:
+def authenticated(cookies: Sequence[str], token: str, port: int) -> bool:
     if len(cookies) != 1:
         return False
     jar: SimpleCookie[str] = SimpleCookie()
@@ -52,12 +52,12 @@ def authenticated(cookies: Sequence[str], token: str) -> bool:
         jar.load(cookies[0])
     except CookieError:
         return False
-    session = jar.get("bw_session")
+    session = jar.get(f"bw_session_{port}")
     return session is not None and valid_token(session.value, token)
 
 
-def session_cookie(token: str) -> str:
-    return (
-        f"bw_session={token}; HttpOnly; SameSite=Strict; Path=/; "
-        "Max-Age=2592000"
-    )
+LEGACY_COOKIE_CLEAR = "bw_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"
+
+
+def session_cookie(session: str, port: int) -> str:
+    return f"bw_session_{port}={session}; HttpOnly; SameSite=Strict; Path=/"

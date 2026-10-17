@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 from unittest.mock import patch
 
 from beyin_web import __version__
+from beyin_web.running import write_running
 from beyin_web.__main__ import find_running, main, parse_args
 from beyin_web.config import Settings
 from beyin_web.http.server import create_server
@@ -266,9 +267,11 @@ class InstallTests(InstallTestCase):
 
 class RunningServerTests(InstallTestCase):
     def start(self, settings: Settings) -> tuple[Settings, threading.Thread]:
+        settings = replace(settings, config_dir=self.config)
         server = create_server(settings, MarkdownSource(settings.vault), BeyinRuntime(settings.vault, enabled=False))
         thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
         thread.start()
+        write_running(server)
 
         def stop() -> None:
             server.shutdown()
@@ -288,13 +291,14 @@ class RunningServerTests(InstallTestCase):
         finally:
             connection.close()
 
-    def test_a_running_server_is_found_only_for_the_same_vault_and_token(self) -> None:
+    def test_a_running_server_is_found_only_for_the_same_vault(self) -> None:
         running, _ = self.start(Settings(vault=self.vault, port=0, token_enabled=True, token="one_session_secret"))
         self.assertEqual(find_running(running), running.port)
-        self.assertIsNone(find_running(replace(running, token="another_secret")))
+        self.assertEqual(find_running(replace(running, token="another_secret")), running.port)
         other = make_vault(self.root / "other")
         self.assertIsNone(find_running(replace(running, vault=other)))
-        self.assertIsNone(find_running(replace(running, port=0)))
+        self.assertEqual(find_running(replace(running, port=0)), running.port)
+        (self.config / "running" / f"{running.port}.json").unlink()
         open_server, _ = self.start(Settings(vault=self.vault, port=0, token_enabled=False))
         self.assertEqual(find_running(open_server), open_server.port)
 

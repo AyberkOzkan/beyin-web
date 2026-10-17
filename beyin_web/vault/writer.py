@@ -30,6 +30,10 @@ class VaultWriter:
         self._folder = folder
         self._lock = threading.Lock()
 
+    @property
+    def folder(self) -> str:
+        return self._folder
+
     def _inside(self, path: Path) -> bool:
         try:
             return not path.is_symlink() and path.resolve().is_relative_to(self._root)
