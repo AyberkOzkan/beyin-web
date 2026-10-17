@@ -1,6 +1,6 @@
 # Değişiklikler
 
-## Yayımlanmamış
+## 0.2.1 (2026-10-17)
 
 - Giriş çerezi artık geçici bir oturum değeri taşır; yeniden açma çalışan arayüzü kilit dosyasından bulur ve kalıcı belirteci başka portlara göndermez.
 - Giriş belirteci bir kez yenilenir: 0.2.0'ın `token` dosyası ve kalıcı belirteci taşıyan 30 günlük çerezi ilk açılışta silinir, belirteç artık `login-token` dosyasında durur.

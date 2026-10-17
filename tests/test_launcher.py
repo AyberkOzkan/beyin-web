@@ -44,7 +44,7 @@ class LauncherTests(unittest.TestCase):
     def assert_version(self, launcher: Path) -> None:
         result = self.run_launcher(launcher, ["--version"])
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "beyin-web 0.2.0\n")
+        self.assertEqual(result.stdout, "beyin-web 0.2.1\n")
         self.assertEqual(result.stderr, "")
 
     def test_posix_version_outside_repository(self) -> None:
@@ -90,7 +90,7 @@ class LauncherTests(unittest.TestCase):
         self.env["PATH"] = str(bin_dir) + os.pathsep + os.environ.get("PATH", "")
         result = self.run_launcher(ROOT / "scripts" / "beyin-web", ["--version"])
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "beyin-web 0.2.0\n")
+        self.assertEqual(result.stdout, "beyin-web 0.2.1\n")
         self.assertNotIn("old python3", result.stderr)
 
     def assert_fake_package(self, filename: str) -> None:

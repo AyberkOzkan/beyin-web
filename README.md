@@ -2,7 +2,7 @@
 
 **Beyin yazar, sen okursun.** beyin-web, [avenoxbeyin](https://github.com/avenoxai/avenoxbeyin) (Beyin) kurulu bir vault'u tarayıcıda açan küçük bir arayüz. Ajanının zamanla biriktirdiği projeler, görevler, iş kayıtları ve hafıza dosyaları dosya ağacının içinde kaybolmasın diye var: hepsini Obsidian bilmeden gezilebilen sade sayfalara dizer.
 
-Sürüm 0.2.0 · [Neler değişti](CHANGELOG.md) · [Kurulum rehberi](docs/INSTALL.md) · MIT
+Sürüm 0.2.1 · [Neler değişti](CHANGELOG.md) · [Kurulum rehberi](docs/INSTALL.md) · MIT
 
 ![Arayüzde kısa bir gezinti: Ana Sayfa, Projeler, Günlükler, Grafik, arama ve Hedefler](docs/img/demo.gif)
 
@@ -28,7 +28,7 @@ Rehber ajana adım adım ne yapacağını söyler: uygun Python'u arar, son sür
 
 ### Kendin kur
 
-[Sürümler sayfasından](https://github.com/AyberkOzkan/beyin-web/releases/latest) `beyin-web-0.2.0.zip`'i indir. İstersen yanındaki `.sha256` dosyasıyla indirdiğin paketin bozulmadığını kontrol edebilirsin. ZIP'i bir yere aç, o klasörde bir terminal aç ve kendi vault yolunla:
+[Sürümler sayfasından](https://github.com/AyberkOzkan/beyin-web/releases/latest) `beyin-web-0.2.1.zip`'i indir. İstersen yanındaki `.sha256` dosyasıyla indirdiğin paketin bozulmadığını kontrol edebilirsin. ZIP'i bir yere aç, o klasörde bir terminal aç ve kendi vault yolunla:
 
 ```sh
 # Linux, macOS, WSL
@@ -131,7 +131,7 @@ Bir güvenlik açığı bulursan herkese açık issue yerine deponun **Security*
 | `--install` | Bu kullanıcı için kurar: kopya, vault ayarı ve kısayol. `--vault` ve `--lang` ile birlikte verilir. |
 | `--uninstall` | Kısayolları ve kurulu kopyayı siler. |
 | `--reuse` | Aynı vault için çalışan bir arayüz varsa yenisini başlatmaz, onun adresini açar. Kısayol bunu kullanır. |
-| `--version` | `beyin-web 0.2.0` yazdırıp çıkar. |
+| `--version` | `beyin-web 0.2.1` yazdırıp çıkar. |
 
 Vault şu sırayla aranır: `--vault` → `BEYIN_VAULT` → `config.json` içindeki `vault` → bulunulan klasör (içinde `beyin.py` veya `.obsidian` varsa). Göreli yollar bulunulan klasöre göre çözülür. Öncelikli yol geçersizse sonraki aday denenmez.
 

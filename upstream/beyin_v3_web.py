@@ -10,7 +10,7 @@ verileni okur), SHA-256 ozetini dogrular, durum klasorunde web/<surum>/ altina a
 Vault'a hicbir sey yazilmaz; `kur` cagrilmadikca ag istegi yapilmaz. `beyin.py` bu alt komutu tanimadan
 once dosya tek basina da calisir:
 
-    python3 beyin_v3_web.py --vault ~/Beyin kur --paket beyin-web-0.2.0.zip
+    python3 beyin_v3_web.py --vault ~/Beyin kur --paket beyin-web-0.2.1.zip
 """
 import argparse
 import hashlib
@@ -27,8 +27,8 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urlsplit
 from urllib.request import HTTPRedirectHandler, build_opener
 
-VERSION = '0.2.0'
-SHA256 = '866ac6bce7d72d50eb1c95ded78b81270ddb446f3332eabb256776d33d9c9185'
+VERSION = '0.2.1'
+SHA256 = 'ce3b9760102979781f3636771412f5178305aba753c864af041e5f1f6579f891'
 URL = 'https://github.com/AyberkOzkan/beyin-web/releases/download/v{version}/beyin-web-{version}.zip'
 FOLDER = 'web'
 STATE_FILE = 'web.json'

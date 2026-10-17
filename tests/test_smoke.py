@@ -44,7 +44,7 @@ class SmokeTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stdout, "beyin-web 0.2.0\n")
+        self.assertEqual(result.stdout, "beyin-web 0.2.1\n")
         self.assertEqual(result.stderr, "")
 
     def test_turkish_output_survives_a_pipe_without_utf8(self) -> None:
